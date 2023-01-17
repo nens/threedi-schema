@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-214.2 (unreleased)
+214.2 (2023-01-17)
 ------------------
 
 - Fixed packaging (also include migrations).
