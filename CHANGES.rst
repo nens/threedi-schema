@@ -2,8 +2,8 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.1 (unreleased)
-----------------
+214.0 (2023-01-17)
+------------------
 
 - Initial project structure created with cookiecutter and
   https://github.com/nens/cookiecutter-python-template
