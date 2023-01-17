@@ -1,6 +1,6 @@
 import pathlib
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 long_description = "\n\n".join([open("README.rst").read(), open("CHANGES.rst").read()])
 
@@ -38,7 +38,7 @@ setup(
     author_email="info@nelen-schuurmans.nl",
     url="https://github.com/nens/threedi-schema",
     license="MIT",
-    packages=["threedi_schema"],
+    packages=find_packages(include="threedi_schema*"),
     include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
