@@ -22,7 +22,7 @@ install_requires = [
     "alembic>=1.8",
 ]
 
-tests_require = ["pytest"]
+tests_require = ["pytest", "pytest-cov"]
 cli_require = ["click"]
 
 
