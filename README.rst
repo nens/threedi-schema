@@ -2,7 +2,7 @@ threedi-schema
 ==========================================
 
 
-.. image:: https://img.shields.io/pypi/v/threedi-modelchecker.svg
+.. image:: https://img.shields.io/pypi/v/threedi-schema.svg
   :target: https://pypi.org/project/threedi-schema/
 
 .. image:: https://github.com/nens/threedi-schema/actions/workflows/test.yml/badge.svg
