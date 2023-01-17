@@ -1,7 +1,9 @@
-from setuptools import setup
 import pathlib
 
+from setuptools import setup
+
 long_description = "\n\n".join([open("README.rst").read(), open("CHANGES.rst").read()])
+
 
 def get_version():
     # Edited from https://packaging.python.org/guides/single-sourcing-package-version/
@@ -14,9 +16,15 @@ def get_version():
         raise RuntimeError("Unable to find version string.")
 
 
-install_requires = []
+install_requires = [
+    "GeoAlchemy2>=0.9,!=0.11.*",
+    "SQLAlchemy>=1.3",
+    "alembic>=1.8",
+]
 
 tests_require = ["pytest"]
+cli_require = ["click"]
+
 
 setup(
     name="threedi-schema",
@@ -36,10 +44,10 @@ setup(
     install_requires=install_requires,
     python_requires=">=3.7",
     tests_require=tests_require,
-    extras_require={"test": tests_require},
+    extras_require={"test": tests_require, "cli": cli_require},
     entry_points={
         "console_scripts": [
-            "run-threedi-schema = threedi_schema.scripts:main"
+            "threedi_schema = threedi_schema.scripts:main"
         ]
     },
 )
