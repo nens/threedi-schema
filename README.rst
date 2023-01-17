@@ -1,93 +1,57 @@
 threedi-schema
 ==========================================
 
-Introduction
 
-Usage, etc.
+.. image:: https://img.shields.io/pypi/v/threedi-modelchecker.svg
+  :target: https://pypi.org/project/threedi-modelchecker/
+
+.. image:: https://github.com/nens/threedi-schema/actions/workflows/test.yml/badge.svg
+	:alt: Github Actions status
+	:target: https://github.com/nens/threedi-schema/actions/workflows/test.yml
+
+
+The schema of 3Di schematization files
+
+This package exposes the following:
+
+- A ``ThreediDatabase`` object to interact with the schematization files.
+- Methods for upgrading schema versions.
+- The 3Di schema as SQLAlchemy models and python Enum classes.
+
+Example
+-------
+
+The following code sample shows how you can upgrade a schematization file::
+
+    from threedi_schema import ThreediDatabase
+
+    db = ThreediDatabase("<Path to your sqlite file>")
+    db.schema.upgrade()
+
+
+The following code sample shows how you can list Channel objects::
+
+    from threedi_schema import models
+
+    channels = db.get_session().query(models.Channel).all()
+
+
+Command-line interface
+----------------------
+
+Migrate to the latest schema version::
+
+    threedi_schema -s path/to/model.sqlite migrate 
+
+
+Ensure presence of spatial indexes::
+
+    threedi_schema -s path/to/model.sqlite index 
 
 
 Installation
 ------------
 
-We can be installed with::
+Install with::
 
   $ pip install threedi-schema
-
-(TODO: after the first release has been made)
-
-
-Development installation of this project itself
------------------------------------------------
-
-We use python's build-in "virtualenv" to get a nice isolated directory. You
-only need to run this once::
-
-  $ python3 -m venv .
-
-A virtualenv puts its commands in the ``bin`` directory. So ``bin/pip``,
-``bin/pytest``, etc. Set up the dependencies like this::
-
-  $ bin/pip install -r requirements.txt
-
-There will be a script you can run like this::
-
-  $ bin/run-threedi-schema
-
-It runs the `main()` function in `threedi-schema/scripts.py`,
-adjust that if necessary. The script is configured in `setup.py` (see
-`entry_points`).
-
-In order to get nicely formatted python files without having to spend manual
-work on it, run the following command periodically::
-
-  $ bin/black threedi_schema
-
-Run the tests regularly. This also checks with pyflakes, black and it reports
-coverage. Pure luxury::
-
-  $ bin/pytest
-
-The tests are also run automatically `on "github actions"
-<https://githug.com/nens/threedi-schema/actions>`_ for
-"master" and for pull requests. So don't just make a branch, but turn it into
-a pull request right away:
-
-- Prepend the title with "[WIP]", work in progress. That way you make clear it
-  isn't ready yet to be merged.
-
-- **Important**: it is easy to give feedback on pull requests. Little comments
-  on the individual lines, for instance. So use it to get early feedback, if
-  you think that's useful.
-
-- On your pull request page, you also automatically get the feedback from the
-  automated tests.
-
-If you need a new dependency (like ``requests``), add it in ``setup.py`` in
-``install_requires``. Local development tools, like "black", can be added to the
-``requirements.txt`` directoy. In both cases, run install again to actuall
-install your dependency::
-
-  $ bin/pip install -r requirements.txt
-
-
-Steps to do after generating with cookiecutter
-----------------------------------------------
-
-- Add a new project on https://github.com/nens/ with the same name. Set
-  visibility to "public" and do not generate a license or readme.
-
-  Note: "public" means "don't put customer data or sample data with real
-  persons' addresses on github"!
-
-- Follow the steps you then see (from "git init" to "git push origin master")
-  and your code will be online.
-
-- Go to
-  https://github.com/nens/threedi-schema/settings/collaboration
-  and add the teams with write access (you might have to ask someone with
-  admin rights to do it).
-
-- Update this readme. Use `.rst
-  <http://www.sphinx-doc.org/en/stable/rest.html>`_ as the format.
-
-- Remove this section as you've done it all :-)
