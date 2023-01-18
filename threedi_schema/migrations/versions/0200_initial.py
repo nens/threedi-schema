@@ -109,7 +109,7 @@ def upgrade_164():
             geoalchemy2.types.Geometry(
                 geometry_type="POLYGON",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -385,7 +385,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="LINESTRING",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -400,7 +400,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POINT",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -418,7 +418,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POINT",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -434,7 +434,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POINT",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -443,7 +443,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="LINESTRING",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -540,7 +540,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POLYGON",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -555,7 +555,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POINT",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -571,7 +571,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="LINESTRING",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -589,7 +589,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POLYGON",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -654,7 +654,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POLYGON",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -683,7 +683,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="LINESTRING",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -728,7 +728,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="LINESTRING",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -784,7 +784,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="LINESTRING",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -803,7 +803,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POINT",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -849,7 +849,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="LINESTRING",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -1011,7 +1011,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POLYGON",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -1069,7 +1069,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POINT",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -1093,7 +1093,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POINT",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),

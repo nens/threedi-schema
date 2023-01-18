@@ -43,7 +43,7 @@ def downgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="LINESTRING",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -62,7 +62,7 @@ def downgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POINT",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),
@@ -79,7 +79,7 @@ def downgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="POINT",
                 srid=4326,
-                management=True,
+                
             ),
             nullable=True,
         ),

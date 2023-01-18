@@ -54,3 +54,5 @@ jobs:
         shell: bash
         run: |
           pytest
+        env:
+          SQLALCHEMY_SILENCE_UBER_WARNING: 1

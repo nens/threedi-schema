@@ -33,7 +33,7 @@ class Levee(Base):
     crest_level = Column(Float)
     the_geom = Column(
         Geometry(
-            geometry_type="LINESTRING", srid=4326, spatial_index=True, management=True
+            geometry_type="LINESTRING", srid=4326, spatial_index=True, 
         ),
         nullable=False,
     )
@@ -89,7 +89,7 @@ class ConnectionNode(Base):
     __tablename__ = "v2_connection_nodes"
     id = Column(Integer, primary_key=True)
     the_geom = Column(
-        Geometry(geometry_type="POINT", srid=4326, spatial_index=True, management=True),
+        Geometry(geometry_type="POINT", srid=4326, spatial_index=True, ),
         nullable=False,
     )
 
@@ -116,7 +116,7 @@ class Channel(Base):
     connection_node_end_id = Column(Integer, nullable=False)
     the_geom = Column(
         Geometry(
-            geometry_type="LINESTRING", srid=4326, spatial_index=True, management=True
+            geometry_type="LINESTRING", srid=4326, spatial_index=True, 
         ),
         nullable=True,
     )

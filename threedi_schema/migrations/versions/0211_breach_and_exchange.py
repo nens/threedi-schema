@@ -27,7 +27,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="LINESTRING",
                 srid=4326,
-                management=True,
+                
                 from_text="ST_GeomFromEWKT",
                 name="geometry",
             ),
@@ -46,7 +46,7 @@ def upgrade():
             geoalchemy2.types.Geometry(
                 geometry_type="LINESTRING",
                 srid=4326,
-                management=True,
+                
                 from_text="ST_GeomFromEWKT",
                 name="geometry",
             ),
