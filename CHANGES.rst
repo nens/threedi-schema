@@ -7,6 +7,8 @@ Changelog of threedi-schema
 
 - Adapted versioning: prefix existing versions with 0.
 
+- Fixed deprecation warnings of Geoalchemy2 0.13.0
+
 
 0.214.2 (2023-01-17)
 --------------------
