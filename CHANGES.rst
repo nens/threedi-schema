@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.214.3 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Adapted versioning: prefix existing versions with 0.
 
 
 0.214.2 (2023-01-17)
