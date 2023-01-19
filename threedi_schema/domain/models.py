@@ -1,10 +1,9 @@
-from geoalchemy2.types import Geometry
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 from . import constants
-from .custom_types import IntegerEnum, VarcharEnum
+from .custom_types import Geometry, IntegerEnum, VarcharEnum
 
 Base = declarative_base()  # automap_base()
 
@@ -14,10 +13,7 @@ class Lateral2D(Base):
     id = Column(Integer, primary_key=True)
 
     type = Column(IntegerEnum(constants.Later2dType), nullable=False)
-    the_geom = Column(
-        Geometry(geometry_type="POINT", srid=4326, spatial_index=True),
-        nullable=False,
-    )
+    the_geom = Column(Geometry("POINT"), nullable=False)
     timeseries = Column(Text, nullable=False)
 
 
@@ -28,10 +24,7 @@ class BoundaryConditions2D(Base):
     display_name = Column(String(255))
     timeseries = Column(Text)
     boundary_type = Column(IntegerEnum(constants.BoundaryType), nullable=False)
-    the_geom = Column(
-        Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=True),
-        nullable=False,
-    )
+    the_geom = Column(Geometry("LINESTRING"), nullable=False)
 
 
 class ControlDelta(Base):
@@ -138,7 +131,7 @@ class Floodfill(Base):
     __tablename__ = "v2_floodfill"
     id = Column(Integer, primary_key=True)
     waterlevel = Column(Float)
-    the_geom = Column(Geometry(geometry_type="POINT", srid=4326, spatial_index=True))
+    the_geom = Column(Geometry("POINT"))
 
 
 class Interflow(Base):
@@ -204,7 +197,7 @@ class Surface(Base):
         Integer, ForeignKey(SurfaceParameter.__tablename__ + ".id"), nullable=False
     )
     the_geom = Column(
-        Geometry(geometry_type="GEOMETRY", srid=4326, spatial_index=True),
+        Geometry("GEOMETRY"),
         nullable=True,
     )
     surface_parameters = relationship(
@@ -255,10 +248,7 @@ class GridRefinement(Base):
 
     display_name = Column(String(255))
     refinement_level = Column(Integer, nullable=False)
-    the_geom = Column(
-        Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=True),
-        nullable=False,
-    )
+    the_geom = Column(Geometry("LINESTRING"), nullable=False)
     code = Column(String(100))
 
 
@@ -268,10 +258,7 @@ class GridRefinementArea(Base):
     display_name = Column(String(255))
     refinement_level = Column(Integer, nullable=False)
     code = Column(String(100))
-    the_geom = Column(
-        Geometry(geometry_type="POLYGON", srid=4326, spatial_index=True),
-        nullable=False,
-    )
+    the_geom = Column(Geometry("POLYGON"), nullable=False)
 
 
 class CrossSectionDefinition(Base):
@@ -288,13 +275,8 @@ class ConnectionNode(Base):
     id = Column(Integer, primary_key=True)
     storage_area = Column(Float)
     initial_waterlevel = Column(Float)
-    the_geom = Column(
-        Geometry(geometry_type="POINT", srid=4326, spatial_index=True),
-        nullable=False,
-    )
-    the_geom_linestring = Column(
-        Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False)
-    )
+    the_geom = Column(Geometry("POINT"), nullable=False)
+    the_geom_linestring = Column(Geometry("LINESTRING"))
     code = Column(String(100))
 
     manholes = relationship("Manhole", back_populates="connection_node")
@@ -510,10 +492,7 @@ class Channel(Base):
     calculation_type = Column(IntegerEnum(constants.CalculationType), nullable=False)
     dist_calc_points = Column(Float)
     zoom_category = Column(IntegerEnum(constants.ZoomCategories))
-    the_geom = Column(
-        Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=True),
-        nullable=False,
-    )
+    the_geom = Column(Geometry("LINESTRING"), nullable=False)
 
     connection_node_start_id = Column(
         Integer, ForeignKey(ConnectionNode.__tablename__ + ".id"), nullable=False
@@ -545,7 +524,7 @@ class Windshielding(Base):
     southwest = Column(Float)
     west = Column(Float)
     northwest = Column(Float)
-    the_geom = Column(Geometry(geometry_type="POINT", srid=4326, spatial_index=True))
+    the_geom = Column(Geometry("POINT"))
     channel_id = Column(
         Integer, ForeignKey(Channel.__tablename__ + ".id"), nullable=False
     )
@@ -559,10 +538,7 @@ class CrossSectionLocation(Base):
     friction_type = Column(IntegerEnum(constants.FrictionType), nullable=False)
     friction_value = Column(Float, nullable=False)
     bank_level = Column(Float)
-    the_geom = Column(
-        Geometry(geometry_type="POINT", srid=4326, spatial_index=True),
-        nullable=False,
-    )
+    the_geom = Column(Geometry("POINT"), nullable=False)
     channel_id = Column(
         Integer, ForeignKey(Channel.__tablename__ + ".id"), nullable=False
     )
@@ -629,7 +605,7 @@ class Culvert(Base):
     invert_level_start_point = Column(Float, nullable=False)
     invert_level_end_point = Column(Float, nullable=False)
     the_geom = Column(
-        Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=True),
+        Geometry("LINESTRING"),
     )
 
     connection_node_start_id = Column(
@@ -655,10 +631,7 @@ class Culvert(Base):
 class DemAverageArea(Base):
     __tablename__ = "v2_dem_average_area"
     id = Column(Integer, primary_key=True)
-    the_geom = Column(
-        Geometry(geometry_type="POLYGON", srid=4326, spatial_index=True),
-        nullable=False,
-    )
+    the_geom = Column(Geometry("POLYGON"), nullable=False)
 
 
 class Weir(Base):
@@ -764,10 +737,7 @@ class Obstacle(Base):
     id = Column(Integer, primary_key=True)
     code = Column(String(100))
     crest_level = Column(Float, nullable=False)
-    the_geom = Column(
-        Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=True),
-        nullable=False,
-    )
+    the_geom = Column(Geometry("LINESTRING"), nullable=False)
 
 
 class ImperviousSurface(Base):
@@ -785,7 +755,7 @@ class ImperviousSurface(Base):
     area = Column(Float)
     dry_weather_flow = Column(Float)
     the_geom = Column(
-        Geometry(geometry_type="GEOMETRY", srid=4326, spatial_index=True),
+        Geometry("GEOMETRY"),
         nullable=True,
     )
     impervious_surface_maps = relationship(
@@ -819,10 +789,7 @@ class PotentialBreach(Base):
     exchange_level = Column(Float)
     maximum_breach_depth = Column(Float)
     levee_material = Column(IntegerEnum(constants.Material))
-    the_geom = Column(
-        Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=True),
-        nullable=False,
-    )
+    the_geom = Column(Geometry("LINESTRING"), nullable=False)
     channel_id = Column(
         Integer, ForeignKey(Channel.__tablename__ + ".id"), nullable=False
     )
@@ -834,10 +801,7 @@ class PotentialBreach(Base):
 class ExchangeLine(Base):
     __tablename__ = "v2_exchange_line"
     id = Column(Integer, primary_key=True)
-    the_geom = Column(
-        Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=True),
-        nullable=False,
-    )
+    the_geom = Column(Geometry("LINESTRING"), nullable=False)
     channel_id = Column(
         Integer, ForeignKey(Channel.__tablename__ + ".id"), nullable=False
     )

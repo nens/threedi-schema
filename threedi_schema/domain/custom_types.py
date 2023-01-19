@@ -1,4 +1,21 @@
+import geoalchemy2
+from packaging import version
 from sqlalchemy.types import Integer, TypeDecorator, VARCHAR
+
+
+class Geometry(geoalchemy2.types.Geometry):
+    cache_ok = False
+
+    def __init__(self, geometry_type, from_text="ST_GeomFromEWKT"):
+        kwargs = {
+            "geometry_type": geometry_type,
+            "srid": 4326,
+            "spatial_index": True,
+            "from_text": from_text,
+        }
+        if version.parse(geoalchemy2.__version__) < version.parse("0.13.0"):
+            kwargs["management"] = True
+        super().__init__(**kwargs)
 
 
 class CustomEnum(TypeDecorator):

@@ -5,9 +5,10 @@ Revises: 0210
 Create Date: 2022-11-23 11:21:10.967235
 
 """
-import geoalchemy2
 import sqlalchemy as sa
 from alembic import op
+
+from threedi_schema.domain.custom_types import Geometry
 
 # revision identifiers, used by Alembic.
 revision = "0211"
@@ -22,17 +23,7 @@ def upgrade():
         "v2_exchange_line",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("channel_id", sa.Integer(), nullable=True),
-        sa.Column(
-            "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="LINESTRING",
-                srid=4326,
-                
-                from_text="ST_GeomFromEWKT",
-                name="geometry",
-            ),
-            nullable=True,
-        ),
+        sa.Column("the_geom", Geometry("LINESTRING"), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -41,17 +32,7 @@ def upgrade():
         sa.Column("code", sa.String(length=100), nullable=True),
         sa.Column("display_name", sa.String(length=255), nullable=True),
         sa.Column("channel_id", sa.Integer(), nullable=True),
-        sa.Column(
-            "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="LINESTRING",
-                srid=4326,
-                
-                from_text="ST_GeomFromEWKT",
-                name="geometry",
-            ),
-            nullable=True,
-        ),
+        sa.Column("the_geom", Geometry("LINESTRING"), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
 

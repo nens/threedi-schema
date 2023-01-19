@@ -37,7 +37,7 @@ def ensure_spatial_indexes(db, models):
     with engine.begin() as connection:
         for model in models:
             geom_columns = [
-                x for x in model.__table__.columns if type(x.type) == Geometry
+                x for x in model.__table__.columns if isinstance(x.type, Geometry)
             ]
             if len(geom_columns) > 1:
                 # Pragmatic fix: spatialindex breaks on multiple geometry columns per table

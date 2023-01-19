@@ -5,9 +5,10 @@ Revises: 0213
 Create Date: 2022-12-22 11:42:00
 
 """
-import geoalchemy2
 import sqlalchemy as sa
 from alembic import op
+
+from threedi_schema.domain.custom_types import Geometry
 
 # revision identifiers, used by Alembic.
 revision = "0214"
@@ -40,12 +41,11 @@ def downgrade():
         sa.Column("crest_level", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="LINESTRING",
-                srid=4326,
+            Geometry(
+                "LINESTRING"
                 
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.Column("material", sa.Integer(), nullable=True),
         sa.Column("max_breach_depth", sa.Float(), nullable=True),
@@ -59,12 +59,10 @@ def downgrade():
         sa.Column("calc_type", sa.Integer(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POINT",
-                srid=4326,
-                
+            Geometry(
+                "POINT"             
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -76,12 +74,10 @@ def downgrade():
         sa.Column("exchange_level", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POINT",
-                srid=4326,
-                
+            Geometry(
+                "POINT"                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
