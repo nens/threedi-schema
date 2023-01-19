@@ -1,4 +1,4 @@
-from geoalchemy2 import func as geo_func
+from sqlalchemy import func
 
 from threedi_schema.domain import models
 from threedi_schema.infrastructure.spatialite_versions import (
@@ -34,7 +34,7 @@ def test_copy_model(empty_sqlite_v3, empty_sqlite_v4):
             session.query(
                 models.ConnectionNode.id,
                 models.ConnectionNode.code,
-                geo_func.ST_AsText(models.ConnectionNode.the_geom),
+                func.ST_AsText(models.ConnectionNode.the_geom),
                 models.ConnectionNode.the_geom_linestring,
             )
         )
@@ -64,7 +64,7 @@ def test_copy_invalid_geometry(empty_sqlite_v3, empty_sqlite_v4):
         records = list(
             session.query(
                 models.Surface.id,
-                geo_func.ST_AsText(models.Surface.the_geom),
+                func.ST_AsText(models.Surface.the_geom),
             )
         )
 

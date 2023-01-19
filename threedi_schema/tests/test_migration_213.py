@@ -1,20 +1,14 @@
 import struct
-from importlib.machinery import SourceFileLoader
-from pathlib import Path
 
 import pytest
 
-import threedi_schema
 from threedi_schema import ModelSchema, ThreediDatabase
 
-path = (
-    Path(threedi_schema.__file__).parent
-    / "migrations"
-    / "versions"
-    / "0213_connected_points_to_breaches.py"
-)
-migration_213 = SourceFileLoader("migration_213", str(path)).load_module(
-    "migration_213"
+# from threedi_schema.migrations.versions import 0213_connected_points_to_breaches
+module_name = "0213_connected_points_to_breaches"
+migration_213 = getattr(
+    __import__("threedi_schema.migrations.versions", fromlist=[module_name]),
+    module_name,
 )
 
 CalculationPoint = migration_213.CalculationPoint

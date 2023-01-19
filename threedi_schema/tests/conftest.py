@@ -1,3 +1,4 @@
+import os
 import pathlib
 import shutil
 
@@ -6,6 +7,14 @@ import pytest
 from threedi_schema import ThreediDatabase
 
 data_dir = pathlib.Path(__file__).parent / "data"
+
+
+def pytest_sessionstart(session):
+    """
+    Called after the Session object has been created and
+    before performing collection and entering the run test loop.
+    """
+    os.environ["SQLALCHEMY_SILENCE_UBER_WARNING"] = "1"
 
 
 @pytest.fixture

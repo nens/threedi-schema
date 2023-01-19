@@ -8,10 +8,11 @@ Create Date: 2022-12-21 14:54:00
 import logging
 
 from alembic import op
-from geoalchemy2.types import Geometry
 from sqlalchemy import Column, Float, ForeignKey, func, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
+
+from threedi_schema.domain.custom_types import Geometry
 
 # revision identifiers, used by Alembic.
 revision = "0213"
@@ -33,9 +34,9 @@ class Levee(Base):
     crest_level = Column(Float)
     the_geom = Column(
         Geometry(
-            geometry_type="LINESTRING", srid=4326, spatial_index=True, management=True
+            "LINESTRING"
         ),
-        nullable=False,
+        nullable=False
     )
     material = Column(Integer)
     max_breach_depth = Column(Float)
@@ -49,8 +50,8 @@ class CalculationPoint(Base):
     user_ref = Column(String(80), nullable=False)
     calc_type = Column(Integer)
     the_geom = Column(
-        Geometry(geometry_type="POINT", srid=4326),
-        nullable=False,
+        Geometry("POINT"),
+        nullable=False
     )
 
 
@@ -65,8 +66,8 @@ class ConnectedPoint(Base):
 
     exchange_level = Column(Float)
     the_geom = Column(
-        Geometry(geometry_type="POINT", srid=4326),
-        nullable=False,
+        Geometry("POINT"),
+        nullable=False
     )
 
 
@@ -79,8 +80,8 @@ class PotentialBreach(Base):
     maximum_breach_depth = Column(Float)
     levee_material = Column(Integer)
     the_geom = Column(
-        Geometry(geometry_type="LINESTRING", srid=4326, from_text="ST_GeomFromEWKB"),
-        nullable=False,
+        Geometry("LINESTRING", from_text="ST_GeomFromEWKB"),
+        nullable=False
     )
     channel_id = Column(Integer, nullable=False)
 
@@ -89,8 +90,8 @@ class ConnectionNode(Base):
     __tablename__ = "v2_connection_nodes"
     id = Column(Integer, primary_key=True)
     the_geom = Column(
-        Geometry(geometry_type="POINT", srid=4326, spatial_index=True, management=True),
-        nullable=False,
+        Geometry("POINT"),
+        nullable=False
     )
 
 
@@ -116,9 +117,9 @@ class Channel(Base):
     connection_node_end_id = Column(Integer, nullable=False)
     the_geom = Column(
         Geometry(
-            geometry_type="LINESTRING", srid=4326, spatial_index=True, management=True
+            "LINESTRING" 
         ),
-        nullable=True,
+        nullable=True
     )
 
 

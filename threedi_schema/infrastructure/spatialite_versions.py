@@ -1,6 +1,5 @@
-from geoalchemy2 import func as geo_func
 from geoalchemy2.types import Geometry
-from sqlalchemy import inspect
+from sqlalchemy import func, inspect
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 __all__ = ["copy_models"]
@@ -27,7 +26,7 @@ def get_spatialite_version(db):
 def cast_if_geometry(column):
     """Cast Geometry columns to EWKT (so that we can save it right back later)"""
     if isinstance(column.type, Geometry):
-        return geo_func.AsEWKT(column).label(column.name)
+        return func.AsEWKT(column).label(column.name)
     else:
         return column
 

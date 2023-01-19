@@ -2,26 +2,28 @@ Changelog of threedi-schema
 ===================================================
 
 
-214.3 (unreleased)
-------------------
+0.214.3 (unreleased)
+--------------------
 
-- Nothing changed yet.
+- Adapted versioning: prefix existing versions with 0.
+
+- Fixed deprecation warnings of Geoalchemy2 0.13.0
 
 
-214.2 (2023-01-17)
-------------------
+0.214.2 (2023-01-17)
+--------------------
 
 - Fixed packaging (also include migrations).
 
 
-214.1 (2023-01-17)
-------------------
+0.214.1 (2023-01-17)
+--------------------
 
 - Fixed packaging.
 
 
-214.0 (2023-01-17)
-------------------
+0.214.0 (2023-01-17)
+--------------------
 
 - Initial project structure created with cookiecutter and
   https://github.com/nens/cookiecutter-python-template

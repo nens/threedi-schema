@@ -5,10 +5,11 @@ Revises:
 Create Date: 2021-02-15 16:31:00.792077
 
 """
-import geoalchemy2
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy import inspect
+
+from threedi_schema.domain.custom_types import Geometry
 
 # revision identifiers, used by Alembic.
 revision = "0200"
@@ -106,12 +107,12 @@ def upgrade_164():
         sa.Column("code", sa.String(length=100), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POLYGON",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POLYGON"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -129,7 +130,7 @@ def upgrade_165():
         sa.Column(
             "groundwater_impervious_layer_level_file",
             sa.String(length=255),
-            nullable=True,
+            nullable=True
         ),
         sa.Column(
             "groundwater_impervious_layer_level_type", sa.Integer(), nullable=True
@@ -382,12 +383,12 @@ def upgrade():
         sa.Column("boundary_type", sa.Integer(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="LINESTRING",
-                srid=4326,
-                management=True,
+            Geometry(
+                "LINESTRING"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -397,12 +398,12 @@ def upgrade():
         sa.Column("type", sa.Integer(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POINT",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POINT"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.Column("timeseries", sa.Text(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -415,12 +416,12 @@ def upgrade():
         sa.Column("calc_type", sa.Integer(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POINT",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POINT"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -431,21 +432,21 @@ def upgrade():
         sa.Column("initial_waterlevel", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POINT",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POINT"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.Column(
             "the_geom_linestring",
-            geoalchemy2.types.Geometry(
-                geometry_type="LINESTRING",
-                srid=4326,
-                management=True,
+            Geometry(
+                "LINESTRING"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.Column("code", sa.String(length=100), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -537,12 +538,12 @@ def upgrade():
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POLYGON",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POLYGON"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -552,12 +553,12 @@ def upgrade():
         sa.Column("waterlevel", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POINT",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POINT"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -568,12 +569,12 @@ def upgrade():
         sa.Column("refinement_level", sa.Integer(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="LINESTRING",
-                srid=4326,
-                management=True,
+            Geometry(
+                "LINESTRING"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.Column("code", sa.String(length=100), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -586,12 +587,12 @@ def upgrade():
         sa.Column("code", sa.String(length=100), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POLYGON",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POLYGON"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -602,7 +603,7 @@ def upgrade():
         sa.Column(
             "groundwater_impervious_layer_level_file",
             sa.String(length=255),
-            nullable=True,
+            nullable=True
         ),
         sa.Column(
             "groundwater_impervious_layer_level_type", sa.Integer(), nullable=True
@@ -651,12 +652,12 @@ def upgrade():
         sa.Column("dry_weather_flow", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POLYGON",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POLYGON"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -680,12 +681,12 @@ def upgrade():
         sa.Column("crest_level", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="LINESTRING",
-                srid=4326,
-                management=True,
+            Geometry(
+                "LINESTRING"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.Column("material", sa.Integer(), nullable=True),
         sa.Column("max_breach_depth", sa.Float(), nullable=True),
@@ -725,12 +726,12 @@ def upgrade():
         sa.Column("crest_level", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="LINESTRING",
-                srid=4326,
-                management=True,
+            Geometry(
+                "LINESTRING"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -781,12 +782,12 @@ def upgrade():
         sa.Column("zoom_category", sa.Integer(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="LINESTRING",
-                srid=4326,
-                management=True,
+            Geometry(
+                "LINESTRING"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.Column("connection_node_start_id", sa.Integer(), nullable=True),
         sa.Column("connection_node_end_id", sa.Integer(), nullable=True),
@@ -800,12 +801,12 @@ def upgrade():
         sa.Column("exchange_level", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POINT",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POINT"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -846,12 +847,12 @@ def upgrade():
         sa.Column("invert_level_end_point", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="LINESTRING",
-                srid=4326,
-                management=True,
+            Geometry(
+                "LINESTRING"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.Column("connection_node_start_id", sa.Integer(), nullable=True),
         sa.Column("connection_node_end_id", sa.Integer(), nullable=True),
@@ -1008,12 +1009,12 @@ def upgrade():
         sa.Column("surface_parameters_id", sa.Integer(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POLYGON",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POLYGON"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -1066,12 +1067,12 @@ def upgrade():
         sa.Column("bank_level", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POINT",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POINT"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.Column("channel_id", sa.Integer(), nullable=True),
         sa.Column("definition_id", sa.Integer(), nullable=True),
@@ -1090,12 +1091,12 @@ def upgrade():
         sa.Column("northwest", sa.Float(), nullable=True),
         sa.Column(
             "the_geom",
-            geoalchemy2.types.Geometry(
-                geometry_type="POINT",
-                srid=4326,
-                management=True,
+            Geometry(
+                "POINT"
+                
+                
             ),
-            nullable=True,
+            nullable=True
         ),
         sa.Column("channel_id", sa.Integer(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
