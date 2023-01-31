@@ -27,10 +27,10 @@ INSERT INTO v2_levee (code, crest_level, the_geom) SELECT code, crest_level, the
 
 
 def upgrade():
-    op.drop_table("v2_connected_pnt")
-    op.drop_table("v2_calculation_point")
     op.execute(LEVEE_TO_OBSTACLE)
-    op.drop_table("v2_levee")
+
+    for table_name in ["v2_connected_pnt", "v2_calculation_point", "v2_levee"]:
+        op.execute(f"SELECT DropGeoTable('{table_name}')")
 
 
 def downgrade():
@@ -39,14 +39,7 @@ def downgrade():
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("code", sa.String(length=100), nullable=True),
         sa.Column("crest_level", sa.Float(), nullable=True),
-        sa.Column(
-            "the_geom",
-            Geometry(
-                "LINESTRING"
-                
-            ),
-            nullable=True
-        ),
+        sa.Column("the_geom", Geometry("LINESTRING"), nullable=True),
         sa.Column("material", sa.Integer(), nullable=True),
         sa.Column("max_breach_depth", sa.Float(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -57,13 +50,7 @@ def downgrade():
         sa.Column("content_type_id", sa.Integer(), nullable=True),
         sa.Column("user_ref", sa.String(length=80), nullable=True),
         sa.Column("calc_type", sa.Integer(), nullable=True),
-        sa.Column(
-            "the_geom",
-            Geometry(
-                "POINT"             
-            ),
-            nullable=True
-        ),
+        sa.Column("the_geom", Geometry("POINT"), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -72,12 +59,6 @@ def downgrade():
         sa.Column("calculation_pnt_id", sa.Integer(), nullable=True),
         sa.Column("levee_id", sa.Integer(), nullable=True),
         sa.Column("exchange_level", sa.Float(), nullable=True),
-        sa.Column(
-            "the_geom",
-            Geometry(
-                "POINT"                
-            ),
-            nullable=True
-        ),
+        sa.Column("the_geom", Geometry("POINT"), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
