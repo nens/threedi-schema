@@ -315,6 +315,9 @@ class Manhole(Base):
     sediment_level = Column(Float)
     manhole_indicator = Column(Integer)
     calculation_type = Column(IntegerEnum(constants.CalculationTypeNode))
+    exchange_thickness = Column(Float)
+    hydraulic_conductivity_in = Column(Float)
+    hydraulic_conductivity_out = Column(Float)
 
     connection_node_id = Column(
         Integer,
@@ -511,6 +514,9 @@ class Channel(Base):
     )
     potential_breaches = relationship("PotentialBreach", back_populates="channel")
     exchange_lines = relationship("ExchangeLine", back_populates="channel")
+    exchange_thickness = Column(Float)
+    hydraulic_conductivity_in = Column(Float)
+    hydraulic_conductivity_out = Column(Float)
 
 
 class Windshielding(Base):
@@ -588,6 +594,9 @@ class Pipe(Base):
         nullable=False,
     )
     cross_section_definition = relationship("CrossSectionDefinition")
+    exchange_thickness = Column(Float)
+    hydraulic_conductivity_in = Column(Float)
+    hydraulic_conductivity_out = Column(Float)
 
 
 class Culvert(Base):
