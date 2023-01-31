@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.214.4 (unreleased)
+0.214.4 (2023-01-31)
 --------------------
 
 - Properly cleanup geo-tables in migration 214.
