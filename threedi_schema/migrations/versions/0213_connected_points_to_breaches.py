@@ -9,8 +9,7 @@ import logging
 
 from alembic import op
 from sqlalchemy import Column, Float, ForeignKey, func, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, declarative_base
 
 from threedi_schema.domain.custom_types import Geometry
 
