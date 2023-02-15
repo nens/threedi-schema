@@ -1,5 +1,5 @@
 from geoalchemy2.types import Geometry
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 __all__ = ["ensure_spatial_indexes"]
 
@@ -15,9 +15,9 @@ def _ensure_spatial_index(connection, column):
         return False
 
     idx_name = f"{column.table.name}_{column.name}"
-    connection.execute(f"DROP TABLE IF EXISTS idx_{idx_name}")
+    connection.execute(text(f"DROP TABLE IF EXISTS idx_{idx_name}"))
     for prefix in {"gii_", "giu_", "gid_"}:
-        connection.execute(f"DROP TRIGGER IF EXISTS {prefix}{idx_name}")
+        connection.execute(text(f"DROP TRIGGER IF EXISTS {prefix}{idx_name}"))
     if (
         connection.execute(
             func.CreateSpatialIndex(column.table.name, column.name)
@@ -46,4 +46,4 @@ def ensure_spatial_indexes(db, models):
                 created &= _ensure_spatial_index(connection, geom_columns[0])
 
         if created:
-            connection.execute("VACUUM")
+            connection.execute(text("VACUUM"))

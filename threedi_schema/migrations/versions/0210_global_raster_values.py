@@ -26,7 +26,7 @@ UPDATE v2_groundwater SET groundwater_hydro_connectivity = NULL WHERE groundwate
 
 def upgrade():
     for q in MIGRATION_QUERIES.split(";"):
-        op.execute(q)
+        op.execute(sa.text(q))
 
     with op.batch_alter_table("v2_simple_infiltration") as batch_op:
         batch_op.add_column(

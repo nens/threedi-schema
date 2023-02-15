@@ -7,6 +7,8 @@ Create Date: 2021-12-16 13:30:00
 """
 from alembic import op
 
+from sqlalchemy import text
+
 # revision identifiers, used by Alembic.
 revision = "0206"
 down_revision = "0205"
@@ -21,7 +23,7 @@ UPDATE v2_control_measure_map SET weight = 1.0 WHERE weight IS NULL;
 
 def upgrade():
     for q in MIGRATION_QUERIES.split(";"):
-        op.execute(q)
+        op.execute(text(q))
 
     with op.batch_alter_table("v2_control_measure_map") as batch_op:
         batch_op.alter_column("object_id", nullable=False)

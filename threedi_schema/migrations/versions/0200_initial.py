@@ -7,7 +7,7 @@ Create Date: 2021-02-15 16:31:00.792077
 """
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 
 from threedi_schema.domain.custom_types import Geometry
 
@@ -41,7 +41,7 @@ def _get_version(connection):
     if "south_migrationhistory" not in existing_tables:
         return
     res = connection.execute(
-        "SELECT id FROM south_migrationhistory ORDER BY id DESC LIMIT 1"
+        text("SELECT id FROM south_migrationhistory ORDER BY id DESC LIMIT 1")
     )
     results = res.fetchall()
     if len(results) == 1:
@@ -91,7 +91,7 @@ def upgrade_163():
     with op.batch_alter_table("v2_global_settings") as batch_op:
         batch_op.add_column(sa.Column("use_2d_rain", sa.Integer(), nullable=True))
 
-    op.execute("UPDATE v2_global_settings SET use_2d_rain = 1")
+    op.execute(text("UPDATE v2_global_settings SET use_2d_rain = 1"))
 
 
 def upgrade_164():
@@ -219,7 +219,7 @@ def upgrade_166():
 
     0166_fill_Groundwater_Interflow_SimpleInfiltration
     """
-    op.execute(
+    op.execute(text(
         """
     INSERT INTO v2_interflow (id, interflow_type, porosity, porosity_file, porosity_layer_thickness,
                               impervious_layer_elevation, hydraulic_conductivity, hydraulic_conductivity_file)
@@ -227,8 +227,8 @@ def upgrade_166():
            impervious_layer_elevation, hydraulic_conductivity, hydraulic_conductivity_file
     FROM v2_global_settings;
     """
-    )
-    op.execute(
+    ))
+    op.execute(text(
         """
     INSERT INTO v2_simple_infiltration (id, infiltration_rate, infiltration_rate_file,
                                         infiltration_surface_option, max_infiltration_capacity_file)
@@ -236,10 +236,10 @@ def upgrade_166():
            infiltration_surface_option, max_infiltration_capacity_file
     FROM v2_global_settings;
     """
-    )
-    op.execute(
+    ))
+    op.execute(text(
         """UPDATE v2_global_settings SET interflow_settings_id = id, simple_infiltration_settings_id = id"""
-    )
+    ))
 
 
 def upgrade_167():
@@ -299,12 +299,12 @@ def upgrade_171():
 
     0170_auto__chg_field_v2culvert_discharge_coefficient_negative__chg_field_v2.py
     """
-    op.execute(
+    op.execute(text(
         "UPDATE v2_culvert SET discharge_coefficient_negative = 1.0 WHERE discharge_coefficient_negative IS NULL"
-    )
-    op.execute(
+    ))
+    op.execute(text(
         "UPDATE v2_culvert SET discharge_coefficient_positive = 1.0 WHERE discharge_coefficient_positive IS NULL"
-    )
+    ))
 
 
 def upgrade_172():
@@ -368,7 +368,7 @@ def upgrade():
     # Initialize the Spatialite if necessary:
     if conn.dialect.name == "sqlite" and "spatial_ref_sys" not in existing_tables:
         # The (1) performs the init in 1 transaction, which improves performance.
-        op.execute("SELECT InitSpatialMetadata(1)")
+        op.execute(text("SELECT InitSpatialMetadata(1)"))
 
     version = _get_version(conn)
     if version is not None:

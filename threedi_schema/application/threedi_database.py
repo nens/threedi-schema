@@ -4,7 +4,7 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
-from sqlalchemy import create_engine, event, inspect
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.event import listen
 from sqlalchemy.orm import sessionmaker
@@ -150,13 +150,13 @@ class ThreediDatabase:
             appropriate error.
         """
         session = self.get_session()
-        r = session.execute("select 1")
+        r = session.execute(text("select 1"))
         return r.fetchone()
 
     def check_integrity(self):
         """Should be called before doing anything with an untrusted sqlite file."""
         with self.session_scope() as session:
-            session.execute("PRAGMA integrity_check")
+            session.execute(text("PRAGMA integrity_check"))
 
     def has_table(self, name):
         engine = self.get_engine()

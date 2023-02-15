@@ -5,7 +5,7 @@ from alembic.config import Config
 from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import Column, Integer, MetaData, Table
+from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
 from ..domain import constants, models, views
@@ -43,7 +43,7 @@ def _upgrade_database(db, revision="head", unsafe=True):
             # Speed up by journalling in memory; in case of a crash the database
             # will likely go corrupt.
             # NB: This setting is scoped to this connection.
-            connection.execute("PRAGMA journal_mode = MEMORY")
+            connection.execute(text("PRAGMA journal_mode = MEMORY"))
         config = get_alembic_config(connection)
         alembic_command.upgrade(config, revision)
 

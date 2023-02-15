@@ -1,7 +1,7 @@
 from unittest import mock
 
 import pytest
-from sqlalchemy import Column, Integer, MetaData, String, Table
+from sqlalchemy import Column, Integer, MetaData, String, Table, text
 
 from threedi_schema import ModelSchema
 from threedi_schema.application import errors
@@ -181,7 +181,7 @@ def test_set_views(oldest_sqlite):
     # Test all views
     with oldest_sqlite.session_scope() as session:
         for view_name in ALL_VIEWS:
-            session.execute(f"SELECT * FROM {view_name} LIMIT 1").fetchall()
+            session.execute(text(f"SELECT * FROM {view_name} LIMIT 1")).fetchall()
 
 
 def test_upgrade_spatialite_3(oldest_sqlite):
@@ -198,7 +198,7 @@ def test_upgrade_spatialite_3(oldest_sqlite):
     # the spatial indexes are there
     with oldest_sqlite.get_engine().begin() as connection:
         check_result = connection.execute(
-            "SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')"
+            text("SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')")
         ).scalar()
 
     assert check_result == 1
@@ -212,15 +212,15 @@ def test_set_spatial_indexes(in_memory_sqlite):
 
     with engine.begin() as connection:
         connection.execute(
-            "SELECT DisableSpatialIndex('v2_connection_nodes', 'the_geom')"
+            text("SELECT DisableSpatialIndex('v2_connection_nodes', 'the_geom')")
         ).scalar()
-        connection.execute("DROP TABLE idx_v2_connection_nodes_the_geom")
+        connection.execute(text("DROP TABLE idx_v2_connection_nodes_the_geom"))
 
     schema.set_spatial_indexes()
 
     with engine.begin() as connection:
         check_result = connection.execute(
-            "SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')"
+            text("SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')")
         ).scalar()
 
     assert check_result == 1
