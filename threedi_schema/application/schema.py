@@ -5,7 +5,7 @@ from alembic.config import Config
 from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import Column, Integer, MetaData, Table, text
+from sqlalchemy import Column, Integer, MetaData, Table
 from sqlalchemy.exc import IntegrityError
 
 from ..domain import constants, models, views
@@ -17,12 +17,13 @@ from .errors import MigrationMissingError, UpgradeFailedError
 __all__ = ["ModelSchema"]
 
 
-def get_alembic_config(connection=None):
+def get_alembic_config(engine=None, unsafe=False):
     alembic_cfg = Config()
     alembic_cfg.set_main_option("script_location", "threedi_schema:migrations")
     alembic_cfg.set_main_option("version_table", constants.VERSION_TABLE_NAME)
-    if connection is not None:
-        alembic_cfg.attributes["connection"] = connection
+    if engine is not None:
+        alembic_cfg.attributes["engine"] = engine
+    alembic_cfg.attributes["unsafe"] = unsafe
     return alembic_cfg
 
 
@@ -38,14 +39,8 @@ def _upgrade_database(db, revision="head", unsafe=True):
     """Upgrade ThreediDatabase instance"""
     engine = db.get_engine()
 
-    with engine.begin() as connection:
-        if unsafe:
-            # Speed up by journalling in memory; in case of a crash the database
-            # will likely go corrupt.
-            # NB: This setting is scoped to this connection.
-            connection.execute(text("PRAGMA journal_mode = MEMORY"))
-        config = get_alembic_config(connection)
-        alembic_command.upgrade(config, revision)
+    config = get_alembic_config(engine, unsafe=unsafe)
+    alembic_command.upgrade(config, revision)
 
 
 class ModelSchema:

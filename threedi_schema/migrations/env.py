@@ -1,6 +1,7 @@
 import os
 
 from alembic import context
+from sqlalchemy import text
 
 import threedi_schema.domain.models  # NOQA needed for autogenerate
 from threedi_schema import ThreediDatabase
@@ -26,11 +27,20 @@ def run_migrations_online():
     Note: SQLite does not (completely) support transactions, so, backup the
     SQLite before running migrations.
     """
-    connectable = config.attributes.get("connection")
-    if connectable is None:
-        connectable = ThreediDatabase(get_url()).get_engine()
+    unsafe = config.attributes.get("unsafe")
+    
+    engine = config.attributes.get("engine")
+    if engine is None:
+        engine = ThreediDatabase(get_url()).get_engine()
+    
 
-    with connectable.connect() as connection:
+    with engine.begin() as connection:
+        if unsafe:
+            # Speed up by journalling in memory; in case of a crash the database
+            # will likely go corrupt.
+            # NB: This setting is scoped to this connection.
+            connection.execute(text("PRAGMA journal_mode = MEMORY"))
+
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
