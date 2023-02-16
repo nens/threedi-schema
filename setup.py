@@ -19,7 +19,7 @@ def get_version():
 install_requires = [
     "GeoAlchemy2>=0.9,!=0.11.*",
     "SQLAlchemy>=1.4",
-    "alembic>=1.8",
+    "alembic>=1.8,<2",
 ]
 
 tests_require = ["pytest", "pytest-cov"]
