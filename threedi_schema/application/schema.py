@@ -17,12 +17,13 @@ from .errors import MigrationMissingError, UpgradeFailedError
 __all__ = ["ModelSchema"]
 
 
-def get_alembic_config(connection=None):
+def get_alembic_config(engine=None, unsafe=False):
     alembic_cfg = Config()
     alembic_cfg.set_main_option("script_location", "threedi_schema:migrations")
     alembic_cfg.set_main_option("version_table", constants.VERSION_TABLE_NAME)
-    if connection is not None:
-        alembic_cfg.attributes["connection"] = connection
+    if engine is not None:
+        alembic_cfg.attributes["engine"] = engine
+    alembic_cfg.attributes["unsafe"] = unsafe
     return alembic_cfg
 
 
@@ -38,14 +39,8 @@ def _upgrade_database(db, revision="head", unsafe=True):
     """Upgrade ThreediDatabase instance"""
     engine = db.get_engine()
 
-    with engine.begin() as connection:
-        if unsafe:
-            # Speed up by journalling in memory; in case of a crash the database
-            # will likely go corrupt.
-            # NB: This setting is scoped to this connection.
-            connection.execute("PRAGMA journal_mode = MEMORY")
-        config = get_alembic_config(connection)
-        alembic_command.upgrade(config, revision)
+    config = get_alembic_config(engine, unsafe=unsafe)
+    alembic_command.upgrade(config, revision)
 
 
 class ModelSchema:
@@ -61,7 +56,7 @@ class ModelSchema:
         engine = self.db.get_engine()
         if not self.db.has_table("south_migrationhistory"):
             return
-        with engine.connect() as connection:
+        with engine.begin() as connection:
             query = south_migrationhistory.select().order_by(
                 south_migrationhistory.columns["id"].desc()
             )
@@ -73,7 +68,7 @@ class ModelSchema:
 
     def get_version(self):
         """Returns the id (integer) of the latest migration"""
-        with self.db.get_engine().connect() as connection:
+        with self.db.get_engine().begin() as connection:
             context = MigrationContext.configure(
                 connection, opts={"version_table": constants.VERSION_TABLE_NAME}
             )

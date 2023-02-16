@@ -8,7 +8,7 @@ Create Date: 2021-09-29 13:50:19.544275
 import re
 
 from alembic import op
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 
 # revision identifiers, used by Alembic.
 revision = "0202"
@@ -104,7 +104,7 @@ def upgrade():
             continue
         defn = inspector.get_view_definition(view_name)
         if VIEW_REGEX.match(defn):
-            op.execute(f"DROP VIEW {view_name}")
+            op.execute(text(f"DROP VIEW {view_name}"))
 
     # then delete the actual tables if they exist
     existing = set(inspector.get_table_names())

@@ -7,6 +7,8 @@ Create Date: 2021-11-15 16:41:43.316599
 """
 from alembic import op
 
+from sqlalchemy import text
+
 
 # revision identifiers, used by Alembic.
 revision = "0205"
@@ -80,7 +82,7 @@ UPDATE v2_aggregation_settings SET flow_variable = 'discharge'
 
 def upgrade():
     for q in MIGRATION_QUERIES.split(";"):
-        op.execute(q)
+        op.execute(text(q))
 
     with op.batch_alter_table("v2_global_settings") as batch_op:
         batch_op.alter_column("output_time_step", nullable=False)

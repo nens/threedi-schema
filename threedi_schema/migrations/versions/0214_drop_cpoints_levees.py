@@ -27,10 +27,10 @@ INSERT INTO v2_levee (code, crest_level, the_geom) SELECT code, crest_level, the
 
 
 def upgrade():
-    op.execute(LEVEE_TO_OBSTACLE)
+    op.execute(sa.text(LEVEE_TO_OBSTACLE))
 
     for table_name in ["v2_connected_pnt", "v2_calculation_point", "v2_levee"]:
-        op.execute(f"SELECT DropGeoTable('{table_name}')")
+        op.execute(sa.text(f"SELECT DropGeoTable('{table_name}')"))
 
 
 def downgrade():

@@ -1,6 +1,5 @@
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declarative_base, relationship
 
 from . import constants
 from .custom_types import Geometry, IntegerEnum, VarcharEnum

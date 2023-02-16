@@ -1,5 +1,5 @@
 from geoalchemy2.types import Geometry
-from sqlalchemy import func, inspect
+from sqlalchemy import func, inspect, text
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 __all__ = ["copy_models"]
@@ -7,7 +7,9 @@ __all__ = ["copy_models"]
 
 def get_spatialite_version(db):
     with db.session_scope() as session:
-        ((lib_version,),) = session.execute("SELECT spatialite_version()").fetchall()
+        ((lib_version,),) = session.execute(
+            text("SELECT spatialite_version()")
+        ).fetchall()
 
     # Identify Spatialite version
     inspector = inspect(db.get_engine())
@@ -32,7 +34,7 @@ def cast_if_geometry(column):
 
 
 def model_count(session, model) -> int:
-    q = f"SELECT COUNT(*) FROM {model.__tablename__}"
+    q = text(f"SELECT COUNT(*) FROM {model.__tablename__}")
     try:
         return session.execute(q).fetchall()[0][0]
     except OperationalError as e:
