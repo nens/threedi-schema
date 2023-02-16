@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.214.5 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Add SQLAlchemy 2.0 support and drop 1.3 support.
 
 
 0.214.4 (2023-01-31)
