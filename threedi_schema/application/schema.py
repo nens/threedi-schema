@@ -56,7 +56,7 @@ class ModelSchema:
         engine = self.db.get_engine()
         if not self.db.has_table("south_migrationhistory"):
             return
-        with engine.connect() as connection:
+        with engine.begin() as connection:
             query = south_migrationhistory.select().order_by(
                 south_migrationhistory.columns["id"].desc()
             )
@@ -68,7 +68,7 @@ class ModelSchema:
 
     def get_version(self):
         """Returns the id (integer) of the latest migration"""
-        with self.db.get_engine().connect() as connection:
+        with self.db.get_engine().begin() as connection:
             context = MigrationContext.configure(
                 connection, opts={"version_table": constants.VERSION_TABLE_NAME}
             )
