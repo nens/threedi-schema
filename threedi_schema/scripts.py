@@ -7,7 +7,7 @@ from threedi_schema import ThreediDatabase
 @click.option(
     "-s",
     "--sqlite",
-    type=click.Path(exists=True, readable=True),
+    type=click.Path(readable=True),
     help="Path to an sqlite (spatialite) file",
     required=True,
 )
