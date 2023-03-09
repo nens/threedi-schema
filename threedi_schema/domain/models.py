@@ -21,7 +21,7 @@ class BoundaryConditions2D(Base):
     id = Column(Integer, primary_key=True)
 
     display_name = Column(String(255))
-    timeseries = Column(Text)
+    timeseries = Column(Text, nullable=False)
     boundary_type = Column(IntegerEnum(constants.BoundaryType), nullable=False)
     the_geom = Column(Geometry("LINESTRING"), nullable=False)
 
@@ -458,7 +458,7 @@ class BoundaryCondition1D(Base):
 
     id = Column(Integer, primary_key=True)
     boundary_type = Column(IntegerEnum(constants.BoundaryType), nullable=False)
-    timeseries = Column(Text)
+    timeseries = Column(Text, nullable=False)
 
     connection_node_id = Column(
         Integer,
