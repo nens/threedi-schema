@@ -50,7 +50,12 @@ jobs:
           pip install ${{ matrix.pins }} .[test,cli]
           pip list
 
-      - name: Run tests
+      - name: Run tests (Python 3.9-)
         shell: bash
         run: |
           pytest
+      
+      - name: Run tests (Python 3.10+)
+        shell: bash
+        run: |
+          pytest -Werror
