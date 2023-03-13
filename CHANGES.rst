@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.214.6 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Make timeseries non-nullable for BoundaryCondition1D and BoundaryConditions2D.
 
 
 0.214.5 (2023-02-16)
