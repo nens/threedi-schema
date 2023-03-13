@@ -357,6 +357,25 @@ class NumericalSettings(Base):
     global_settings = relationship("GlobalSetting", back_populates="numerical_settings")
 
 
+class VegetationDrag(Base):
+    __tablename__ = "v2_vegetation_drag"
+    id = Column(Integer, primary_key=True)
+    display_name = Column(String(255))
+
+    height = Column(Float)
+    height_file = Column(String(255))
+
+    stem_count = Column(Float)
+    stem_count_file = Column(String(255))
+
+    stem_diameter = Column(Float)
+    stem_diameter_file = Column(String(255))
+
+    global_settings = relationship(
+        "GlobalSetting", back_populates="vegetation_drag_settings"
+    )
+
+
 class GlobalSetting(Base):
     __tablename__ = "v2_global_settings"
     id = Column(Integer, primary_key=True)
@@ -433,6 +452,14 @@ class GlobalSetting(Base):
     groundwater_settings = relationship(
         GroundWater,
         foreign_keys=groundwater_settings_id,
+        back_populates="global_settings",
+    )
+    vegetation_drag_settings_id = Column(
+        Integer, ForeignKey(VegetationDrag.__tablename__ + ".id")
+    )
+    vegetation_drag_settings = relationship(
+        VegetationDrag,
+        foreign_keys=vegetation_drag_settings_id,
         back_populates="global_settings",
     )
 
@@ -851,6 +878,7 @@ DECLARED_MODELS = [
     Surface,
     SurfaceMap,
     SurfaceParameter,
+    VegetationDrag,
     Weir,
     Windshielding,
 ]
