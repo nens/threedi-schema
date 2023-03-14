@@ -371,6 +371,9 @@ class VegetationDrag(Base):
     stem_diameter = Column(Float)
     stem_diameter_file = Column(String(255))
 
+    drag_coefficient = Column(Float)
+    drag_coefficient_file = Column(String(255))
+
     global_settings = relationship(
         "GlobalSetting", back_populates="vegetation_drag_settings"
     )

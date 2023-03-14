@@ -5,8 +5,9 @@ Revises: 0215
 Create Date: 2023-03-13 15:05:42.393961
 
 """
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 
 # revision identifiers, used by Alembic.
@@ -27,6 +28,8 @@ def upgrade():
         sa.Column('stem_count_file', sa.String(length=255), nullable=True),
         sa.Column('stem_diameter', sa.Float(), nullable=True),
         sa.Column('stem_diameter_file', sa.String(length=255), nullable=True),
+        sa.Column('drag_coefficient', sa.Float(), nullable=True),
+        sa.Column('drag_coefficient_file', sa.String(length=255), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
 
