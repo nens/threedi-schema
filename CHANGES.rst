@@ -1,11 +1,16 @@
 Changelog of threedi-schema
 ===================================================
 
-
 0.216.0 (unreleased)
 --------------------
 
 - Add v2_vegation_drag table.
+
+
+0.214.6 (2023-03-13)
+--------------------
+
+- Make timeseries non-nullable for BoundaryCondition1D and BoundaryConditions2D.
 
 
 0.214.5 (2023-02-16)
