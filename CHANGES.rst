@@ -1,11 +1,10 @@
 Changelog of threedi-schema
 ===================================================
 
-
-0.214.7 (unreleased)
+0.216.0 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Add v2_vegation_drag table.
 
 
 0.214.6 (2023-03-13)
