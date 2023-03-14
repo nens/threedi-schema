@@ -6,9 +6,7 @@ Create Date: 2023-03-13 15:05:42.393961
 
 """
 import sqlalchemy as sa
-
 from alembic import op
-
 
 # revision identifiers, used by Alembic.
 revision = '0216'
@@ -34,7 +32,6 @@ def upgrade():
     )
 
     op.add_column('v2_global_settings', sa.Column('vegetation_drag_settings_id', sa.Integer(), nullable=True))
-    op.create_foreign_key(None, 'v2_global_settings', 'v2_vegetation_drag', ['vegetation_drag_settings_id'], ['id'])
 
 
 def downgrade():
