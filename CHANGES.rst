@@ -5,6 +5,7 @@ Changelog of threedi-schema
 --------------------
 
 - Add v2_vegation_drag table.
+- Add 1D2D groundwater attributes to Pipes, Channels and Manholes
 
 
 0.214.6 (2023-03-13)
