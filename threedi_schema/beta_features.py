@@ -20,7 +20,7 @@ BETA_COLUMNS = [
     models.Pipe.hydraulic_conductivity_out,
 ]
 """
-This list contains dicts with lists of beta values for enums, where the dict has the format:
+This list contains dicts with lists of beta values for columns, where the dict has the format:
 {
     "columns": [
         models.SomeTable.some_column,
@@ -28,11 +28,9 @@ This list contains dicts with lists of beta values for enums, where the dict has
     ],
     "values": [
         constants.SomeConstantsClass.SOMEENUMVALUE,
-        constants.SomeConstantsClass.SOMEOTHERENUMVALUE,
+        "or just some random string",
     ]
 }
-The columns in which the enums are used are included so that the modelchecker doesn't have to
-search the whole database to find the enums to check.
 """
 BETA_VALUES = [
     {
