@@ -28,6 +28,7 @@ This list contains dicts with lists of beta values for columns, where the dict h
         "or just some random string",
     ]
 }
+The modelchecker will go through each column and give an error when a beta value is used for its associated column.
 """
 BETA_VALUES = [
     {
