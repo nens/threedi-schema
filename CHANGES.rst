@@ -1,7 +1,7 @@
 Changelog of threedi-schema
 ===================================================
 
-0.216.1 (unreleased)
+0.216.1 (2023-03-23)
 --------------------
 
 - Add beta_features.py to contain a list of spatialite columns and values for columns still in beta status.
