@@ -3,12 +3,9 @@ from .domain import constants, models
 """
 Put features in beta development in these lists to prevent users from using them, in the SQLAlchemy format used in the schema.
 """
-"""This list contains beta tables, e.g. models.SomeTable"""
-BETA_TABLES = [
-    models.VegetationDrag,
-]
 """This list contains beta columns, e.g. models.SomeTable.some_column"""
 BETA_COLUMNS = [
+    models.VegetationDrag.id,
     models.Manhole.exchange_thickness,
     models.Manhole.hydraulic_conductivity_in,
     models.Manhole.hydraulic_conductivity_out,
