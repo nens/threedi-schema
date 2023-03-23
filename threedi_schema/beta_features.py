@@ -1,5 +1,48 @@
+from .domain import constants, models
+
 """
-Put columns in beta development in this list to prevent users from using them, in the SQLAlchemy format used in the schema.
-For instance, models.BoundaryCondition1D.boundary_type
+Put features in beta development in these lists to prevent users from using them, in the SQLAlchemy format used in the schema.
 """
-BETA_FEATURES = []
+"""This list contains beta tables, e.g. models.SomeTable"""
+BETA_TABLES = [
+    models.VegetationDrag,
+]
+"""This list contains beta columns, e.g. models.SomeTable.some_column"""
+BETA_COLUMNS = [
+    models.Manhole.exchange_thickness,
+    models.Manhole.hydraulic_conductivity_in,
+    models.Manhole.hydraulic_conductivity_out,
+    models.Channel.exchange_thickness,
+    models.Channel.hydraulic_conductivity_in,
+    models.Channel.hydraulic_conductivity_out,
+    models.Pipe.exchange_thickness,
+    models.Pipe.hydraulic_conductivity_in,
+    models.Pipe.hydraulic_conductivity_out,
+]
+"""
+This list contains dicts with lists of beta values for enums, where the dict has the format:
+{
+    "columns": [
+        models.SomeTable.some_column,
+        models.SomeTable.some_other_column,
+    ],
+    "values": [
+        constants.SomeConstantsClass.SOMEENUMVALUE,
+        constants.SomeConstantsClass.SOMEOTHERENUMVALUE,
+    ]
+}
+The columns in which the enums are used are included so that the modelchecker doesn't have to
+search the whole database to find the enums to check.
+"""
+BETA_VALUES = [
+    {
+        "columns": [
+            models.BoundaryCondition1D.boundary_type,
+            models.BoundaryConditions2D.boundary_type,
+        ],
+        "values": [
+            constants.BoundaryType.GROUNDWATERLEVEL,
+            constants.BoundaryType.GROUNDWATERDISCHARGE,
+        ],
+    }
+]
