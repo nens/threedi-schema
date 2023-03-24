@@ -1,7 +1,7 @@
 Changelog of threedi-schema
 ===================================================
 
-0.216.2 (unreleased)
+0.216.2 (2023-03-24)
 --------------------
 
 - Remove groundwater columns from beta columns for 1d boundary conditions.
