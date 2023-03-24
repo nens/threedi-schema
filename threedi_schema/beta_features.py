@@ -5,7 +5,7 @@ Put features in beta development in these lists to prevent users from using them
 """
 """This list contains beta columns, e.g. models.SomeTable.some_column"""
 BETA_COLUMNS = [
-    models.VegetationDrag.id,
+    models.GlobalSetting.vegetation_drag_settings_id,
     models.Manhole.exchange_thickness,
     models.Manhole.hydraulic_conductivity_in,
     models.Manhole.hydraulic_conductivity_out,
@@ -33,8 +33,7 @@ The modelchecker will go through each column and give an error when a beta value
 BETA_VALUES = [
     {
         "columns": [
-            models.BoundaryCondition1D.boundary_type,
-            models.BoundaryConditions2D.boundary_type,
+            models.BoundaryConditions2D.boundary_type,  # 1d boundary conditions shouldn't have groundwater anyway
         ],
         "values": [
             constants.BoundaryType.GROUNDWATERLEVEL,

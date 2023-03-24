@@ -4,7 +4,8 @@ Changelog of threedi-schema
 0.216.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Remove groundwater columns from beta columns for 1d boundary conditions.
+- Check on vegetation drag settings id in global settings instead of vegetation drag id for beta columns.
 
 
 0.216.1 (2023-03-23)
