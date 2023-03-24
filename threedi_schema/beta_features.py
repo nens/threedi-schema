@@ -5,7 +5,7 @@ Put features in beta development in these lists to prevent users from using them
 """
 """This list contains beta columns, e.g. models.SomeTable.some_column"""
 BETA_COLUMNS = [
-    models.VegetationDrag.id,
+    models.GlobalSetting.vegetation_drag_settings_id,
     models.Manhole.exchange_thickness,
     models.Manhole.hydraulic_conductivity_in,
     models.Manhole.hydraulic_conductivity_out,
