@@ -33,8 +33,7 @@ The modelchecker will go through each column and give an error when a beta value
 BETA_VALUES = [
     {
         "columns": [
-            models.BoundaryCondition1D.boundary_type,
-            models.BoundaryConditions2D.boundary_type,
+            models.BoundaryConditions2D.boundary_type,  # 1d boundary conditions shouldn't have groundwater anyway
         ],
         "values": [
             constants.BoundaryType.GROUNDWATERLEVEL,
