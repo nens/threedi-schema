@@ -4,7 +4,8 @@ Changelog of threedi-schema
 0.216.3 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fixed DROP TABLE in migration 214 (tables "v2_connected_pnt", "v2_calculation_point",
+  "v2_levee" remained present). The DROP TABLE is emitted again in migration 216.
 
 
 0.216.2 (2023-03-24)
