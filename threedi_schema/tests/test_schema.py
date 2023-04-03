@@ -120,6 +120,8 @@ def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
     schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=False)
     assert schema.get_version() == get_schema_version()
     assert south_latest_sqlite.has_table("v2_connection_nodes")
+    # https://github.com/nens/threedi-schema/issues/10:
+    assert not south_latest_sqlite.has_table("v2_levee")
 
 
 def test_full_upgrade_oldest(oldest_sqlite):
@@ -128,6 +130,8 @@ def test_full_upgrade_oldest(oldest_sqlite):
     schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=False)
     assert schema.get_version() == get_schema_version()
     assert oldest_sqlite.has_table("v2_connection_nodes")
+    # https://github.com/nens/threedi-schema/issues/10:
+    assert not oldest_sqlite.has_table("v2_levee")
 
 
 def test_upgrade_south_not_latest_errors(in_memory_sqlite):

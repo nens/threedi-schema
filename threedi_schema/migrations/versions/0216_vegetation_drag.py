@@ -33,6 +33,10 @@ def upgrade():
 
     op.add_column('v2_global_settings', sa.Column('vegetation_drag_settings_id', sa.Integer(), nullable=True))
 
+    ## FIX migration 214:
+    for table_name in ["v2_connected_pnt", "v2_calculation_point", "v2_levee"]:
+        op.execute(sa.text(f"SELECT DropTable(NULL, '{table_name}', TRUE)"))
+
 
 def downgrade():
     op.drop_constraint(None, 'v2_global_settings', type_='foreignkey')
