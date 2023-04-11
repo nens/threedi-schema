@@ -10,22 +10,26 @@ on:
 jobs:
   TestLinux:
     name: Linux, Python ${{ matrix.python }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
           # 2019
           - python: 3.8
+            os: ubuntu-20.04
             pins: "sqlalchemy==1.4.0 alembic==1.8.* geoalchemy2==0.9.*"
           # 2021
           - python: 3.9
+            os: ubuntu-20.04
             pins: "sqlalchemy==1.4.30 alembic==1.8.* geoalchemy2==0.10.*"
           # 2022
           - python: "3.10"
+            os: ubuntu-22.04
             pins: "sqlalchemy==1.4.44 alembic==1.8.* geoalchemy2==0.12.*"
           # current
           - python: "3.11"
+            os: ubuntu-latest
             pins: ""
             pytestargs: "-Werror"
 
