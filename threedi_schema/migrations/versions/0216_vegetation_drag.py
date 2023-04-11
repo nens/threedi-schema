@@ -35,7 +35,11 @@ def upgrade():
 
     ## FIX migration 214:
     for table_name in ["v2_connected_pnt", "v2_calculation_point", "v2_levee"]:
-        op.execute(sa.text(f"SELECT DropTable(NULL, '{table_name}', TRUE)"))
+        try:
+            op.execute(sa.text(f"SELECT DropTable(NULL, '{table_name}', TRUE)"))
+        except sa.exc.OperationalError:
+            op.execute(sa.text(f"SELECT DropGeoTable('{table_name}')"))
+            op.execute(sa.text(f"DROP TABLE IF EXISTS '{table_name}'"))
 
 
 def downgrade():
