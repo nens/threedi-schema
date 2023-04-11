@@ -1,7 +1,7 @@
 Changelog of threedi-schema
 ===================================================
 
-0.216.4 (unreleased)
+0.216.4 (2023-04-11)
 --------------------
 
 - Fixed libspatialite 4.3 incompatibility (introduced in 0.216.3).
