@@ -30,7 +30,10 @@ def upgrade():
     op.execute(sa.text(LEVEE_TO_OBSTACLE))
 
     for table_name in ["v2_connected_pnt", "v2_calculation_point", "v2_levee"]:
-        op.execute(sa.text(f"SELECT DropTable(NULL, '{table_name}')"))
+        try:
+            op.execute(sa.text(f"SELECT DropTable(NULL, '{table_name}')"))
+        except sa.exc.OperationalError:
+            op.execute(sa.text(f"SELECT DropGeoTable('{table_name}')"))
 
 
 def downgrade():
