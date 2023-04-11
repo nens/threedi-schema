@@ -34,6 +34,7 @@ def upgrade():
             op.execute(sa.text(f"SELECT DropTable(NULL, '{table_name}')"))
         except sa.exc.OperationalError:
             op.execute(sa.text(f"SELECT DropGeoTable('{table_name}')"))
+            op.execute(sa.text(f"DROP TABLE IF EXISTS '{table_name}'"))
 
 
 def downgrade():
