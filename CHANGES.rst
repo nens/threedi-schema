@@ -1,7 +1,7 @@
 Changelog of threedi-schema
 ===================================================
 
-0.216.5 (unreleased)
+0.217.0 (2023-05-08)
 --------------------
 
 - Rename vegetation columns to match raster options.
