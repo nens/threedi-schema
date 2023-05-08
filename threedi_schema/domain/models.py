@@ -365,17 +365,17 @@ class VegetationDrag(Base):
     id = Column(Integer, primary_key=True)
     display_name = Column(String(255))
 
-    height = Column(Float)
-    height_file = Column(String(255))
+    vegetation_height = Column(Float)
+    vegetation_height_file = Column(String(255))
 
-    stem_count = Column(Float)
-    stem_count_file = Column(String(255))
+    vegetation_stem_count = Column(Float)
+    vegetation_stem_count_file = Column(String(255))
 
-    stem_diameter = Column(Float)
-    stem_diameter_file = Column(String(255))
+    vegetation_stem_diameter = Column(Float)
+    vegetation_stem_diameter_file = Column(String(255))
 
-    drag_coefficient = Column(Float)
-    drag_coefficient_file = Column(String(255))
+    vegetation_drag_coefficient = Column(Float)
+    vegetation_drag_coefficient_file = Column(String(255))
 
     global_settings = relationship(
         "GlobalSetting", back_populates="vegetation_drag_settings"
