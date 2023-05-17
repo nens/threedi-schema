@@ -4,7 +4,7 @@ Changelog of threedi-schema
 0.217.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Rewrite release workflow to use a supported github action for github release.
 
 
 0.217.0 (2023-05-08)
