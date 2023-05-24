@@ -4,7 +4,7 @@ Changelog of threedi-schema
 0.217.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Remove vegetation and groundwater settings from beta features, since they are going to be released.
 
 
 0.217.1 (2023-05-17)
