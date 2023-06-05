@@ -4,15 +4,13 @@ Changelog of threedi-schema
 0.217.3 (unreleased)
 --------------------
 
-- Remove vegetation and groundwater settings from beta features, since they are going to be released.
+- Added groundwater 1D2D columns to the views.
 
 
-0.217.2 (2023-06-12)
+0.217.2 (2023-05-24)
 --------------------
 
 - Remove vegetation and groundwater settings from beta features, since they are going to be released.
-
-- Added groundwater 1D2D columns to the views.
 
 
 0.217.1 (2023-05-17)
