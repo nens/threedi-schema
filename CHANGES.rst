@@ -1,7 +1,7 @@
 Changelog of threedi-schema
 ===================================================
 
-0.217.3 (unreleased)
+0.217.3 (2023-06-12)
 --------------------
 
 - Added groundwater 1D2D columns to the views.
