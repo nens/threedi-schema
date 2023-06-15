@@ -31,3 +31,5 @@ def recreate_views(db, file_version, all_views, views_to_delete):
             connection.execute(
                 text(f"DELETE FROM views_geometry_columns WHERE view_name = '{name}'")
             )
+
+        connection.commit()

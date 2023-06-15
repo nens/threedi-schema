@@ -58,6 +58,7 @@ def test_get_version_south(in_memory_sqlite, south_migration_table):
     with in_memory_sqlite.engine.connect() as connection:
         for v in (42, 43):
             connection.execute(south_migration_table.insert().values(id=v))
+        connection.commit()
 
     schema_checker = ModelSchema(in_memory_sqlite)
     migration_id = schema_checker.get_version()
@@ -75,6 +76,7 @@ def test_get_version_alembic(in_memory_sqlite, alembic_version_table):
     """Get the version of a sqlite with an alembic version table"""
     with in_memory_sqlite.engine.connect() as connection:
         connection.execute(alembic_version_table.insert().values(version_num="0201"))
+        connection.commit()
 
     schema_checker = ModelSchema(in_memory_sqlite)
     migration_id = schema_checker.get_version()
@@ -219,6 +221,7 @@ def test_set_spatial_indexes(in_memory_sqlite):
             text("SELECT DisableSpatialIndex('v2_connection_nodes', 'the_geom')")
         ).scalar()
         connection.execute(text("DROP TABLE idx_v2_connection_nodes_the_geom"))
+        connection.commit()
 
     schema.set_spatial_indexes()
 

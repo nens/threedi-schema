@@ -26,6 +26,8 @@ def _ensure_spatial_index(connection, column):
     ):
         raise RuntimeError(f"Spatial index creation for {idx_name} failed")
 
+    connection.commit()
+
     return True
 
 
