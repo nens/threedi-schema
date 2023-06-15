@@ -32,18 +32,19 @@ def _ensure_spatial_index(connection, column):
 def ensure_spatial_indexes(db, models):
     """Ensure presence of spatial indexes for all geometry columns"""
     created = False
-    engine = db.get_engine()
+    engine = db.engine
 
-    with engine.begin() as connection:
-        for model in models:
-            geom_columns = [
-                x for x in model.__table__.columns if isinstance(x.type, Geometry)
-            ]
-            if len(geom_columns) > 1:
-                # Pragmatic fix: spatialindex breaks on multiple geometry columns per table
-                geom_columns = [x for x in geom_columns if x.name == "the_geom"]
-            if geom_columns:
-                created &= _ensure_spatial_index(connection, geom_columns[0])
+    with engine.connect() as connection:
+        with connection.begin():
+            for model in models:
+                geom_columns = [
+                    x for x in model.__table__.columns if isinstance(x.type, Geometry)
+                ]
+                if len(geom_columns) > 1:
+                    # Pragmatic fix: spatialindex breaks on multiple geometry columns per table
+                    geom_columns = [x for x in geom_columns if x.name == "the_geom"]
+                if geom_columns:
+                    created &= _ensure_spatial_index(connection, geom_columns[0])
 
-        if created:
-            connection.execute(text("VACUUM"))
+            if created:
+                connection.execute(text("VACUUM"))

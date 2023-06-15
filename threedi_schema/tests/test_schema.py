@@ -16,7 +16,7 @@ def south_migration_table(in_memory_sqlite):
     south_migrationhistory = Table(
         "south_migrationhistory", MetaData(), Column("id", Integer)
     )
-    engine = in_memory_sqlite.get_engine()
+    engine = in_memory_sqlite.engine
     south_migrationhistory.create(engine)
     return south_migrationhistory
 
@@ -28,7 +28,7 @@ def alembic_version_table(in_memory_sqlite):
         MetaData(),
         Column("version_num", String(32), nullable=False),
     )
-    engine = in_memory_sqlite.get_engine()
+    engine = in_memory_sqlite.engine
     alembic_version.create(engine)
     return alembic_version
 
@@ -55,9 +55,10 @@ def test_get_version_empty_south(in_memory_sqlite, south_migration_table):
 
 def test_get_version_south(in_memory_sqlite, south_migration_table):
     """Get the version of a sqlite with a South version table"""
-    with in_memory_sqlite.get_engine().begin() as connection:
-        for v in (42, 43):
-            connection.execute(south_migration_table.insert().values(id=v))
+    with in_memory_sqlite.engine.connect() as connection:
+        with connection.begin():
+            for v in (42, 43):
+                connection.execute(south_migration_table.insert().values(id=v))
 
     schema_checker = ModelSchema(in_memory_sqlite)
     migration_id = schema_checker.get_version()
@@ -73,8 +74,11 @@ def test_get_version_empty_alembic(in_memory_sqlite, alembic_version_table):
 
 def test_get_version_alembic(in_memory_sqlite, alembic_version_table):
     """Get the version of a sqlite with an alembic version table"""
-    with in_memory_sqlite.get_engine().begin() as connection:
-        connection.execute(alembic_version_table.insert().values(version_num="0201"))
+    with in_memory_sqlite.engine.connect() as connection:
+        with connection.begin():
+            connection.execute(
+                alembic_version_table.insert().values(version_num="0201")
+            )
 
     schema_checker = ModelSchema(in_memory_sqlite)
     migration_id = schema_checker.get_version()
@@ -200,7 +204,7 @@ def test_upgrade_spatialite_3(oldest_sqlite):
     assert file_version_after == 4
 
     # the spatial indexes are there
-    with oldest_sqlite.get_engine().begin() as connection:
+    with oldest_sqlite.engine.connect() as connection:
         check_result = connection.execute(
             text("SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')")
         ).scalar()
@@ -209,20 +213,21 @@ def test_upgrade_spatialite_3(oldest_sqlite):
 
 
 def test_set_spatial_indexes(in_memory_sqlite):
-    engine = in_memory_sqlite.get_engine()
+    engine = in_memory_sqlite.engine
 
     schema = ModelSchema(in_memory_sqlite)
     schema.upgrade(backup=False)
 
-    with engine.begin() as connection:
-        connection.execute(
-            text("SELECT DisableSpatialIndex('v2_connection_nodes', 'the_geom')")
-        ).scalar()
-        connection.execute(text("DROP TABLE idx_v2_connection_nodes_the_geom"))
+    with engine.connect() as connection:
+        with connection.begin():
+            connection.execute(
+                text("SELECT DisableSpatialIndex('v2_connection_nodes', 'the_geom')")
+            ).scalar()
+            connection.execute(text("DROP TABLE idx_v2_connection_nodes_the_geom"))
 
     schema.set_spatial_indexes()
 
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         check_result = connection.execute(
             text("SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')")
         ).scalar()

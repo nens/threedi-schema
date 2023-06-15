@@ -37,7 +37,7 @@ def get_schema_version():
 
 def _upgrade_database(db, revision="head", unsafe=True):
     """Upgrade ThreediDatabase instance"""
-    engine = db.get_engine()
+    engine = db.engine
 
     config = get_alembic_config(engine, unsafe=unsafe)
     alembic_command.upgrade(config, revision)
@@ -53,10 +53,10 @@ class ModelSchema:
         south_migrationhistory = Table(
             "south_migrationhistory", MetaData(), Column("id", Integer)
         )
-        engine = self.db.get_engine()
+        engine = self.db.engine
         if not self.db.has_table("south_migrationhistory"):
             return
-        with engine.begin() as connection:
+        with engine.connect() as connection:
             query = south_migrationhistory.select().order_by(
                 south_migrationhistory.columns["id"].desc()
             )
@@ -68,7 +68,7 @@ class ModelSchema:
 
     def get_version(self):
         """Returns the id (integer) of the latest migration"""
-        with self.db.get_engine().begin() as connection:
+        with self.db.engine.connect() as connection:
             context = MigrationContext.configure(
                 connection, opts={"version_table": constants.VERSION_TABLE_NAME}
             )

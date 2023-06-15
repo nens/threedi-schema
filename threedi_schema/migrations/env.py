@@ -31,10 +31,10 @@ def run_migrations_online():
     
     engine = config.attributes.get("engine")
     if engine is None:
-        engine = ThreediDatabase(get_url()).get_engine()
+        engine = ThreediDatabase(get_url()).engine
     
 
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         if unsafe:
             # Speed up by journalling in memory; in case of a crash the database
             # will likely go corrupt.
