@@ -1,7 +1,7 @@
 Changelog of threedi-schema
 ===================================================
 
-0.217.4 (unreleased)
+0.217.4 (2023-06-15)
 --------------------
 
 - Fix SQLAlchemy engine and connection usage.
