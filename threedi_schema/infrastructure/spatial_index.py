@@ -32,9 +32,9 @@ def _ensure_spatial_index(connection, column):
 def ensure_spatial_indexes(db, models):
     """Ensure presence of spatial indexes for all geometry columns"""
     created = False
-    engine = db.get_engine()
+    engine = db.engine
 
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         for model in models:
             geom_columns = [
                 x for x in model.__table__.columns if isinstance(x.type, Geometry)

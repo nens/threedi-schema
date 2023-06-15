@@ -5,9 +5,9 @@ __all__ = ["recreate_views"]
 
 def recreate_views(db, file_version, all_views, views_to_delete):
     """Recreate predefined views in a ThreediDatabase instance"""
-    engine = db.get_engine()
+    engine = db.engine
 
-    with engine.begin() as connection:
+    with engine.connect() as connection:
         for name, view in all_views.items():
             connection.execute(text(f"DROP VIEW IF EXISTS {name}"))
             connection.execute(

@@ -12,7 +12,7 @@ def get_spatialite_version(db):
         ).fetchall()
 
     # Identify Spatialite version
-    inspector = inspect(db.get_engine())
+    inspector = inspect(db.engine)
     spatial_ref_sys_cols = [x["name"] for x in inspector.get_columns("spatial_ref_sys")]
     if len(spatial_ref_sys_cols) == 0:
         raise ValueError("Not a spatialite file")

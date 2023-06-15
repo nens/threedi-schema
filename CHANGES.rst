@@ -4,7 +4,9 @@ Changelog of threedi-schema
 0.217.4 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix SQLAlchemy engine and connection usage.
+
+- Do not pool connections (solving file permission denied issues on Windows).
 
 
 0.217.3 (2023-06-12)

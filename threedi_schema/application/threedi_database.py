@@ -8,6 +8,7 @@ from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.event import listen
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 
 from .schema import ModelSchema
 
@@ -90,7 +91,15 @@ class ThreediDatabase:
 
     def get_engine(self, get_seperate_engine=False):
         if self._engine is None or get_seperate_engine:
-            engine = create_engine("sqlite:///{0}".format(self.path), echo=self.echo)
+            if self.path == "":
+                # Special case in-memory SQLite:
+                # https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#threading-pooling-behavior
+                poolclass = None
+            else:
+                poolclass = NullPool
+            engine = create_engine(
+                "sqlite:///{0}".format(self.path), echo=self.echo, poolclass=poolclass
+            )
             listen(engine, "connect", load_spatialite)
             if get_seperate_engine:
                 return engine
