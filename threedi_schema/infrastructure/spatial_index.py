@@ -26,8 +26,6 @@ def _ensure_spatial_index(connection, column):
     ):
         raise RuntimeError(f"Spatial index creation for {idx_name} failed")
 
-    connection.commit()
-
     return True
 
 
@@ -37,15 +35,16 @@ def ensure_spatial_indexes(db, models):
     engine = db.engine
 
     with engine.connect() as connection:
-        for model in models:
-            geom_columns = [
-                x for x in model.__table__.columns if isinstance(x.type, Geometry)
-            ]
-            if len(geom_columns) > 1:
-                # Pragmatic fix: spatialindex breaks on multiple geometry columns per table
-                geom_columns = [x for x in geom_columns if x.name == "the_geom"]
-            if geom_columns:
-                created &= _ensure_spatial_index(connection, geom_columns[0])
+        with connection.begin():
+            for model in models:
+                geom_columns = [
+                    x for x in model.__table__.columns if isinstance(x.type, Geometry)
+                ]
+                if len(geom_columns) > 1:
+                    # Pragmatic fix: spatialindex breaks on multiple geometry columns per table
+                    geom_columns = [x for x in geom_columns if x.name == "the_geom"]
+                if geom_columns:
+                    created &= _ensure_spatial_index(connection, geom_columns[0])
 
-        if created:
-            connection.execute(text("VACUUM"))
+            if created:
+                connection.execute(text("VACUUM"))
