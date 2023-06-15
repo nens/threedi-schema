@@ -1,6 +1,18 @@
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 
 __all__ = ["recreate_views"]
+
+
+def drop_view(connection, name):
+    try:
+        connection.execute(text(f"SELECT DropTable(NULL, '{name}')"))
+    except OperationalError:
+        connection.execute(text(f"SELECT DropGeoTable('{name}')"))
+        connection.execute(text(f"DROP VIEW IF EXISTS '{name}'"))
+    connection.execute(
+        text(f"DELETE FROM views_geometry_columns WHERE view_name = '{name}'")
+    )
 
 
 def recreate_views(db, file_version, all_views, views_to_delete):
@@ -10,12 +22,8 @@ def recreate_views(db, file_version, all_views, views_to_delete):
     with engine.connect() as connection:
         with connection.begin():
             for name, view in all_views.items():
-                connection.execute(text(f"DROP VIEW IF EXISTS {name}"))
-                connection.execute(
-                    text(
-                        f"DELETE FROM views_geometry_columns WHERE view_name = '{name}'"
-                    )
-                )
+                drop_view(connection, name)
+
                 connection.execute(text(f"CREATE VIEW {name} AS {view['definition']}"))
                 if file_version == 3:
                     connection.execute(
@@ -30,9 +38,4 @@ def recreate_views(db, file_version, all_views, views_to_delete):
                         )
                     )
             for name in views_to_delete:
-                connection.execute(text(f"DROP VIEW IF EXISTS {name}"))
-                connection.execute(
-                    text(
-                        f"DELETE FROM views_geometry_columns WHERE view_name = '{name}'"
-                    )
-                )
+                drop_view(connection, name)

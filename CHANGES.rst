@@ -4,7 +4,7 @@ Changelog of threedi-schema
 0.217.5 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fixed set_views (spatialite metadata tables wwere not updated).
 
 
 0.217.4 (2023-06-15)
