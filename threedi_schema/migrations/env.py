@@ -39,7 +39,8 @@ def run_migrations_online():
             # Speed up by journalling in memory; in case of a crash the database
             # will likely go corrupt.
             # NB: This setting is scoped to this connection.
-            connection.execute(text("PRAGMA journal_mode = MEMORY"))
+            with connection.begin():
+                connection.execute(text("PRAGMA journal_mode = MEMORY"))
 
         context.configure(
             connection=connection,

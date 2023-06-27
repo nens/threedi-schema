@@ -366,9 +366,22 @@ def upgrade():
     _get_existing_tables(inspector)
 
     # Initialize the Spatialite if necessary:
-    if conn.dialect.name == "sqlite" and "spatial_ref_sys" not in existing_tables:
-        # The (1) performs the init in 1 transaction, which improves performance.
-        op.execute(text("SELECT InitSpatialMetadata(1)"))
+    try:
+        databases = [
+            i[-1].endswith(".gpkg") for i in conn.execute(text("PRAGMA database_list")).fetchall()
+        ]
+        is_gpkg = any(databases)
+    except Exception:
+        is_gpkg = False
+    if is_gpkg and not conn.execute(text("SELECT CheckGeoPackageMetaData()")).fetchone()[0]:
+        conn.execute(text("SELECT gpkgCreateBaseTables()"))
+        del conn.info["_is_gpkg"]
+    if not is_gpkg and "spatial_ref_sys" not in existing_tables:
+        conn.execute(text("SELECT InitSpatialMetadata(1)"))
+
+    if is_gpkg:
+        assert bool(conn.execute(text("SELECT HasGeopackage()")).scalar())
+        assert bool(conn.execute(text("SELECT CheckGeoPackageMetaData()")).scalar())
 
     version = _get_version(conn)
     if version is not None:
@@ -439,15 +452,15 @@ def upgrade():
             ),
             nullable=True
         ),
-        sa.Column(
-            "the_geom_linestring",
-            Geometry(
-                "LINESTRING"
+        # sa.Column(
+        #     "the_geom_linestring",
+        #     Geometry(
+        #         "LINESTRING"
                 
                 
-            ),
-            nullable=True
-        ),
+        #     ),
+        #     nullable=True
+        # ),
         sa.Column("code", sa.String(length=100), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -784,9 +797,8 @@ def upgrade():
             "the_geom",
             Geometry(
                 "LINESTRING"
-                
-                
             ),
+            
             nullable=True
         ),
         sa.Column("connection_node_start_id", sa.Integer(), nullable=True),

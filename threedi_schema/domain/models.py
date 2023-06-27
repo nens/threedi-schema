@@ -275,7 +275,7 @@ class ConnectionNode(Base):
     storage_area = Column(Float)
     initial_waterlevel = Column(Float)
     the_geom = Column(Geometry("POINT"), nullable=False)
-    the_geom_linestring = Column(Geometry("LINESTRING"))
+    # the_geom_linestring = Column(Geometry("LINESTRING"))
     code = Column(String(100))
 
     manholes = relationship("Manhole", back_populates="connection_node")

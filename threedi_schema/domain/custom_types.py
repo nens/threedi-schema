@@ -1,5 +1,4 @@
 import geoalchemy2
-from packaging import version
 from sqlalchemy.types import Integer, TypeDecorator, VARCHAR
 
 
@@ -12,9 +11,8 @@ class Geometry(geoalchemy2.types.Geometry):
             "srid": 4326,
             "spatial_index": True,
             "from_text": from_text,
+            "management": True,
         }
-        if version.parse(geoalchemy2.__version__) < version.parse("0.13.0"):
-            kwargs["management"] = True
         super().__init__(**kwargs)
 
 

@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 import uuid
@@ -35,38 +36,30 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.close()
 
 
-def load_spatialite(con, connection_record):
-    """Load spatialite extension as described in
-    https://geoalchemy-2.readthedocs.io/en/latest/spatialite_tutorial.html"""
-    import sqlite3
+def load_spatialite(dbapi_conn, connection_record):
+    """Load SpatiaLite extension in SQLite DB.
 
-    con.enable_load_extension(True)
-    cur = con.cursor()
-    libs = [
-        # SpatiaLite >= 4.2 and Sqlite >= 3.7.17, should work on all platforms
-        ("mod_spatialite", "sqlite3_modspatialite_init"),
-        # SpatiaLite >= 4.2 and Sqlite < 3.7.17 (Travis)
-        ("mod_spatialite.so", "sqlite3_modspatialite_init"),
-        # SpatiaLite < 4.2 (linux)
-        ("libspatialite.so", "sqlite3_extension_init"),
-    ]
-    found = False
-    for lib, entry_point in libs:
-        try:
-            cur.execute("select load_extension('{}', '{}')".format(lib, entry_point))
-        except sqlite3.OperationalError:
-            continue
-        else:
-            found = True
-            break
+    The path to the SpatiaLite module should be set in the `SPATIALITE_LIBRARY_PATH` environment
+    variable.
+    """
+
+    spatialite_library_path = os.environ.get(
+        "SPATIALITE_LIBRARY_PATH", "mod_spatialite"
+    )
+    dbapi_conn.enable_load_extension(True)
+    dbapi_conn.load_extension(spatialite_library_path)
+    dbapi_conn.enable_load_extension(False)
     try:
-        cur.execute("select EnableGpkgAmphibiousMode()")
-    except sqlite3.OperationalError:
-        pass
-    if not found:
-        raise RuntimeError("Cannot find any suitable spatialite module")
-    cur.close()
-    con.enable_load_extension(False)
+        databases = [
+            i[-1].endswith(".gpkg")
+            for i in dbapi_conn.execute("PRAGMA database_list;").fetchall()
+        ]
+        is_gpkg = any(databases)
+    except Exception:
+        is_gpkg = False
+    if is_gpkg:
+        dbapi_conn.execute("SELECT AutoGpkgStart();")
+        dbapi_conn.execute("SELECT EnableGpkgAmphibiousMode();")
 
 
 class ThreediDatabase:
@@ -139,14 +132,16 @@ class ThreediDatabase:
         On contextmanager exit, the database is copied back and the real
         database is overwritten. On error, nothing happens.
         """
+        if self._engine is not None:
+            self._engine.dispose()
         with tempfile.TemporaryDirectory() as tempdir:
-            work_file = Path(tempdir) / f"work-{uuid.uuid4()}.sqlite"
+            work_file = Path(tempdir) / f"work-{uuid.uuid4()}{Path(self.path).suffix}"
             # copy the database to the temporary directory
             if not start_empty:
                 shutil.copy(self.path, str(work_file))
             # yield a new ThreediDatabase refering to the backup
             try:
-                yield self.__class__(str(work_file))
+                yield self.__class__(str(work_file), echo=self.echo)
             except Exception as e:
                 raise e
             else:
