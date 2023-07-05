@@ -1,5 +1,6 @@
 import warnings
 
+import geoalchemy2.alembic_helpers  # NOQA
 from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.environment import EnvironmentContext

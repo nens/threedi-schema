@@ -18,6 +18,7 @@ ansible/*.retry
 .venv
 bin/
 lib/
+var/
 pyvenv.cfg
 
 # Unit test / coverage reports

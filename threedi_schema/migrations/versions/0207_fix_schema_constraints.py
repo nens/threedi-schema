@@ -30,7 +30,7 @@ DROP TRIGGER IF EXISTS ggi_v2_connection_nodes_the_geom;
 DROP TRIGGER IF EXISTS ggu_v2_connection_nodes_the_geom;
 DROP TRIGGER IF EXISTS ggi_v2_connection_nodes_the_geom_linestring;
 DROP TRIGGER IF EXISTS ggu_v2_connection_nodes_the_geom_linestring;
-UPDATE v2_connection_nodes SET the_geom_linestring = NULL;
+
 """
 
 

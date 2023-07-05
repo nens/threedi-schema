@@ -1,6 +1,5 @@
 import geoalchemy2
-from packaging import version
-from sqlalchemy.types import Integer, TypeDecorator, VARCHAR
+from sqlalchemy.types import Integer, TEXT, TypeDecorator
 
 
 class Geometry(geoalchemy2.types.Geometry):
@@ -13,8 +12,6 @@ class Geometry(geoalchemy2.types.Geometry):
             "spatial_index": True,
             "from_text": from_text,
         }
-        if version.parse(geoalchemy2.__version__) < version.parse("0.13.0"):
-            kwargs["management"] = True
         super().__init__(**kwargs)
 
 
@@ -68,4 +65,4 @@ class IntegerEnum(CustomEnum):
 
 class VarcharEnum(CustomEnum):
     cache_ok = True
-    impl = VARCHAR
+    impl = TEXT

@@ -17,7 +17,7 @@ def get_version():
 
 
 install_requires = [
-    "GeoAlchemy2>=0.9,!=0.11.*",
+    "GeoAlchemy2>=0.14",
     "SQLAlchemy>=1.4",
     "alembic>=1.8,<2",
 ]

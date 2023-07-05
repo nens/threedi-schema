@@ -29,8 +29,8 @@ def upgrade():
     op.create_table(
         "v2_potential_breach",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("code", sa.String(length=100), nullable=True),
-        sa.Column("display_name", sa.String(length=255), nullable=True),
+        sa.Column("code", sa.Text(length=100), nullable=True),
+        sa.Column("display_name", sa.Text(length=255), nullable=True),
         sa.Column("channel_id", sa.Integer(), nullable=True),
         sa.Column("the_geom", Geometry("LINESTRING"), nullable=True),
         sa.PrimaryKeyConstraint("id"),
