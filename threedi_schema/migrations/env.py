@@ -1,5 +1,6 @@
 import os
 
+import geoalchemy2.alembic_helpers
 from alembic import context
 from sqlalchemy import text
 

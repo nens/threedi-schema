@@ -5,8 +5,9 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
-from sqlalchemy import create_engine, event, inspect, text
-from sqlalchemy.engine import Engine
+from geoalchemy2.admin.dialects.geopackage import load_geopackage_driver
+from geoalchemy2.admin.dialects.sqlite import load_spatialite_driver
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.event import listen
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -16,7 +17,6 @@ from .schema import ModelSchema
 __all__ = ["ThreediDatabase"]
 
 
-@event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     """Switch on legacy_alter_table setting to fix our migrations.
 
@@ -34,32 +34,6 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA cell_size_check=ON")
     cursor.execute("PRAGMA mmap_size=0")
     cursor.close()
-
-
-def load_spatialite(dbapi_conn, connection_record):
-    """Load SpatiaLite extension in SQLite DB.
-
-    The path to the SpatiaLite module should be set in the `SPATIALITE_LIBRARY_PATH` environment
-    variable.
-    """
-
-    spatialite_library_path = os.environ.get(
-        "SPATIALITE_LIBRARY_PATH", "mod_spatialite"
-    )
-    dbapi_conn.enable_load_extension(True)
-    dbapi_conn.load_extension(spatialite_library_path)
-    dbapi_conn.enable_load_extension(False)
-    try:
-        databases = [
-            i[-1].endswith(".gpkg")
-            for i in dbapi_conn.execute("PRAGMA database_list;").fetchall()
-        ]
-        is_gpkg = any(databases)
-    except Exception:
-        is_gpkg = False
-    if is_gpkg:
-        dbapi_conn.execute("SELECT AutoGpkgStart();")
-        dbapi_conn.execute("SELECT EnableGpkgAmphibiousMode();")
 
 
 class ThreediDatabase:
@@ -82,6 +56,10 @@ class ThreediDatabase:
     def base_path(self):
         return Path(self.path).absolute().parent
 
+    @property
+    def _driver(self) -> str:
+        return "gpkg" if Path(self.path).suffix.lower() == ".gpkg" else "sqlite"
+
     def get_engine(self, get_seperate_engine=False):
         if self._engine is None or get_seperate_engine:
             if self.path == "":
@@ -91,9 +69,17 @@ class ThreediDatabase:
             else:
                 poolclass = NullPool
             engine = create_engine(
-                "sqlite:///{0}".format(self.path), echo=self.echo, poolclass=poolclass
+                f"{self._driver}:///{self.path}", echo=self.echo, poolclass=poolclass
             )
-            listen(engine, "connect", load_spatialite)
+            os.environ.setdefault("SPATIALITE_LIBRARY_PATH", "mod_spatialite")
+            listen(
+                engine,
+                "connect",
+                load_spatialite_driver
+                if self._driver == "sqlite"
+                else load_geopackage_driver,
+            )
+            listen(engine, "connect", set_sqlite_pragma)
             if get_seperate_engine:
                 return engine
             else:

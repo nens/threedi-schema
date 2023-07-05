@@ -1,5 +1,5 @@
 import geoalchemy2
-from sqlalchemy.types import Integer, TypeDecorator, VARCHAR
+from sqlalchemy.types import Integer, TEXT, TypeDecorator
 
 
 class Geometry(geoalchemy2.types.Geometry):
@@ -11,7 +11,6 @@ class Geometry(geoalchemy2.types.Geometry):
             "srid": 4326,
             "spatial_index": True,
             "from_text": from_text,
-            "management": True,
         }
         super().__init__(**kwargs)
 
@@ -66,4 +65,4 @@ class IntegerEnum(CustomEnum):
 
 class VarcharEnum(CustomEnum):
     cache_ok = True
-    impl = VARCHAR
+    impl = TEXT

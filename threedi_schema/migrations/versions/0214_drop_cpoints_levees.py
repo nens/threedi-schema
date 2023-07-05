@@ -41,7 +41,7 @@ def downgrade():
     op.create_table(
         "v2_levee",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("code", sa.String(length=100), nullable=True),
+        sa.Column("code", sa.Text(length=100), nullable=True),
         sa.Column("crest_level", sa.Float(), nullable=True),
         sa.Column("the_geom", Geometry("LINESTRING"), nullable=True),
         sa.Column("material", sa.Integer(), nullable=True),
@@ -52,7 +52,7 @@ def downgrade():
         "v2_calculation_point",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("content_type_id", sa.Integer(), nullable=True),
-        sa.Column("user_ref", sa.String(length=80), nullable=True),
+        sa.Column("user_ref", sa.Text(length=80), nullable=True),
         sa.Column("calc_type", sa.Integer(), nullable=True),
         sa.Column("the_geom", Geometry("POINT"), nullable=True),
         sa.PrimaryKeyConstraint("id"),

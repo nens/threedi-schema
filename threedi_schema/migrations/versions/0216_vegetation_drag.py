@@ -19,15 +19,15 @@ def upgrade():
     op.create_table(
         'v2_vegetation_drag',
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('display_name', sa.String(length=255), nullable=True),
+        sa.Column('display_name', sa.Text(length=255), nullable=True),
         sa.Column('height', sa.Float(), nullable=True),
-        sa.Column('height_file', sa.String(length=255), nullable=True),
+        sa.Column('height_file', sa.Text(length=255), nullable=True),
         sa.Column('stem_count', sa.Float(), nullable=True),
-        sa.Column('stem_count_file', sa.String(length=255), nullable=True),
+        sa.Column('stem_count_file', sa.Text(length=255), nullable=True),
         sa.Column('stem_diameter', sa.Float(), nullable=True),
-        sa.Column('stem_diameter_file', sa.String(length=255), nullable=True),
+        sa.Column('stem_diameter_file', sa.Text(length=255), nullable=True),
         sa.Column('drag_coefficient', sa.Float(), nullable=True),
-        sa.Column('drag_coefficient_file', sa.String(length=255), nullable=True),
+        sa.Column('drag_coefficient_file', sa.Text(length=255), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
 
