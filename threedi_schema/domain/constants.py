@@ -82,6 +82,8 @@ class CrossSectionShape(Enum):
 class FrictionType(Enum):
     CHEZY = 1
     MANNING = 2
+    CHEZY_CONVEYANCE = 3
+    MANNING_CONVEYANCE = 4
 
 
 class InitializationType(Enum):
