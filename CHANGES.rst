@@ -4,7 +4,8 @@ Changelog of threedi-schema
 0.217.6 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Extend FrictionType enum with Chézy friction with conveyance and
+  Manning friction with conveyance.
 
 
 0.217.5 (2023-06-15)
