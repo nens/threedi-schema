@@ -28,7 +28,7 @@ cli = ["click"]
 threedi_schema = "threedi_schema.scripts:main"
 
 [tool.setuptools.dynamic]
-version = {attr = "threedi-schema.__version__"}
+version = {attr = "threedi_schema.__version__"}
 readme = {file = ["README.rst", "CHANGES.rst"]}
 
 [tool.isort]
