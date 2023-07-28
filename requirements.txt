@@ -5,4 +5,4 @@
 # Extra development dependencies
 black
 pre-commit
-zest.releaser
+zest.releaser>=9.0.0
