@@ -35,11 +35,14 @@ def run_migrations_online():
     
 
     with engine.connect() as connection:
-        if unsafe:
-            # Speed up by journalling in memory; in case of a crash the database
-            # will likely go corrupt.
-            # NB: This setting is scoped to this connection.
-            connection.execute(text("PRAGMA journal_mode = MEMORY"))
+        # the following 5 lines have been commented out because for some reason the
+        # spatialite schema_version doesn't get updated when journal_mode is set to MEMORY
+        # TODO: make this work again.
+        # if unsafe:
+        #     # Speed up by journalling in memory; in case of a crash the database
+        #     # will likely go corrupt.
+        #     # NB: This setting is scoped to this connection.
+        #     connection.execute(text("PRAGMA journal_mode = MEMORY"))
 
         context.configure(
             connection=connection,
