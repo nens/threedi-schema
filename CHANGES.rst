@@ -4,7 +4,8 @@ Changelog of threedi-schema
 0.217.7 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Don't set journal_mode to MEMORY since it causes the schema version
+  field to not be updated, making migrations crash.
 
 
 0.217.6 (2023-07-13)
