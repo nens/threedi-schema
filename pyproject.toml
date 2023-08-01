@@ -1,0 +1,53 @@
+[project]
+name = "threedi-schema"
+authors = [
+    {name = "Nelen & Schuurmans", email = "info@nelen-schuurmans.nl"},
+]
+description = "The schema of 3Di schematization files"
+requires-python = ">=3.7"
+keywords = []
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "GeoAlchemy2>=0.9,!=0.11.*",
+    "SQLAlchemy>=1.4",
+    "alembic>=1.8,<2",
+]
+dynamic = ["version", "readme"]
+
+[project.urls]
+Repository = "https://github.com/nens/threedi-schema"
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-cov"]
+cli = ["click"]
+
+[project.scripts]
+threedi_schema = "threedi_schema.scripts:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "threedi_schema.__version__"}
+readme = {file = ["README.rst", "CHANGES.rst"]}
+
+[tool.isort]
+profile = "black"
+force_alphabetical_sort_within_sections = true
+
+[tool.pytest.ini_options]
+addopts = "--cov --cache-clear"
+norecursedirs = [
+    ".venv",
+    "data",
+    "doc",
+    "etc",
+    "*.egg-info",
+    "misc",
+    "var",
+    "build",
+    "lib",
+    "include",
+]
+python_files = ["test_*.py"]
+testpaths = ["threedi_schema"]
