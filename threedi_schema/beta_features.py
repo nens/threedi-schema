@@ -1,8 +1,24 @@
+from .domain import models, constants
 """
 Put features in beta development in these lists to prevent users from using them, in the SQLAlchemy format used in the schema.
 """
 """This list contains beta columns, e.g. models.SomeTable.some_column"""
-BETA_COLUMNS = []
+BETA_COLUMNS = [
+    {
+        "columns": [
+            models.GlobalSetting.frict_type,
+            models.CrossSectionLocation.friction_type,
+            models.Pipe.friction_type,
+            models.Culvert.friction_type,
+            models.Weir.friction_type,
+            models.Orifice.friction_type,
+        ],
+        "values": [
+            constants.FrictionType.CHEZY_CONVEYANCE,
+            constants.FrictionType.MANNING_CONVEYANCE,
+        ]
+    }
+]
 """
 This list contains dicts with lists of beta values for columns, where the dict has the format:
 {
