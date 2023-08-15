@@ -4,7 +4,7 @@ Changelog of threedi-schema
 0.217.8 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Mark friction types with conveyance as beta features.
 
 
 0.217.7 (2023-07-28)
