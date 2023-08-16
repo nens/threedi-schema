@@ -4,7 +4,7 @@ Changelog of threedi-schema
 0.217.9 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix incorrectly formatted beta_features.py.
 
 
 0.217.8 (2023-08-15)
