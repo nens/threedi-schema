@@ -1,7 +1,7 @@
 Changelog of threedi-schema
 ===================================================
 
-0.217.10 (unreleased)
+0.217.10 (2023-09-19)
 ---------------------
 
 - Unmark conveyance columns as beta.
