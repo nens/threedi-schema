@@ -4,7 +4,7 @@ Changelog of threedi-schema
 0.217.11 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Fix conveyance values list.
 
 
 0.217.10 (2023-09-19)

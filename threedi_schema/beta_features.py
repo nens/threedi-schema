@@ -7,12 +7,7 @@ Put features in beta development in these lists to prevent users from using them
 BETA_COLUMNS = []
 """This list contains beta columns, e.g. models.SomeTable.some_column"""
 
-BETA_VALUES = [
-    {
-        "columns": [],
-        "values": [],
-    }
-]
+BETA_VALUES = []
 """
 This list contains dicts with lists of beta values for columns, where the dict has the format:
 {

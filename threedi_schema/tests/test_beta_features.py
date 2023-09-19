@@ -17,5 +17,8 @@ def test_beta_values_structure():
         assert set(entry) == {"columns", "values"}  # check the keys
         assert isinstance(entry["columns"], list)
         assert isinstance(entry["values"], list)
+        # empty columns or values field is not allowed
+        assert len(entry["columns"]) > 0
+        assert len(entry["values"]) > 0
         for column in entry["columns"]:
             assert isinstance(column, InstrumentedAttribute)
