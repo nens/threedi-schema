@@ -1,4 +1,4 @@
-from .domain import constants, models
+from .domain import constants, models  # noqa
 
 """
 Put features in beta development in these lists to prevent users from using them, in the SQLAlchemy format used in the schema.
@@ -9,18 +9,8 @@ BETA_COLUMNS = []
 
 BETA_VALUES = [
     {
-        "columns": [
-            models.GlobalSetting.frict_type,
-            models.CrossSectionLocation.friction_type,
-            models.Pipe.friction_type,
-            models.Culvert.friction_type,
-            models.Weir.friction_type,
-            models.Orifice.friction_type,
-        ],
-        "values": [
-            constants.FrictionType.CHEZY_CONVEYANCE,
-            constants.FrictionType.MANNING_CONVEYANCE,
-        ],
+        "columns": [],
+        "values": [],
     }
 ]
 """
