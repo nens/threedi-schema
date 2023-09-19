@@ -5,6 +5,7 @@ Changelog of threedi-schema
 ---------------------
 
 - Unmark conveyance columns as beta.
+- Move zest.releaser config to pyproject.toml.
 
 
 0.217.9 (2023-08-16)
