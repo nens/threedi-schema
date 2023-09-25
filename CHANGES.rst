@@ -4,7 +4,7 @@ Changelog of threedi-schema
 0.217.12 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Add set_gate_height to control structure options.
 
 
 0.217.11 (2023-09-19)
