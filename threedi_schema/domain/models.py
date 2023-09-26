@@ -106,10 +106,10 @@ class ControlTable(Base):
 class ControlTimed(Base):
     __tablename__ = "v2_control_timed"
     id = Column(Integer, primary_key=True)
-    action_type = Column(String(50))
-    action_table = Column(Text)
-    target_type = Column(String(100))
-    target_id = Column(Integer)
+    action_type = Column(VarcharEnum(constants.ControlTableActionTypes), nullable=False)
+    action_table = Column(Text, nullable=False)
+    target_type = Column(VarcharEnum(constants.StructureControlTypes), nullable=False)
+    target_id = Column(Integer, nullable=False)
 
 
 class Control(Base):
