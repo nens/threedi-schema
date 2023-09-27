@@ -6,6 +6,8 @@ Changelog of threedi-schema
 
 - Add set_gate_height to control structure options.
 
+- Set timed control column restrictions similar to table control.
+
 
 0.217.11 (2023-09-19)
 ---------------------
