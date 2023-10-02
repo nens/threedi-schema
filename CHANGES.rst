@@ -1,7 +1,7 @@
 Changelog of threedi-schema
 ===================================================
 
-0.217.13 (unreleased)
+0.217.13 (2023-10-02)
 ---------------------
 
 - Change set_gate_height to set_gate_level
