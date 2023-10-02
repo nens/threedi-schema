@@ -218,7 +218,7 @@ class ControlTableActionTypes(Enum):
     set_crest_level = "set_crest_level"  # orifice, weir only
     set_pump_capacity = "set_pump_capacity"  # only pump, in API: set_pump_capacity
     set_capacity = "set_capacity"  # old form, mapped to set_pump_capacity
-    set_gate_height = "set_gate_height"
+    set_gate_level = "set_gate_level"
 
 
 class MeasureLocationContentTypes(Enum):
