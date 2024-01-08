@@ -15,7 +15,7 @@ down_revision = '0217'
 branch_labels = None
 depends_on = None
 
-FLOAT_COLUMNS = (
+LOC_COLUMNS = (
     "vegetation_stem_density",
     "vegetation_stem_diameter",
     "vegetation_height",
@@ -23,7 +23,7 @@ FLOAT_COLUMNS = (
     "vegetation_drag_coeficients"
 )
 
-STRING_COLUMNS = (
+DEF_COLUMNS = (
     "friction_values",
     "vegetation_stem_densities",
     "vegetation_stem_diameters",
@@ -34,13 +34,17 @@ STRING_COLUMNS = (
 
 def upgrade():
     with op.batch_alter_table("v2_cross_section_location") as batch_op:
-        for column in FLOAT_COLUMNS:
+        for column in LOC_COLUMNS:
             batch_op.add_column(sa.Column(column, sa.Float()))
-        for column in STRING_COLUMNS:
+    with op.batch_alter_table("v2_cross_section_definition") as batch_op:
+        for column in DEF_COLUMNS:
             batch_op.add_column(sa.Column(column, sa.String()))
 
 
 def downgrade():
     with op.batch_alter_table("v2_cross_section_location") as batch_op:
-        for column in (FLOAT_COLUMNS + STRING_COLUMNS):
+        for column in LOC_COLUMNS:
+            batch_op.drop_column(column)
+    with op.batch_alter_table("v2_cross_section_definition") as batch_op:
+        for column in DEF_COLUMNS:
             batch_op.drop_column(column)

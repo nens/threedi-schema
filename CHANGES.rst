@@ -4,7 +4,8 @@ Changelog of threedi-schema
 0.217.14 (unreleased)
 ---------------------
 
-- Add parameters friction_values, vegetation_stem_density, vegetation_stem_densities, vegetation_stem_diameter, vegetation_stem_diameters, vegetation_height, vegetation_heights, vegetation_drag_coefficient, vegetation_drag_coefficients to CrossSectionLocation
+- Add parameters vegetation_stem_density, vegetation_stem_diameter, vegetation_height and vegetation_drag_coefficient to CrossSectionLocation
+- Add parameters friction_values, vegetation_stem_densities, vegetation_stem_diameters, vegetation_heights and vegetation_drag_coefficients to CrossSectionDefinition
 
 
 0.217.13 (2023-10-02)
