@@ -267,6 +267,11 @@ class CrossSectionDefinition(Base):
     height = Column(String(255))
     shape = Column(IntegerEnum(constants.CrossSectionShape))
     code = Column(String(100))
+    friction_values = Column(String)
+    vegetation_stem_densities = Column(String)
+    vegetation_stem_diameters = Column(String)
+    vegetation_heights = Column(String)
+    vegetation_drag_coefficients = Column(String)
 
 
 class ConnectionNode(Base):
@@ -573,6 +578,10 @@ class CrossSectionLocation(Base):
     friction_type = Column(IntegerEnum(constants.FrictionType), nullable=False)
     friction_value = Column(Float, nullable=False)
     bank_level = Column(Float)
+    vegetation_stem_density = Column(Float)
+    vegetation_stem_diameter = Column(Float)
+    vegetation_height = Column(Float)
+    vegetation_drag_coefficient = Column(Float)
     the_geom = Column(Geometry("POINT"), nullable=False)
     channel_id = Column(
         Integer, ForeignKey(Channel.__tablename__ + ".id"), nullable=False
