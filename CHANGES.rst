@@ -1,7 +1,7 @@
 Changelog of threedi-schema
 ===================================================
 
-0.219.0 (2024-01-25)
+- 0.218.1 (unreleased)
 --------------------
 
 - Make CrossSectionLocation.friction_value nullable
