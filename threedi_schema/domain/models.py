@@ -576,7 +576,7 @@ class CrossSectionLocation(Base):
     code = Column(String(100))
     reference_level = Column(Float, nullable=False)
     friction_type = Column(IntegerEnum(constants.FrictionType), nullable=False)
-    friction_value = Column(Float, nullable=False)
+    friction_value = Column(Float)
     bank_level = Column(Float)
     vegetation_stem_density = Column(Float)
     vegetation_stem_diameter = Column(Float)
