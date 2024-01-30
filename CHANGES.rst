@@ -1,8 +1,8 @@
 Changelog of threedi-schema
 ===================================================
 
-0.220 (unreleased)
-------------------
+0.219.0 (2024-01-30)
+--------------------
 
 - Re-release with correct version naming.
 
