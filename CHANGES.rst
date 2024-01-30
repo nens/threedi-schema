@@ -4,18 +4,8 @@ Changelog of threedi-schema
 0.219.1 (unreleased)
 --------------------
 
+- Fix migration to nullable friction_value that resulted in string type for friction_value.
 - Update action versions to use a new NodeJS.
-
-
-0.219.0 (2024-01-30)
---------------------
-
-- Re-release with correct version naming.
-
-
-0.219 (2024-01-25)
-------------------
-
 - Make CrossSectionLocation.friction_value nullable
 
 
