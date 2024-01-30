@@ -22,7 +22,7 @@ SELECT RecoverGeometryColumn('v2_cross_section_location', 'the_geom', 4326, 'POI
 
 def upgrade():
     with op.batch_alter_table("v2_cross_section_location") as batch_op:
-        batch_op.alter_column("friction_value", nullable=True, type_=sa.Float)
+        batch_op.alter_column("friction_value", nullable=True, type_=sa.FLOAT)
     for q in MIGRATION_QUERIES.split(";"):
         op.execute(sa.text(q))
 
