@@ -4,7 +4,7 @@ Changelog of threedi-schema
 0.219.1 (unreleased)
 --------------------
 
-- Yet another re-release because PyPI was very confused.
+- Update action versions to use a new NodeJS.
 
 
 0.219.0 (2024-01-30)
