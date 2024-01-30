@@ -1,7 +1,7 @@
 Changelog of threedi-schema
 ===================================================
 
-0.219.1 (unreleased)
+0.219.1 (2024-01-30)
 --------------------
 
 - Fix migration to nullable friction_value that resulted in string type for friction_value.
