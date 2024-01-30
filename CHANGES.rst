@@ -4,7 +4,7 @@ Changelog of threedi-schema
 0.220 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Re-release with correct version naming.
 
 
 0.219 (2024-01-25)
