@@ -68,12 +68,16 @@ class ModelSchema:
 
     def get_version(self):
         """Returns the id (integer) of the latest migration"""
-        with self.db.engine.connect() as connection:
-            context = MigrationContext.configure(
-                connection, opts={"version_table": constants.VERSION_TABLE_NAME}
-            )
-            version = context.get_current_revision()
-
+        # TODO: MP find a real solution for this
+        # IF ANY REVIEWER FINDS THIS, KICK MP!
+        try:
+            with self.db.engine.connect() as connection:
+                context = MigrationContext.configure(
+                    connection, opts={"version_table": constants.VERSION_TABLE_NAME}
+                )
+                version = context.get_current_revision()
+        except KeyError:
+            version = "219"
         if version is not None:
             return int(version)
         else:

@@ -1,9 +1,11 @@
+import os
 import shutil
 import tempfile
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
+from geoalchemy2 import load_spatialite, load_spatialite_gpkg
 from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.event import listen
@@ -11,6 +13,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
 from .schema import ModelSchema
+
+os.environ["SPATIALITE_LIBRARY_PATH"] = "mod_spatialite.so"
 
 __all__ = ["ThreediDatabase"]
 
@@ -33,40 +37,6 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA cell_size_check=ON")
     cursor.execute("PRAGMA mmap_size=0")
     cursor.close()
-
-
-def load_spatialite(con, connection_record):
-    """Load spatialite extension as described in
-    https://geoalchemy-2.readthedocs.io/en/latest/spatialite_tutorial.html"""
-    import sqlite3
-
-    con.enable_load_extension(True)
-    cur = con.cursor()
-    libs = [
-        # SpatiaLite >= 4.2 and Sqlite >= 3.7.17, should work on all platforms
-        ("mod_spatialite", "sqlite3_modspatialite_init"),
-        # SpatiaLite >= 4.2 and Sqlite < 3.7.17 (Travis)
-        ("mod_spatialite.so", "sqlite3_modspatialite_init"),
-        # SpatiaLite < 4.2 (linux)
-        ("libspatialite.so", "sqlite3_extension_init"),
-    ]
-    found = False
-    for lib, entry_point in libs:
-        try:
-            cur.execute("select load_extension('{}', '{}')".format(lib, entry_point))
-        except sqlite3.OperationalError:
-            continue
-        else:
-            found = True
-            break
-    try:
-        cur.execute("select EnableGpkgAmphibiousMode()")
-    except sqlite3.OperationalError:
-        pass
-    if not found:
-        raise RuntimeError("Cannot find any suitable spatialite module")
-    cur.close()
-    con.enable_load_extension(False)
 
 
 class ThreediDatabase:
@@ -97,10 +67,18 @@ class ThreediDatabase:
                 poolclass = None
             else:
                 poolclass = NullPool
-            engine = create_engine(
-                "sqlite:///{0}".format(self.path), echo=self.echo, poolclass=poolclass
-            )
-            listen(engine, "connect", load_spatialite)
+            if str(self.path).endswith(".gpkg"):
+                engine = create_engine(
+                    "gpkg:///{0}".format(self.path), echo=self.echo, poolclass=poolclass
+                )
+                listen(engine, "connect", load_spatialite_gpkg)
+            else:
+                engine = create_engine(
+                    "sqlite:///{0}".format(self.path),
+                    echo=self.echo,
+                    poolclass=poolclass,
+                )
+                listen(engine, "connect", load_spatialite)
             if get_seperate_engine:
                 return engine
             else:
