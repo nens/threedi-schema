@@ -218,15 +218,10 @@ class ModelSchema:
         # check: do these views work and do we want to keep them
         self.upgrade()
         self.validate_schema()
-        # remove tables that break conversion
-        # TODO: move schema change (the_geom_linestring) to migration
+        # remove spatialite specific tables that break conversion
         with self.db.get_session() as session:
             session.execute(text("DROP TABLE IF EXISTS spatialite_history;"))
             session.execute(text("DROP TABLE IF EXISTS views_geometry_columns;"))
-            session.execute(text("DROP VIEW IF EXISTS v2_manhole_view;"))
-            session.execute(
-                text("ALTER TABLE v2_connection_nodes DROP COLUMN the_geom_linestring")
-            )
         cmd = [
             "ogr2ogr",
             "-f",
