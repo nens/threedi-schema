@@ -128,7 +128,7 @@ class ModelSchema:
 
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
-        elif set_views:
+        if set_views:
             self.set_views()
 
     def validate_schema(self):
