@@ -87,6 +87,7 @@ class ModelSchema:
         backup=True,
         set_views=True,
         upgrade_spatialite_version=False,
+        convert_to_geopackage=False,
     ):
         """Upgrade the database to the latest version.
 
@@ -106,8 +107,11 @@ class ModelSchema:
 
         Specify 'upgrade_spatialite_version=True' to also upgrade the
         spatialite file version after the upgrade.
+
+        Specify 'convert_to_geopackage=True' to also convert from spatialite
+        to geopackage file version after the upgrade.
         """
-        if upgrade_spatialite_version and not set_views:
+        if (upgrade_spatialite_version or convert_to_geopackage) and not set_views:
             raise ValueError(
                 "Cannot upgrade the spatialite version without setting the views."
             )
@@ -125,10 +129,11 @@ class ModelSchema:
                 _upgrade_database(work_db, revision=revision, unsafe=True)
         else:
             _upgrade_database(self.db, revision=revision, unsafe=False)
-
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
-        if set_views:
+        elif convert_to_geopackage:
+            self.convert_to_geopackage()
+        elif set_views:
             self.set_views()
 
     def validate_schema(self):
@@ -234,6 +239,7 @@ class ModelSchema:
         p = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1
         )
+        # TODO: process output
         output, err = p.communicate()
         # correct database path
         self.db.path = self.db.path.with_suffix(".gpkg")
