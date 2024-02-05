@@ -1,11 +1,14 @@
+import subprocess
 import warnings
 
+# This import is needed for alembic to recognize the geopackage dialect
+import geoalchemy2.alembic_helpers  # noqa: F401
 from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import Column, Integer, MetaData, Table
+from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
 from ..domain import constants, models, views
@@ -68,16 +71,11 @@ class ModelSchema:
 
     def get_version(self):
         """Returns the id (integer) of the latest migration"""
-        # TODO: MP find a real solution for this
-        # IF ANY REVIEWER FINDS THIS, KICK MP!
-        try:
-            with self.db.engine.connect() as connection:
-                context = MigrationContext.configure(
-                    connection, opts={"version_table": constants.VERSION_TABLE_NAME}
-                )
-                version = context.get_current_revision()
-        except KeyError:
-            version = "219"
+        with self.db.engine.connect() as connection:
+            context = MigrationContext.configure(
+                connection, opts={"version_table": constants.VERSION_TABLE_NAME}
+            )
+            version = context.get_current_revision()
         if version is not None:
             return int(version)
         else:
@@ -211,3 +209,38 @@ class ModelSchema:
                     copy_models(self.db, work_db, self.declared_models)
                 except IntegrityError as e:
                     raise UpgradeFailedError(e.orig.args[0])
+
+    def convert_to_geopackage(self):
+        # check: does this work with file_version = 3?
+        if self.db.get_engine().dialect.name == "geopackage":
+            return
+        # Ensure database is upgraded and views are recreated
+        # check: do these views work and do we want to keep them
+        self.upgrade()
+        self.validate_schema()
+        # remove tables that break conversion
+        # TODO: move schema change (the_geom_linestring) to migration
+        with self.db.get_session() as session:
+            session.execute(text("DROP TABLE IF EXISTS spatialite_history;"))
+            session.execute(text("DROP TABLE IF EXISTS views_geometry_columns;"))
+            session.execute(text("DROP VIEW IF EXISTS v2_manhole_view;"))
+            session.execute(
+                text("ALTER TABLE v2_connection_nodes DROP COLUMN the_geom_linestring")
+            )
+        cmd = [
+            "ogr2ogr",
+            "-f",
+            "gpkg",
+            str(self.db.path.with_suffix(".gpkg")),
+            str(self.db.path),
+            "-oo",
+            "LIST_ALL_TABLES=YES",
+        ]
+        p = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1
+        )
+        output, err = p.communicate()
+        # correct database path
+        self.db.path = self.db.path.with_suffix(".gpkg")
+        # reset engine so new path is used on the next call of get_engine()
+        self.db._engine = None
