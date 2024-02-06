@@ -213,7 +213,7 @@ def test_upgrade_spatialite_3(oldest_sqlite):
     assert check_result == 1
 
 
-@pytest.mark.skip("MP: THIS IS BROKEN, UNCLEAR WHY")
+# @pytest.mark.skip("MP: THIS IS BROKEN, UNCLEAR WHY")
 def test_set_spatial_indexes(in_memory_sqlite):
     engine = in_memory_sqlite.engine
 
