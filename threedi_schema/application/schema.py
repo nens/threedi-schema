@@ -226,7 +226,6 @@ class ModelSchema:
         # remove spatialite specific tables that break conversion
         with self.db.get_session() as session:
             session.execute(text("DROP TABLE IF EXISTS spatialite_history;"))
-            session.execute(text("DROP TABLE IF EXISTS views_geometry_columns;"))
         cmd = [
             "ogr2ogr",
             "-f",
