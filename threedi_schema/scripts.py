@@ -31,7 +31,9 @@ def main(ctx, sqlite):
 )
 @click.option("--convert-to-geopackage/--not-convert-to-geopackage", default=False)
 @click.pass_context
-def migrate(ctx, revision, backup, set_views, upgrade_spatialite_version, convert_to_geopackage):
+def migrate(
+    ctx, revision, backup, set_views, upgrade_spatialite_version, convert_to_geopackage
+):
     """Migrate the threedi model schematisation to the latest version."""
     schema = ctx.obj["db"].schema
     click.echo("The current schema revision is: %s" % schema.get_version())
@@ -41,7 +43,7 @@ def migrate(ctx, revision, backup, set_views, upgrade_spatialite_version, conver
         backup=backup,
         set_views=set_views,
         upgrade_spatialite_version=upgrade_spatialite_version,
-        convert_to_geopackage=convert_to_geopackage
+        convert_to_geopackage=convert_to_geopackage,
     )
     click.echo("The migrated schema revision is: %s" % schema.get_version())
 
