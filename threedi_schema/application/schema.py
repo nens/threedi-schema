@@ -216,7 +216,13 @@ class ModelSchema:
                     raise UpgradeFailedError(e.orig.args[0])
 
     def convert_to_geopackage(self):
-        # check: does this work with file_version = 3?
+        """
+        Convert spatialite to geopackage
+
+        Does nothing if the current database is already a geopackage
+
+        """
+        # TODO: work with temp db!
         if self.db.get_engine().dialect.name == "geopackage":
             return
         # Ensure database is upgraded and views are recreated
@@ -239,9 +245,12 @@ class ModelSchema:
         p = subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1
         )
-        # TODO: process output
-        output, err = p.communicate()
-
+        _, err = p.communicate()
+        # ogr2ogr raises an error while the conversion is fine
+        # so to catch any real issues we compare the produced error with the expected error
+        expected_error = b'ERROR 1: sqlite3_exec(CREATE TABLE "sqlite_sequence" ( "rowid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT, "seq" TEXT)) failed: object name reserved for internal use: sqlite_sequence\n'
+        if err != expected_error:
+            raise RuntimeError(f"ogr2ogr didn't finish as expected:\n{err}")
         # correct database path
         self.db.path = self.db.path.with_suffix(".gpkg")
         # reset engine so new path is used on the next call of get_engine()
