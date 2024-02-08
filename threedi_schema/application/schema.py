@@ -247,16 +247,16 @@ class ModelSchema:
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1
             )
             _, err = p.communicate()
-        # ogr2ogr raises an error while the conversion is fine
-        # so to catch any real issues we compare the produced error with the expected error
+        # ogr2ogr raises an error while the conversion is fine.
+        # To catch any real issues we compare the produced error with the expected error
         expected_error = b'ERROR 1: sqlite3_exec(CREATE TABLE "sqlite_sequence" ( "rowid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT, "seq" TEXT)) failed: object name reserved for internal use: sqlite_sequence\n'
         if err != expected_error:
             raise UpgradeFailedError(f"ogr2ogr didn't finish as expected:\n{err}")
-        # correct database path
+        # Correct path of current database
         self.db.path = self.db.path.with_suffix(".gpkg")
-        # reset engine so new path is used on the next call of get_engine()
+        # Reset engine so new path is used on the next call of get_engine()
         self.db._engine = None
-        # recreate views_geometry_columns so set_views works as expected
+        # Recreate views_geometry_columns so set_views works as expected
         with self.db.get_session() as session:
             session.execute(
                 text(
