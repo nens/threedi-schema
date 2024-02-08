@@ -111,7 +111,7 @@ class ThreediDatabase:
             session.close()
 
     @contextmanager
-    def file_transaction(self, start_empty=False):
+    def file_transaction(self, start_empty=False, copy_results=True):
         """Copy the complete database into a tmpdir and work on that one.
 
         On contextmanager exit, the database is copied back and the real
@@ -128,7 +128,8 @@ class ThreediDatabase:
             except Exception as e:
                 raise e
             else:
-                shutil.copy(str(work_file), self.path)
+                if copy_results:
+                    shutil.copy(str(work_file), self.path)
 
     def check_connection(self):
         """Check if there a connection can be started with the database

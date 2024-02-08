@@ -217,40 +217,41 @@ class ModelSchema:
 
     def convert_to_geopackage(self):
         """
-        Convert spatialite to geopackage
+        Convert spatialite to geopackage using gdal's ogr2ogr.
 
-        Does nothing if the current database is already a geopackage
+        Does nothing if the current database is already a geopackage.
 
+        Raises UpgradeFailedError if the conversion of spatialite to geopackage with ogr2ogr fails.
         """
-        # TODO: work with temp db!
         if self.db.get_engine().dialect.name == "geopackage":
             return
         # Ensure database is upgraded and views are recreated
-        # check: do these views work and do we want to keep them
         self.upgrade()
         self.validate_schema()
-        # remove spatialite specific tables that break conversion
-        with self.db.get_session() as session:
-            session.execute(text("DROP TABLE IF EXISTS spatialite_history;"))
-            session.execute(text("DROP TABLE IF EXISTS views_geometry_columns;"))
-        cmd = [
-            "ogr2ogr",
-            "-f",
-            "gpkg",
-            str(self.db.path.with_suffix(".gpkg")),
-            str(self.db.path),
-            "-oo",
-            "LIST_ALL_TABLES=YES",
-        ]
-        p = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1
-        )
-        _, err = p.communicate()
+        # Make necessary modifications for conversion on temporary database
+        with self.db.file_transaction(start_empty=False, copy_results=False) as work_db:
+            # remove spatialite specific tables that break conversion
+            with work_db.get_session() as session:
+                session.execute(text("DROP TABLE IF EXISTS spatialite_history;"))
+                session.execute(text("DROP TABLE IF EXISTS views_geometry_columns;"))
+            cmd = [
+                "ogr2ogr",
+                "-f",
+                "gpkg",
+                str(self.db.path.with_suffix(".gpkg")),
+                str(work_db.path),
+                "-oo",
+                "LIST_ALL_TABLES=YES",
+            ]
+            p = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1
+            )
+            _, err = p.communicate()
         # ogr2ogr raises an error while the conversion is fine
         # so to catch any real issues we compare the produced error with the expected error
         expected_error = b'ERROR 1: sqlite3_exec(CREATE TABLE "sqlite_sequence" ( "rowid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT, "seq" TEXT)) failed: object name reserved for internal use: sqlite_sequence\n'
         if err != expected_error:
-            raise RuntimeError(f"ogr2ogr didn't finish as expected:\n{err}")
+            raise UpgradeFailedError(f"ogr2ogr didn't finish as expected:\n{err}")
         # correct database path
         self.db.path = self.db.path.with_suffix(".gpkg")
         # reset engine so new path is used on the next call of get_engine()
