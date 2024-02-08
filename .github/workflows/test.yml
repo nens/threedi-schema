@@ -18,19 +18,24 @@ jobs:
           # 2019
           - python: 3.8
             os: ubuntu-20.04
-            pins: "sqlalchemy==1.4.0 alembic==1.8.* geoalchemy2==0.9.*"
+            pins: "sqlalchemy==1.4.1 alembic==1.8.* geoalchemy2==0.14.0"
           # 2021
           - python: 3.9
             os: ubuntu-20.04
-            pins: "sqlalchemy==1.4.30 alembic==1.8.* geoalchemy2==0.10.*"
+            pins: "sqlalchemy==1.4.30 alembic==1.8.* geoalchemy2==0.14.0"
           # 2022
           - python: "3.10"
             os: ubuntu-22.04
-            pins: "sqlalchemy==1.4.44 alembic==1.8.* geoalchemy2==0.12.*"
-          # current
+            pins: "sqlalchemy==1.4.44 alembic==1.8.* geoalchemy2==0.14.0"
+          # 2023
           - python: "3.11"
+            os: ubuntu-22.04
+            pins: "sqlalchemy==2.0.24 alembic==1.13.1 geoalchemy2==0.14.3"
+            pytestargs: "-Werror"
+          # 2024
+          - python: "3.12"
             os: ubuntu-latest
-            pins: ""
+            pins: "sqlalchemy==2.0.* alembic==1.13.* geoalchemy2==0.14.*"
             pytestargs: "-Werror"
 
     steps:
