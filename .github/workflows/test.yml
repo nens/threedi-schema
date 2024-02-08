@@ -52,7 +52,12 @@ jobs:
         run: |
           sudo apt update
           sudo apt install --yes --no-install-recommends sqlite3 libsqlite3-mod-spatialite
-  
+
+      - name: Install gdal (for ogr2ogr)
+        run: |
+          sudo apt update          
+          sudo apt install --yes --no-install-recommends gdal-bin
+
       - name: Install python dependencies
         shell: bash
         run: |
