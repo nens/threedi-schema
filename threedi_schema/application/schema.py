@@ -226,6 +226,7 @@ class ModelSchema:
         # remove spatialite specific tables that break conversion
         with self.db.get_session() as session:
             session.execute(text("DROP TABLE IF EXISTS spatialite_history;"))
+            session.execute(text("DROP TABLE IF EXISTS views_geometry_columns;"))
         cmd = [
             "ogr2ogr",
             "-f",
@@ -240,7 +241,16 @@ class ModelSchema:
         )
         # TODO: process output
         output, err = p.communicate()
+
         # correct database path
         self.db.path = self.db.path.with_suffix(".gpkg")
         # reset engine so new path is used on the next call of get_engine()
         self.db._engine = None
+        # recreate views_geometry_columns so set_views works as expected
+        with self.db.get_session() as session:
+            session.execute(
+                text(
+                    "CREATE TABLE views_geometry_columns(view_name TEXT, view_geometry TEXT, view_rowid TEXT, f_table_name VARCHAR(256), f_geometry_column VARCHAR(256))"
+                )
+            )
+        self.set_views()
