@@ -236,6 +236,7 @@ class ModelSchema:
                 session.execute(text("DROP TABLE IF EXISTS views_geometry_columns;"))
             cmd = [
                 "ogr2ogr",
+                "-skipfailures",
                 "-f",
                 "gpkg",
                 str(self.db.path.with_suffix(".gpkg")),

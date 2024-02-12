@@ -6,3 +6,4 @@ def test_convert_to_geopackage(oldest_sqlite):
     # Ensure that after the conversion the geopackage is used
     assert oldest_sqlite.path.suffix == ".gpkg"
     assert oldest_sqlite.get_engine().dialect.name == "geopackage"
+    assert oldest_sqlite.schema.validate_schema()
