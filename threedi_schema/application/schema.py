@@ -251,9 +251,13 @@ class ModelSchema:
                 raise UpgradeFailedError(f"ogr2ogr failed conversion:\n{e}")
             _, err = p.communicate()
         # Error handling
-        err_list = err.decode('ascii').split('\n')
+        err_list = err.decode("ascii").split("\n")
         # collect only errors and remove 'ERROR #:'
-        errors = [': '.join(item.split(': ')[1:]) for item in err_list if item.lower().startswith('error')]
+        errors = [
+            ": ".join(item.split(": ")[1:])
+            for item in err_list
+            if item.lower().startswith("error")
+        ]
         # While creating the geopackage with ogr2ogr an error occurs
         # because ogr2ogr tries to create a table `sqlite_sequence`, which
         # is reserved for internal use. The resulting database seems fine,
@@ -261,7 +265,9 @@ class ModelSchema:
         # convert error output to list
         expected_error = 'sqlite3_exec(CREATE TABLE "sqlite_sequence" ( "rowid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT, "seq" TEXT)) failed: object name reserved for internal use: sqlite_sequence'
         if (len(errors) != 1) or errors[0] != expected_error:
-            raise UpgradeFailedError(f"ogr2ogr didn't finish as expected:\n{err.decode('ascii')}")
+            raise UpgradeFailedError(
+                f"ogr2ogr didn't finish as expected:\n{err.decode('ascii')}"
+            )
         # Correct path of current database
         self.db.path = self.db.path.with_suffix(".gpkg")
         # Reset engine so new path is used on the next call of get_engine()
