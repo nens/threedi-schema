@@ -243,15 +243,25 @@ class ModelSchema:
                 "-oo",
                 "LIST_ALL_TABLES=YES",
             ]
-            p = subprocess.Popen(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1
-            )
+            try:
+                p = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1
+                )
+            except Exception as e:
+                raise UpgradeFailedError(f"ogr2ogr failed conversion:\n{e}")
             _, err = p.communicate()
-        # ogr2ogr raises an error while the conversion is fine.
-        # To catch any real issues we compare the produced error with the expected error
-        expected_error = b'ERROR 1: sqlite3_exec(CREATE TABLE "sqlite_sequence" ( "rowid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT, "seq" TEXT)) failed: object name reserved for internal use: sqlite_sequence\n'
-        if err != expected_error:
-            raise UpgradeFailedError(f"ogr2ogr didn't finish as expected:\n{err}")
+        # Error handling
+        err_list = err.decode('ascii').split('\n')
+        # collect only errors and remove 'ERROR #:'
+        errors = [': '.join(item.split(': ')[1:]) for item in err_list if item.lower().startswith('error')]
+        # While creating the geopackage with ogr2ogr an error occurs
+        # because ogr2ogr tries to create a table `sqlite_sequence`, which
+        # is reserved for internal use. The resulting database seems fine,
+        # so this specific error is ignored
+        # convert error output to list
+        expected_error = 'sqlite3_exec(CREATE TABLE "sqlite_sequence" ( "rowid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT, "seq" TEXT)) failed: object name reserved for internal use: sqlite_sequence'
+        if (len(errors) != 1) or errors[0] != expected_error:
+            raise UpgradeFailedError(f"ogr2ogr didn't finish as expected:\n{err.decode('ascii')}")
         # Correct path of current database
         self.db.path = self.db.path.with_suffix(".gpkg")
         # Reset engine so new path is used on the next call of get_engine()
