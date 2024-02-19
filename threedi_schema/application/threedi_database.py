@@ -80,7 +80,9 @@ class ThreediDatabase:
                 poolclass = NullPool
             if str(self.path).endswith(".gpkg"):
                 engine = create_engine(
-                    "gpkg:///{0}".format(self._path), echo=self.echo, poolclass=poolclass
+                    "gpkg:///{0}".format(self._path),
+                    echo=self.echo,
+                    poolclass=poolclass,
                 )
                 listen(engine, "connect", load_spatialite_gpkg)
             else:
