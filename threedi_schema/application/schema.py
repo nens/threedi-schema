@@ -227,13 +227,19 @@ class ModelSchema:
         if self.db.get_engine().dialect.name == "geopackage":
             return
         # Check if ogr2ogr
-        result = subprocess.run('ogr2ogr --version', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run(
+            "ogr2ogr --version",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
         ## ogr2ogr is installed; make sure the version is high enough and return if not
         if result.returncode == 0:
             # get version
-            version = re.findall(r'\b(\d+\.\d+\.\d+)\b', result.stdout)[0]
+            version = re.findall(r"\b(\d+\.\d+\.\d+)\b", result.stdout)[0]
             # trim patch version and convert to float
-            float_version = float(version[0:version.rfind('.')])
+            float_version = float(version[0 : version.rfind(".")])
             if float_version < 3.4:
                 warnings.warn(
                     f"ogr2ogr 3.4 (part of GDAL) or newer is needed to convert spatialite to geopackage "
