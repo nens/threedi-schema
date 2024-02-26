@@ -17,7 +17,6 @@ def test_convert_to_geopackage(oldest_sqlite):
         stderr=subprocess.PIPE,
         text=True,
     )
-    print(result)
     expect_success = False
     if result.returncode == 0:
         # get version
@@ -32,7 +31,7 @@ def test_convert_to_geopackage(oldest_sqlite):
         assert oldest_sqlite.get_engine().dialect.name == "geopackage"
         assert oldest_sqlite.schema.validate_schema()
     else:
-        with pytest.warns(None):
+        with pytest.warns():
             assert oldest_sqlite.path.suffix == ".sqlite"
             assert oldest_sqlite.get_engine().dialect.name == "sqlite"
             assert oldest_sqlite.schema.validate_schema()
