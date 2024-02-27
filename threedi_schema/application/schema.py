@@ -281,7 +281,8 @@ class ModelSchema:
                 raise UpgradeFailedError(f"ogr2ogr failed conversion:\n{e}")
             _, err = p.communicate()
         # Error handling
-        err_list = err.decode("ascii").split("\n")
+        # convert bytes to utf and split lines
+        err_list = err.decode("utf-8").split("\n")
         # collect only errors and remove 'ERROR #:'
         errors = [
             ": ".join(item.split(": ")[1:])
@@ -296,7 +297,7 @@ class ModelSchema:
         expected_error = 'sqlite3_exec(CREATE TABLE "sqlite_sequence" ( "rowid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT, "seq" TEXT)) failed: object name reserved for internal use: sqlite_sequence'
         if (len(errors) != 1) or errors[0] != expected_error:
             raise UpgradeFailedError(
-                f"ogr2ogr didn't finish as expected:\n{err.decode('ascii')}"
+                f"ogr2ogr didn't finish as expected:\n{err.decode('utf-8')}"
             )
         # Correct path of current database
         self.db.path = self.db.path.with_suffix(".gpkg")
