@@ -25,14 +25,14 @@ def test_convert_to_geopackage(oldest_sqlite):
         if float_version >= 3.4:
             expect_success = True
     if expect_success:
-        oldest_sqlite.schema.upgrade(convert_to_geopackage=True)
+        oldest_sqlite.schema.convert_to_geopackage()
         # Ensure that after the conversion the geopackage is used
         assert oldest_sqlite.path.suffix == ".gpkg"
         assert oldest_sqlite.get_engine().dialect.name == "geopackage"
         assert oldest_sqlite.schema.validate_schema()
     else:
         with pytest.warns():
-            oldest_sqlite.schema.upgrade(convert_to_geopackage=True)
+            oldest_sqlite.schema.convert_to_geopackage()
             assert oldest_sqlite.path.suffix == ".sqlite"
             assert oldest_sqlite.get_engine().dialect.name == "sqlite"
             assert oldest_sqlite.schema.validate_schema()
