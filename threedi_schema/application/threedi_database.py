@@ -41,7 +41,7 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 
 class ThreediDatabase:
     def __init__(self, path, echo=False):
-        self._path = str(path)
+        self.path = path
         self.echo = echo
         self._engine = None
         self._base_metadata = None
@@ -58,44 +58,28 @@ class ThreediDatabase:
     def base_path(self):
         return Path(self.path).absolute().parent
 
-    @property
-    def path(self):
-        return Path(self._path)
-
-    @path.setter
-    def path(self, value):
-        if isinstance(value, Path):
-            self._path = str(value)
-        else:
-            self._path = value
-
     def get_engine(self, get_seperate_engine=False):
+        # Ensure that path is a Path so checks below don't break
+        path = Path(self.path)
         if self._engine is None or get_seperate_engine:
-            if self._path == "":
+            if path == Path(""):
                 # Special case in-memory SQLite:
                 # https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#threading-pooling-behavior
                 poolclass = None
             else:
                 poolclass = NullPool
-            if self.path.suffix.lower() == ".gpkg":
-                engine = create_engine(
-                    "gpkg:///{0}".format(self._path),
-                    echo=self.echo,
-                    poolclass=poolclass,
-                )
-                listen(engine, "connect", load_spatialite_gpkg)
+            if path.suffix.lower() == ".gpkg":
+                engine_path = f"gpkg:///{path}"
+                engine_fn = load_spatialite_gpkg
             else:
-                engine = create_engine(
-                    "sqlite:///{0}".format(self._path),
-                    echo=self.echo,
-                    poolclass=poolclass,
-                )
-                listen(engine, "connect", load_spatialite)
+                engine_path = "sqlite:///" if path == Path("") else f"sqlite:///{path}"
+                engine_fn = load_spatialite
+            engine = create_engine(engine_path, echo=self.echo, poolclass=poolclass)
+            listen(engine, "connect", engine_fn)
             if get_seperate_engine:
                 return engine
             else:
                 self._engine = engine
-
         return self._engine
 
     def get_session(self, **kwargs):

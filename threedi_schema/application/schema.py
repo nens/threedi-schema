@@ -1,6 +1,7 @@
 import re
 import subprocess
 import warnings
+from pathlib import Path
 
 # This import is needed for alembic to recognize the geopackage dialect
 import geoalchemy2.alembic_helpers  # noqa: F401
@@ -268,7 +269,7 @@ class ModelSchema:
                 "-skipfailures",
                 "-f",
                 "gpkg",
-                str(self.db.path.with_suffix(".gpkg")),
+                str(Path(self.db.path).with_suffix(".gpkg")),
                 str(work_db.path),
                 "-oo",
                 "LIST_ALL_TABLES=YES",
@@ -304,7 +305,7 @@ class ModelSchema:
             )
             raise UpgradeFailedError(f"ogr2ogr didn't finish as expected:\n{error_str}")
         # Correct path of current database
-        self.db.path = self.db.path.with_suffix(".gpkg")
+        self.db.path = Path(self.db.path).with_suffix(".gpkg")
         # Reset engine so new path is used on the next call of get_engine()
         self.db._engine = None
         # Recreate views_geometry_columns so set_views works as expected
