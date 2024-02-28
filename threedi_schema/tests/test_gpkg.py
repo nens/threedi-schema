@@ -31,8 +31,13 @@ def test_convert_to_geopackage(oldest_sqlite):
         assert oldest_sqlite.get_engine().dialect.name == "geopackage"
         assert oldest_sqlite.schema.validate_schema()
     else:
+        # Upgrade is not performed in convert_to_geopackage when ogr2ogr doesn't run
+        # because no operation should be performed in that case.
+        # However, this wil result in an invalid schema, so here we will run upgrade manually.
+        # Because convert_to_geopackage() is only used via upgrade; this is not an issue.
         with pytest.warns():
             oldest_sqlite.schema.convert_to_geopackage()
+            oldest_sqlite.schema.upgrade()
             assert oldest_sqlite.path.suffix == ".sqlite"
             assert oldest_sqlite.get_engine().dialect.name == "sqlite"
             assert oldest_sqlite.schema.validate_schema()
