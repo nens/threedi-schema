@@ -41,9 +41,8 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 
 class ThreediDatabase:
     def __init__(self, path, echo=False):
-        self._path = path
+        self._path = str(path)
         self.echo = echo
-
         self._engine = None
         self._base_metadata = None
 
