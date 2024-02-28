@@ -279,14 +279,14 @@ class ModelSchema:
                 )
             except Exception as e:
                 raise UpgradeFailedError(f"ogr2ogr failed conversion:\n{e}")
-            _, err = p.communicate()
+            _, out = p.communicate()
         # Error handling
         # convert bytes to utf and split lines
-        err_list = err.decode("utf-8").split("\n")
+        out_list = out.decode("utf-8").split("\n")
         # collect only errors and remove 'ERROR #:'
         errors = [
-            ": ".join(item.split(": ")[1:])
-            for item in err_list
+            [idx, ": ".join(item.split(": ")[1:])]
+            for idx, item in enumerate(out_list)
             if item.lower().startswith("error")
         ]
         # While creating the geopackage with ogr2ogr an error occurs
@@ -295,10 +295,14 @@ class ModelSchema:
         # so this specific error is ignored
         # convert error output to list
         expected_error = 'sqlite3_exec(CREATE TABLE "sqlite_sequence" ( "rowid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT, "seq" TEXT)) failed: object name reserved for internal use: sqlite_sequence'
-        if (len(errors) != 1) or errors[0] != expected_error:
-            raise UpgradeFailedError(
-                f"ogr2ogr didn't finish as expected:\n{err.decode('utf-8')}"
+        unexpected_error_indices = [
+            idx for idx, error in errors if error.lower() != expected_error.lower()
+        ]
+        if len(unexpected_error_indices) > 0:
+            error_str = "\n".join(
+                [out_list[idx].decode("utf-8") for idx in unexpected_error_indices]
             )
+            raise UpgradeFailedError(f"ogr2ogr didn't finish as expected:\n{error_str}")
         # Correct path of current database
         self.db.path = self.db.path.with_suffix(".gpkg")
         # Reset engine so new path is used on the next call of get_engine()
