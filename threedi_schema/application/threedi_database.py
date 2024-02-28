@@ -41,7 +41,7 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 
 class ThreediDatabase:
     def __init__(self, path, echo=False):
-        self._path = path
+        self.path = path if isinstance(path, Path) else Path(path) 
         self.echo = echo
 
         self._engine = None
@@ -78,7 +78,7 @@ class ThreediDatabase:
                 poolclass = None
             else:
                 poolclass = NullPool
-            if str(self.path).endswith(".gpkg"):
+            if self.path.suffix.lower() == ".gpkg":
                 engine = create_engine(
                     "gpkg:///{0}".format(self._path),
                     echo=self.echo,
