@@ -1,8 +1,8 @@
 Changelog of threedi-schema
 ===================================================
 
-0.220 (unreleased)
---------------------
+0.220 (2024-02-29)
+------------------
 - Add support for geopackage
 - Remove `the_geom_linestring` from `v2_connection_nodes` because geopackage does not support multiple geometry objects in one table
 
