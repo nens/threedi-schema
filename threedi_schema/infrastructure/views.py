@@ -18,7 +18,6 @@ def drop_view(connection, name):
 def recreate_views(db, file_version, all_views, views_to_delete):
     """Recreate predefined views in a ThreediDatabase instance"""
     engine = db.engine
-
     with engine.connect() as connection:
         with connection.begin():
             for name, view in all_views.items():

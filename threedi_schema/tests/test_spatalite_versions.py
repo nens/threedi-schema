@@ -35,11 +35,10 @@ def test_copy_model(empty_sqlite_v3, empty_sqlite_v4):
                 models.ConnectionNode.id,
                 models.ConnectionNode.code,
                 func.ST_AsText(models.ConnectionNode.the_geom),
-                models.ConnectionNode.the_geom_linestring,
             )
         )
 
-        assert records == [(3, "test", "POINT(-71.064544 42.28787)", None)]
+        assert records == [(3, "test", "POINT(-71.064544 42.28787)")]
 
 
 def test_copy_invalid_geometry(empty_sqlite_v3, empty_sqlite_v4):
