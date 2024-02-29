@@ -1,6 +1,12 @@
 Changelog of threedi-schema
 ===================================================
 
+0.221 (unreleased)
+------------------
+
+- Nothing changed yet.
+
+
 0.220 (2024-02-29)
 ------------------
 - Add support for geopackage
