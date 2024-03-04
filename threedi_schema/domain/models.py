@@ -366,7 +366,8 @@ class NumericalSettings(Base):
     limiter_slope_thin_water_layer = Column(Float)
     use_preconditioner_cg = Column(Integer)
     use_nested_newton = Column(IntegerEnum(constants.OffOrStandard))
-
+    flooding_threshold = Column(Float, nullable=False)
+    # TODO: remove relationship?
     global_settings = relationship("GlobalSetting", back_populates="numerical_settings")
 
 
@@ -410,7 +411,6 @@ class GlobalSetting(Base):
     guess_dams = Column(Integer)
     table_step_size = Column(Float, nullable=False)
     maximum_table_step_size = Column(Float)
-    flooding_threshold = Column(Float, nullable=False)
     advection_1d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
     advection_2d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
     dem_file = Column(String(255))

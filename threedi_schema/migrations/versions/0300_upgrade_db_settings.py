@@ -23,7 +23,7 @@ RENAME_TABLES = [
     ("v2_vegetation_drag", "vegetation_drag"),
 ]
 
-RENAME_FIELDS = {"aggregation_settings":
+RENAME_COLUMNS = {"aggregation_settings":
                      [
                          ("timestep", "interval")
                      ],
@@ -58,20 +58,30 @@ RENAME_FIELDS = {"aggregation_settings":
                      ]
                  }
 
+MOVE_COLUMNS = [(sa.Column("flooding_threshold", sa.Float()), "v2_global_settings", "numerical_settings")]
+
 
 def upgrade():
+    # Rename tables
     for old_name, new_name in RENAME_TABLES:
         op.rename_table(old_name, new_name)
-    for table, fields in RENAME_FIELDS.items():
+
+    # Rename columns
+    for table, columns in RENAME_COLUMNS.items():
         with op.batch_alter_table(table) as batch_op:
-            for old_name, new_name in fields:
+            for old_name, new_name in columns:
                 batch_op.alter_column(old_name, new_column_name=new_name)
 
+    # Move columns
+    for col, src, dst in MOVE_COLUMNS:
+        op.add_column(dst, col)
+        op.execute(sa.text(f'INSERT INTO {dst} ({col.name}) SELECT {col.name} FROM {src}'))
+        # TODO: maybe drop column
 
 def downgrade():
-    for table, fields in RENAME_FIELDS.items():
+    for table, columns in RENAME_COLUMNS.items():
         with op.batch_alter_table(table) as batch_op:
-            for old_name, new_name in fields:
+            for old_name, new_name in columns:
                 batch_op.alter_column(new_name, new_column_name=old_name)
     for old_name, new_name in RENAME_TABLES:
         op.rename_table(new_name, old_name)
