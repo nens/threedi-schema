@@ -18,11 +18,14 @@ RENAME_TABLES = [
     ("v2_aggregation_settings", "aggregation_settings"),
     ("v2_groundwater", "groundwater"),
     ("v2_interflow", "interflow"),
-    ("v2_numerical_settings", "numerical_settings")
+    ("v2_numerical_settings", "numerical_settings"),
+    ("v2_simple_infiltration", "simple_infiltration"),
 ]
 
 RENAME_FIELDS = {"aggregation_settings":
-                     [("timestep", "interval")],
+                     [
+                         ("timestep", "interval")
+                     ],
                  "groundwater":
                      [
                          ("groundwater_hydro_connectivity", "groundwater_hydraulic_conductivity"),
@@ -46,6 +49,11 @@ RENAME_FIELDS = {"aggregation_settings":
                          ("integration_method", "time_integration_method"),
                          ("use_of_nested_newton", "use_nested_newton"),
                          ("precon_cg", "use_preconditioner_cg"),
+                     ],
+                 "simple_infiltration":
+                     [
+                         ("max_infiltration_capacity", "max_infiltration_volume"),
+                         ("max_infiltration_capacity_file", "max_infiltration_volume_file"),
                      ]
                  }
 

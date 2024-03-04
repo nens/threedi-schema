@@ -149,15 +149,15 @@ class Interflow(Base):
 
 
 class SimpleInfiltration(Base):
-    __tablename__ = "v2_simple_infiltration"
+    __tablename__ = "simple_infiltration"
     id = Column(Integer, primary_key=True)
     infiltration_rate = Column(Float)
     infiltration_rate_file = Column(String(255))
     infiltration_surface_option = Column(
         IntegerEnum(constants.InfiltrationSurfaceOption)
     )
-    max_infiltration_capacity = Column(Float)
-    max_infiltration_capacity_file = Column(Text)
+    max_infiltration_volume = Column(Float)
+    max_infiltration_volume_file = Column(Text)
     display_name = Column(String(255))
 
     global_settings = relationship(
