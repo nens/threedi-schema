@@ -205,17 +205,19 @@ class Surface(Base):
 
 
 class GroundWater(Base):
-    __tablename__ = "v2_groundwater"
+    __tablename__ = "groundwater"
     id = Column(Integer, primary_key=True)
 
     groundwater_impervious_layer_level = Column(Float)
     groundwater_impervious_layer_level_file = Column(String(255))
-    groundwater_impervious_layer_level_type = Column(
+    groundwater_impervious_layer_level_aggregation = Column(
         IntegerEnum(constants.InitializationType)
     )
     phreatic_storage_capacity = Column(Float)
     phreatic_storage_capacity_file = Column(String(255))
-    phreatic_storage_capacity_type = Column(IntegerEnum(constants.InitializationType))
+    phreatic_storage_capacity_aggregation = Column(
+        IntegerEnum(constants.InitializationType)
+    )
     equilibrium_infiltration_rate = Column(Float)
     equilibrium_infiltration_rate_file = Column(String(255))
     equilibrium_infiltration_rate_type = Column(
@@ -223,13 +225,17 @@ class GroundWater(Base):
     )
     initial_infiltration_rate = Column(Float)
     initial_infiltration_rate_file = Column(String(255))
-    initial_infiltration_rate_type = Column(IntegerEnum(constants.InitializationType))
+    initial_infiltration_rate_aggregation = Column(
+        IntegerEnum(constants.InitializationType)
+    )
     infiltration_decay_period = Column(Float)
     infiltration_decay_period_file = Column(String(255))
-    infiltration_decay_period_type = Column(IntegerEnum(constants.InitializationType))
-    groundwater_hydro_connectivity = Column(Float)
-    groundwater_hydro_connectivity_file = Column(String(255))
-    groundwater_hydro_connectivity_type = Column(
+    infiltration_decay_period_aggregation = Column(
+        IntegerEnum(constants.InitializationType)
+    )
+    groundwater_hydraulic_conductivity = Column(Float)
+    groundwater_hydraulic_conductivity_file = Column(String(255))
+    groundwater_hydraulic_conductivity_aggregation = Column(
         IntegerEnum(constants.InitializationType)
     )
     display_name = Column(String(255))
@@ -475,7 +481,7 @@ class GlobalSetting(Base):
 
 
 class AggregationSettings(Base):
-    __tablename__ = "v2_aggregation_settings"
+    __tablename__ = "aggregation_settings"
     id = Column(Integer, primary_key=True)
 
     global_settings_id = Column(
@@ -487,7 +493,7 @@ class AggregationSettings(Base):
     aggregation_method = Column(
         VarcharEnum(constants.AggregationMethod), nullable=False
     )
-    timestep = Column(Integer, nullable=False)
+    interval = Column(Integer, nullable=False)
 
 
 class BoundaryCondition1D(Base):
