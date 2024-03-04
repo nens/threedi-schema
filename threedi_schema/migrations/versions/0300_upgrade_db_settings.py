@@ -20,6 +20,7 @@ RENAME_TABLES = [
     ("v2_interflow", "interflow"),
     ("v2_numerical_settings", "numerical_settings"),
     ("v2_simple_infiltration", "simple_infiltration"),
+    ("v2_vegetation_drag", "vegetation_drag"),
 ]
 
 RENAME_FIELDS = {"aggregation_settings":

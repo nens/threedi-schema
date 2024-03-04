@@ -371,7 +371,7 @@ class NumericalSettings(Base):
 
 
 class VegetationDrag(Base):
-    __tablename__ = "v2_vegetation_drag"
+    __tablename__ = "vegetation_drag"
     id = Column(Integer, primary_key=True)
     display_name = Column(String(255))
 
