@@ -134,7 +134,7 @@ class Floodfill(Base):
 
 
 class Interflow(Base):
-    __tablename__ = "v2_interflow"
+    __tablename__ = "interflow"
     id = Column(Integer, primary_key=True)
     interflow_type = Column(IntegerEnum(constants.InterflowType), nullable=False)
     porosity = Column(Float)
@@ -338,34 +338,34 @@ class Manhole(Base):
 
 
 class NumericalSettings(Base):
-    __tablename__ = "v2_numerical_settings"
+    __tablename__ = "numerical_settings"
     id = Column(Integer, primary_key=True)
     cfl_strictness_factor_1d = Column(Float)
     cfl_strictness_factor_2d = Column(Float)
     convergence_cg = Column(Float)
     convergence_eps = Column(Float)
     flow_direction_threshold = Column(Float)
-    frict_shallow_water_correction = Column(
+    friction_shallow_water_depth_correction = Column(
         IntegerEnum(constants.FrictionShallowWaterDepthCorrection)
     )
     general_numerical_threshold = Column(Float)
-    integration_method = Column(IntegerEnum(constants.IntegrationMethod))
-    limiter_grad_1d = Column(IntegerEnum(constants.OffOrStandard))
-    limiter_grad_2d = Column(IntegerEnum(constants.OffOrStandard))
+    time_integration_method = Column(IntegerEnum(constants.IntegrationMethod))
+    limiter_waterlevel_gradient_1d = Column(IntegerEnum(constants.OffOrStandard))
+    limiter_waterlevel_gradient_2d = Column(IntegerEnum(constants.OffOrStandard))
     limiter_slope_crossectional_area_2d = Column(
         IntegerEnum(constants.LimiterSlopeXArea)
     )
     limiter_slope_friction_2d = Column(IntegerEnum(constants.OffOrStandard))
-    max_nonlin_iterations = Column(Integer)
-    max_degree = Column(Integer)
-    minimum_friction_velocity = Column(Float)
-    minimum_surface_area = Column(Float)
-    precon_cg = Column(IntegerEnum(constants.OffOrStandard))
+    max_non_linear_newton_iterations = Column(Integer)
+    max_degree_gauss_seidel = Column(Integer)
+    min_friction_velocity = Column(Float)
+    min_surface_area = Column(Float)
+    use_preconditioner_cg = Column(IntegerEnum(constants.OffOrStandard))
     preissmann_slot = Column(Float)
     pump_implicit_ratio = Column(Float)
-    thin_water_layer_definition = Column(Float)
-    use_of_cg = Column(Integer)
-    use_of_nested_newton = Column(IntegerEnum(constants.OffOrStandard))
+    limiter_slope_thin_water_layer = Column(Float)
+    use_preconditioner_cg = Column(Integer)
+    use_nested_newton = Column(IntegerEnum(constants.OffOrStandard))
 
     global_settings = relationship("GlobalSetting", back_populates="numerical_settings")
 

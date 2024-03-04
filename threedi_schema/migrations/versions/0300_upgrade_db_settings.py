@@ -16,7 +16,9 @@ depends_on = None
 
 RENAME_TABLES = [
     ("v2_aggregation_settings", "aggregation_settings"),
-    ('v2_groundwater', 'groundwater'),
+    ("v2_groundwater", "groundwater"),
+    ("v2_interflow", "interflow"),
+    ("v2_numerical_settings", "numerical_settings")
 ]
 
 RENAME_FIELDS = {"aggregation_settings":
@@ -30,10 +32,22 @@ RENAME_FIELDS = {"aggregation_settings":
                          ("infiltration_decay_period_type", "infiltration_decay_period_aggregation"),
                          ("initial_infiltration_rate_type", "initial_infiltration_rate_aggregation"),
                          ("phreatic_storage_capacity_type", "phreatic_storage_capacity_aggregation"),
+                     ],
+                 "numerical_settings":
+                     [
+                         ("frict_shallow_water_correction", "friction_shallow_water_depth_correction"),
+                         ("thin_water_layer_definition", "limiter_slope_thin_water_layer"),
+                         ("limiter_grad_1d", "limiter_waterlevel_gradient_1d"),
+                         ("limiter_grad_2d", "limiter_waterlevel_gradient_2d"),
+                         ("max_degree", "max_degree_gauss_seidel"),
+                         ("max_nonlin_iterations", "max_non_linear_newton_iterations"),
+                         ("minimum_friction_velocity", "min_friction_velocity"),
+                         ("minimum_surface_area", "min_surface_area"),
+                         ("integration_method", "time_integration_method"),
+                         ("use_of_nested_newton", "use_nested_newton"),
+                         ("precon_cg", "use_preconditioner_cg"),
                      ]
                  }
-
-
 
 
 def upgrade():
