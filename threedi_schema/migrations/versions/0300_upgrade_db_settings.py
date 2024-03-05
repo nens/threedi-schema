@@ -15,12 +15,12 @@ branch_labels = None
 depends_on = None
 
 RENAME_TABLES = [
-    ("v2_aggregation_settings", "aggregation_settings"),
-    ("v2_groundwater", "groundwater"),
-    ("v2_interflow", "interflow"),
-    ("v2_numerical_settings", "numerical_settings"),
-    ("v2_simple_infiltration", "simple_infiltration"),
-    ("v2_vegetation_drag", "vegetation_drag"),
+    ["v2_aggregation_settings", "aggregation_settings"],
+    ["v2_groundwater", "groundwater"],
+    ["v2_interflow", "interflow"],
+    ["v2_numerical_settings", "numerical_settings"],
+    ["v2_simple_infiltration", "simple_infiltration"],
+    ["v2_vegetation_drag", "vegetation_drag"],
 ]
 
 RENAME_COLUMNS = {"aggregation_settings":
@@ -58,9 +58,17 @@ RENAME_COLUMNS = {"aggregation_settings":
                      ]
                  }
 
-ADD_COLUMNS = [["numerical_settings", sa.Column("flooding_threshold", sa.Float())]]
+ADD_TABLES = ["initial_conditions"]
 
-MOVE_COLUMNS = [["v2_global_settings", "flooding_threshold", "numerical_settings", "flooding_threshold"]]
+ADD_COLUMNS = [
+    ["numerical_settings", sa.Column("flooding_threshold", sa.Float())],
+    ["initial_conditions", sa.Column("initial_groundwater_level", sa.Float())]
+]
+
+MOVE_COLUMNS = [
+    ["v2_global_settings", "flooding_threshold", "numerical_settings", "flooding_threshold"],
+    ["v2_global_settings", "initial_groundwater_level", "initial_conditions", "initial_groundwater_level"]
+]
 
 
 def upgrade():
@@ -73,6 +81,10 @@ def upgrade():
         with op.batch_alter_table(table) as batch_op:
             for old_name, new_name in columns:
                 batch_op.alter_column(old_name, new_column_name=new_name)
+
+    # Add tables
+    for table_name in ADD_TABLES:
+        op.create_table(table_name, sa.Column("id", sa.Integer(), primary_key=True))
 
     # Add columns
     for dst_table, col in ADD_COLUMNS:

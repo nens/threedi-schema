@@ -480,6 +480,12 @@ class GlobalSetting(Base):
     )
 
 
+class InitialConditions:
+    __tablename__ = "initial_conditions"
+    id = Column(Integer, primary_key=True)
+    initial_groundwater_level = Column(Float)
+
+
 class AggregationSettings(Base):
     __tablename__ = "aggregation_settings"
     id = Column(Integer, primary_key=True)
