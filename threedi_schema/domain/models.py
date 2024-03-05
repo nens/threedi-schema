@@ -399,9 +399,6 @@ class GlobalSetting(Base):
     use_2d_flow = Column(Boolean, nullable=False)
     use_1d_flow = Column(Boolean, nullable=False)
     manhole_storage_area = Column(Float)
-    name = Column(String(128))
-    sim_time_step = Column(Float, nullable=False)
-    output_time_step = Column(Float, nullable=False)
     nr_timesteps = Column(Integer)
     start_time = Column(Text)
     start_date = Column(Text)
@@ -411,33 +408,22 @@ class GlobalSetting(Base):
     guess_dams = Column(Integer)
     table_step_size = Column(Float, nullable=False)
     maximum_table_step_size = Column(Float)
-    advection_1d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
-    advection_2d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
+    # advection_1d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
+    # advection_2d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
     dem_file = Column(String(255))
     frict_type = Column(IntegerEnum(constants.FrictionType), nullable=False)
     frict_coef = Column(Float, nullable=False)
     frict_coef_file = Column(String(255))
-    water_level_ini_type = Column(IntegerEnum(constants.InitializationType))
-    initial_waterlevel = Column(Float, nullable=False)
-    initial_waterlevel_file = Column(String(255))
-    interception_global = Column(Float)
-    interception_file = Column(String(255))
     dem_obstacle_detection = Column(Boolean, nullable=False)
     dem_obstacle_height = Column(Float)
     embedded_cutoff_threshold = Column(Float)
     epsg_code = Column(Integer)
-    timestep_plus = Column(Boolean, nullable=False)
     max_angle_1d_advection = Column(Float)
-    minimum_sim_time_step = Column(Float, nullable=False)
-    maximum_sim_time_step = Column(Float)
     frict_avg = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
     wind_shielding_file = Column(String(255))
     use_0d_inflow = Column(IntegerEnum(constants.InflowType), nullable=False)
     table_step_size_1d = Column(Float)
     use_2d_rain = Column(Integer, nullable=False)
-    initial_groundwater_level = Column(Float)
-    initial_groundwater_level_file = Column(String(255))
-    initial_groundwater_level_type = Column(IntegerEnum(constants.InitializationType))
 
     numerical_settings_id = Column(
         Integer, ForeignKey(NumericalSettings.__tablename__ + ".id"), nullable=False
@@ -478,14 +464,33 @@ class GlobalSetting(Base):
         foreign_keys=vegetation_drag_settings_id,
         back_populates="global_settings",
     )
+    # TODO: FIX THIS
+    # Removing these items will break 'copy_models'
+    output_time_step = Column(Float, nullable=False)
+    minimum_sim_time_step = Column(Float, nullable=False)
 
 
-class InitialConditions:
+class InitialConditions(Base):
     __tablename__ = "initial_conditions"
     id = Column(Integer, primary_key=True)
     initial_groundwater_level = Column(Float)
+    initial_groundwater_level_file = Column(String(255))
+    initial_groundwater_level_aggregation = Column(
+        IntegerEnum(constants.InitializationType)
+    )
+    initial_waterlevel = Column(Float, nullable=False)
+    initial_water_level_aggregation = Column(IntegerEnum(constants.InitializationType))
+    initial_waterlevel_file = Column(String(255))
 
 
+class Interception(Base):
+    __tablename__ = "interception"
+    id = Column(Integer, primary_key=True)
+    interception = Column(Float)
+    interception_file = Column(String(255))
+
+
+# class PhysicalSettings
 class AggregationSettings(Base):
     __tablename__ = "aggregation_settings"
     id = Column(Integer, primary_key=True)
@@ -500,6 +505,29 @@ class AggregationSettings(Base):
         VarcharEnum(constants.AggregationMethod), nullable=False
     )
     interval = Column(Integer, nullable=False)
+
+
+class PhysicalSettings(Base):
+    __tablename__ = "physical_settings"
+    id = Column(Integer, primary_key=True)
+    use_advection_1d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
+    use_advection_2d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
+
+
+class SimulationTemplateSettings(Base):
+    __tablename__ = "simulation_template_settings"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(128))
+
+
+class TimeStepSettings(Base):
+    __tablename__ = "time_step_settings"
+    id = Column(Integer, primary_key=True)
+    time_step = Column(Float, nullable=True)
+    min_time_step = Column(Float, nullable=True)
+    max_time_step = Column(Float, nullable=True)
+    output_time_step = Column(Float, nullable=False)
+    use_time_step_stretch = Column(Boolean)
 
 
 class BoundaryCondition1D(Base):
