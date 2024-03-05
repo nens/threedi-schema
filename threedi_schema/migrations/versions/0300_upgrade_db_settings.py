@@ -58,7 +58,9 @@ RENAME_COLUMNS = {"aggregation_settings":
                      ]
                  }
 
-MOVE_COLUMNS = [(sa.Column("flooding_threshold", sa.Float()), "v2_global_settings", "numerical_settings")]
+ADD_COLUMNS = [["numerical_settings", sa.Column("flooding_threshold", sa.Float())]]
+
+MOVE_COLUMNS = [["v2_global_settings", "flooding_threshold", "numerical_settings", "flooding_threshold"]]
 
 
 def upgrade():
@@ -72,11 +74,14 @@ def upgrade():
             for old_name, new_name in columns:
                 batch_op.alter_column(old_name, new_column_name=new_name)
 
+    # Add columns
+    for dst_table, col in ADD_COLUMNS:
+        op.add_column(dst_table, col)
+
     # Move columns
-    for col, src, dst in MOVE_COLUMNS:
-        op.add_column(dst, col)
-        op.execute(sa.text(f'INSERT INTO {dst} ({col.name}) SELECT {col.name} FROM {src}'))
-        # TODO: maybe drop column
+    for src_table, src_col, dst_table, dst_col in MOVE_COLUMNS:
+        op.execute(sa.text(f'INSERT INTO {dst_table} ({dst_col}) SELECT {src_col} FROM {src_table}'))
+        # TODO: maybe drop copied column from source
 
 def downgrade():
     for table, columns in RENAME_COLUMNS.items():
