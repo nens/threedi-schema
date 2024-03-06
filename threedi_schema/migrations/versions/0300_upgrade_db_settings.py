@@ -22,6 +22,7 @@ RENAME_TABLES = [
     ["v2_numerical_settings", "numerical_settings"],
     ["v2_simple_infiltration", "simple_infiltration"],
     ["v2_vegetation_drag", "vegetation_drag"],
+    ["v2_global_settings", "model_settings"]
 ]
 
 RENAME_COLUMNS = {
@@ -57,6 +58,18 @@ RENAME_COLUMNS = {
         [
             ["max_infiltration_capacity", "max_infiltration_volume"],
             ["max_infiltration_capacity_file", "max_infiltration_volume_file"],
+        ],
+    "model_settings":
+        [
+            ["dist_calc_points", "calculation_point_distance_1d"],
+            ["frict_avg", "friction_averaging"],
+            ["frict_coef", "friction_coefficient"],
+            ["frict_coef_file", "friction_coefficient_file"],
+            ["frict_type", "friction_type"],
+            ["manhole_storage_area", "manhole_aboveground_storage_area"],
+            ["grid_space", "minimum_cell_size"],
+            ["kmax", "nr_grid_levels"],
+            ["table_step_size", "minimum_table_step_size"],
         ],
 }
 
@@ -130,11 +143,16 @@ def upgrade():
         op.add_column(dst_table, col)
 
     # Move columns
-    src_table = "v2_global_settings"
+    src_table = "model_settings"
     for dst_table, columns in COPY_FROM_GLOBAL.items():
         dst_cols = ', '.join(dst for _, dst in columns)
         src_cols = ', '.join(src for src, _ in columns)
         op.execute(sa.text(f'INSERT INTO {dst_table} ({dst_cols}) SELECT {src_cols} FROM {src_table}'))
+        # Remove columns specified in src_columns from src_table
+        # for src, _ in columns:
+        #     op.execute(sa.text(f'ALTER TABLE {src_table} DROP COLUMN {src};'))
+
+
 
 
 def downgrade():

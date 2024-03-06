@@ -145,7 +145,7 @@ class Interflow(Base):
     hydraulic_conductivity_file = Column(String(255))
     display_name = Column(String(255))
 
-    global_settings = relationship("GlobalSetting", back_populates="interflow_settings")
+    global_settings = relationship("ModelSettings", back_populates="interflow_settings")
 
 
 class SimpleInfiltration(Base):
@@ -161,7 +161,7 @@ class SimpleInfiltration(Base):
     display_name = Column(String(255))
 
     global_settings = relationship(
-        "GlobalSetting", back_populates="simple_infiltration_settings"
+        "ModelSettings", back_populates="simple_infiltration_settings"
     )
 
 
@@ -243,7 +243,7 @@ class GroundWater(Base):
     leakage_file = Column(String(255))
 
     global_settings = relationship(
-        "GlobalSetting", back_populates="groundwater_settings"
+        "ModelSettings", back_populates="groundwater_settings"
     )
 
 
@@ -368,7 +368,7 @@ class NumericalSettings(Base):
     use_nested_newton = Column(IntegerEnum(constants.OffOrStandard))
     flooding_threshold = Column(Float, nullable=False)
     # TODO: remove relationship?
-    global_settings = relationship("GlobalSetting", back_populates="numerical_settings")
+    global_settings = relationship("ModelSettings", back_populates="numerical_settings")
 
 
 class VegetationDrag(Base):
@@ -389,37 +389,37 @@ class VegetationDrag(Base):
     vegetation_drag_coefficient_file = Column(String(255))
 
     global_settings = relationship(
-        "GlobalSetting", back_populates="vegetation_drag_settings"
+        "ModelSettings", back_populates="vegetation_drag_settings"
     )
 
 
-class GlobalSetting(Base):
-    __tablename__ = "v2_global_settings"
+class ModelSettings(Base):
+    __tablename__ = "model_settings"
     id = Column(Integer, primary_key=True)
     use_2d_flow = Column(Boolean, nullable=False)
     use_1d_flow = Column(Boolean, nullable=False)
-    manhole_storage_area = Column(Float)
+    manhole_aboveground_storage_area = Column(Float)
     nr_timesteps = Column(Integer)
     start_time = Column(Text)
     start_date = Column(Text)
-    grid_space = Column(Float, nullable=False)
-    dist_calc_points = Column(Float, nullable=False)
-    kmax = Column(Integer, nullable=False)
+    minimum_cell_size = Column(Float, nullable=False)
+    calculation_point_distance_1d = Column(Float, nullable=False)
+    nr_grid_levels = Column(Integer, nullable=False)
     guess_dams = Column(Integer)
-    table_step_size = Column(Float, nullable=False)
+    minimum_table_step_size = Column(Float, nullable=False)
     maximum_table_step_size = Column(Float)
     # advection_1d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
     # advection_2d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
     dem_file = Column(String(255))
-    frict_type = Column(IntegerEnum(constants.FrictionType), nullable=False)
-    frict_coef = Column(Float, nullable=False)
-    frict_coef_file = Column(String(255))
+    friction_type = Column(IntegerEnum(constants.FrictionType), nullable=False)
+    friction_coefficient = Column(Float, nullable=False)
+    friction_coefficient_file = Column(String(255))
     dem_obstacle_detection = Column(Boolean, nullable=False)
     dem_obstacle_height = Column(Float)
     embedded_cutoff_threshold = Column(Float)
     epsg_code = Column(Integer)
     max_angle_1d_advection = Column(Float)
-    frict_avg = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
+    friction_averaging = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
     wind_shielding_file = Column(String(255))
     use_0d_inflow = Column(IntegerEnum(constants.InflowType), nullable=False)
     table_step_size_1d = Column(Float)
@@ -496,7 +496,7 @@ class AggregationSettings(Base):
     id = Column(Integer, primary_key=True)
 
     global_settings_id = Column(
-        Integer, ForeignKey(GlobalSetting.__tablename__ + ".id")
+        Integer, ForeignKey(ModelSettings.__tablename__ + ".id")
     )
 
     var_name = Column(String(100), nullable=False)
@@ -918,7 +918,7 @@ DECLARED_MODELS = [
     DemAverageArea,
     ExchangeLine,
     Floodfill,
-    GlobalSetting,
+    ModelSettings,
     GridRefinement,
     GridRefinementArea,
     GroundWater,
