@@ -9,11 +9,16 @@ import sqlalchemy as sa
 from sqlalchemy import Boolean, Column, Float, Integer, String
 from alembic import op
 
+from sqlalchemy.orm import declarative_base, Session
+
 # revision identifiers, used by Alembic.
 revision = "0300"
 down_revision = "0220"
 branch_labels = None
 depends_on = None
+
+Base = declarative_base()
+
 
 RENAME_TABLES = [
     ["v2_aggregation_settings", "aggregation_settings"],
@@ -74,23 +79,29 @@ RENAME_COLUMNS = {
 }
 
 ADD_COLUMNS = [
-    ["numerical_settings", Column("flooding_threshold", Float)],
-    ["initial_conditions", Column("initial_groundwater_level", Float)],
-    ["initial_conditions", Column("initial_groundwater_level_aggregation", Integer)],
-    ["initial_conditions", Column("initial_groundwater_level_file", String)],
-    ["initial_conditions", Column("initial_water_level", Float)],
-    ["initial_conditions", Column("initial_water_level_aggregation", Integer)],
-    ["initial_conditions", Column("initial_water_level_file", String)],
-    ["interception", Column("interception", Float)],
-    ["interception", Column("interception_file", String)],
-    ["physical_settings", Column("use_advection_1d", Integer)],
-    ["physical_settings", Column("use_advection_2d", Integer)],
-    ["simulation_template_settings", Column("name", String)],
-    ["time_step_settings", Column("max_time_step", Float, nullable=True)],
-    ["time_step_settings", Column("min_time_step", Float, nullable=True)],
-    ["time_step_settings", Column("output_time_step", Float, nullable=True)],
-    ["time_step_settings", Column("time_step", Float, nullable=True)],
-    ["time_step_settings", Column("use_time_step_stretch", Boolean)],
+    ("numerical_settings", Column("flooding_threshold", Float)),
+    ("initial_conditions", Column("initial_groundwater_level", Float)),
+    ("initial_conditions", Column("initial_groundwater_level_aggregation", Integer)),
+    ("initial_conditions", Column("initial_groundwater_level_file", String)),
+    ("initial_conditions", Column("initial_water_level", Float)),
+    ("initial_conditions", Column("initial_water_level_aggregation", Integer)),
+    ("initial_conditions", Column("initial_water_level_file", String)),
+    ("interception", Column("interception", Float)),
+    ("interception", Column("interception_file", String)),
+    ("physical_settings", Column("use_advection_1d", Integer)),
+    ("physical_settings", Column("use_advection_2d", Integer)),
+    ("simulation_template_settings", Column("name", String)),
+    ("time_step_settings", Column("max_time_step", Float, nullable=True)),
+    ("time_step_settings", Column("min_time_step", Float, nullable=True)),
+    ("time_step_settings", Column("output_time_step", Float, nullable=True)),
+    ("time_step_settings", Column("time_step", Float, nullable=True)),
+    ("time_step_settings", Column("use_time_step_stretch", Boolean)),
+    ("model_settings", Column("use_groundwater_flow", Boolean)),
+    ("model_settings", Column("use_groundwater_storage", Boolean)),
+    ("model_settings", Column("use_structure_control", Boolean)),
+    ("model_settings", Column("use_simple_infiltration", Boolean)),
+    ("model_settings", Column("use_vegetation_drag_2d", Boolean)),
+    ("model_settings", Column("use_interflow", Boolean)),
 ]
 
 COPY_FROM_GLOBAL = {
@@ -121,6 +132,14 @@ COPY_FROM_GLOBAL = {
         ("interception_file", "interception_file"),
     ],
 }
+
+GLOBAL_SETTINGS_ID_TO_BOOL = [
+    ("use_groundwater_storage", "groundwater"),
+    ("use_interflow", "interflow"),
+    ("use_structure_control", "v2_control_group"),
+    ("use_simple_infiltration", "simple_infiltration"),
+    ("use_vegetation_drag_2d", "vegetation_drag")
+]
 
 
 def upgrade():
@@ -153,6 +172,14 @@ def upgrade():
         #     op.execute(sa.text(f'ALTER TABLE {src_table} DROP COLUMN {src};'))
 
 
+    # TODO use_groundwater_flow: True if either groundwater.hydro_connectivity or groundwater.hydro_connectivity_file is NOT NULL
+    session = Session(bind=op.get_bind())
+    for settings_col, settings_table in GLOBAL_SETTINGS_ID_TO_BOOL:
+        op.execute(f"UPDATE model_settings SET {settings_col} = 1 WHERE groundwater_settings_id IS NOT NULL;")
+        op.execute(
+            f"DELETE FROM {settings_table} WHERE id NOT IN (SELECT {settings_col} FROM model_settings WHERE {settings_col} IS NOT NULL);")
+        # TODO: drop columns
+        # op.execute(sa.text(f'ALTER TABLE model_settings DROP COLUMN {settings_col};'))
 
 
 def downgrade():

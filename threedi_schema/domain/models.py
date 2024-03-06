@@ -145,8 +145,6 @@ class Interflow(Base):
     hydraulic_conductivity_file = Column(String(255))
     display_name = Column(String(255))
 
-    global_settings = relationship("ModelSettings", back_populates="interflow_settings")
-
 
 class SimpleInfiltration(Base):
     __tablename__ = "simple_infiltration"
@@ -159,10 +157,6 @@ class SimpleInfiltration(Base):
     max_infiltration_volume = Column(Float)
     max_infiltration_volume_file = Column(Text)
     display_name = Column(String(255))
-
-    global_settings = relationship(
-        "ModelSettings", back_populates="simple_infiltration_settings"
-    )
 
 
 class SurfaceParameter(Base):
@@ -241,10 +235,6 @@ class GroundWater(Base):
     display_name = Column(String(255))
     leakage = Column(Float)
     leakage_file = Column(String(255))
-
-    global_settings = relationship(
-        "ModelSettings", back_populates="groundwater_settings"
-    )
 
 
 class GridRefinement(Base):
@@ -388,10 +378,6 @@ class VegetationDrag(Base):
     vegetation_drag_coefficient = Column(Float)
     vegetation_drag_coefficient_file = Column(String(255))
 
-    global_settings = relationship(
-        "ModelSettings", back_populates="vegetation_drag_settings"
-    )
-
 
 class ModelSettings(Base):
     __tablename__ = "model_settings"
@@ -433,37 +419,12 @@ class ModelSettings(Base):
         foreign_keys=numerical_settings_id,
         back_populates="global_settings",
     )
-    interflow_settings_id = Column(Integer, ForeignKey(Interflow.__tablename__ + ".id"))
-    interflow_settings = relationship(
-        Interflow,
-        foreign_keys=interflow_settings_id,
-        back_populates="global_settings",
-    )
-    control_group_id = Column(Integer, ForeignKey(ControlGroup.__tablename__ + ".id"))
-    simple_infiltration_settings_id = Column(
-        Integer, ForeignKey(SimpleInfiltration.__tablename__ + ".id")
-    )
-    simple_infiltration_settings = relationship(
-        SimpleInfiltration,
-        foreign_keys=simple_infiltration_settings_id,
-        back_populates="global_settings",
-    )
-    groundwater_settings_id = Column(
-        Integer, ForeignKey(GroundWater.__tablename__ + ".id")
-    )
-    groundwater_settings = relationship(
-        GroundWater,
-        foreign_keys=groundwater_settings_id,
-        back_populates="global_settings",
-    )
-    vegetation_drag_settings_id = Column(
-        Integer, ForeignKey(VegetationDrag.__tablename__ + ".id")
-    )
-    vegetation_drag_settings = relationship(
-        VegetationDrag,
-        foreign_keys=vegetation_drag_settings_id,
-        back_populates="global_settings",
-    )
+    use_interflow = Column(Boolean)
+    use_structure_control = Column(Boolean)
+    use_simple_infiltration = Column(Boolean)
+    use_groundwater_flow = Column(Boolean)
+    use_groundwater_storage = Column(Boolean)
+    use_vegetation_drag_2d = Column(Boolean)
     # TODO: FIX THIS
     # Removing these items will break 'copy_models'
     output_time_step = Column(Float, nullable=False)
