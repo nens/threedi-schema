@@ -415,7 +415,7 @@ class InitialConditions(Base):
     initial_groundwater_level_aggregation = Column(
         IntegerEnum(constants.InitializationType)
     )
-    initial_waterlevel = Column(Float, nullable=False)
+    initial_waterlevel = Column(Float)
     initial_water_level_aggregation = Column(IntegerEnum(constants.InitializationType))
     initial_waterlevel_file = Column(String(255))
 
@@ -439,8 +439,8 @@ class AggregationSettings(Base):
 class PhysicalSettings(Base):
     __tablename__ = "physical_settings"
     id = Column(Integer, primary_key=True)
-    use_advection_1d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
-    use_advection_2d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
+    use_advection_1d = Column(IntegerEnum(constants.OffOrStandard))
+    use_advection_2d = Column(IntegerEnum(constants.OffOrStandard))
 
 
 class groundwater(Base):
@@ -452,10 +452,10 @@ class groundwater(Base):
 class TimeStepSettings(Base):
     __tablename__ = "time_step_settings"
     id = Column(Integer, primary_key=True)
-    time_step = Column(Float, nullable=True)
-    min_time_step = Column(Float, nullable=True)
-    max_time_step = Column(Float, nullable=True)
-    output_time_step = Column(Float, nullable=False)
+    time_step = Column(Float)
+    min_time_step = Column(Float)
+    max_time_step = Column(Float)
+    output_time_step = Column(Float)
     use_time_step_stretch = Column(Boolean)
 
 
