@@ -21,61 +21,72 @@ Base = declarative_base()
 
 
 RENAME_TABLES = [
-    ["v2_aggregation_settings", "aggregation_settings"],
-    ["v2_groundwater", "groundwater"],
-    ["v2_interflow", "interflow"],
-    ["v2_numerical_settings", "numerical_settings"],
-    ["v2_simple_infiltration", "simple_infiltration"],
-    ["v2_vegetation_drag", "vegetation_drag"],
-    ["v2_global_settings", "model_settings"]
+    ("v2_aggregation_settings", "aggregation_settings"),
+    ("v2_groundwater", "groundwater"),
+    ("v2_interflow", "interflow"),
+    ("v2_numerical_settings", "numerical_settings"),
+    ("v2_simple_infiltration", "simple_infiltration"),
+    ("v2_vegetation_drag", "vegetation_drag"),
+    ("v2_global_settings", "model_settings")
 ]
 
+# (old name, new name)
 RENAME_COLUMNS = {
     "aggregation_settings":
         [
-            ["timestep", "interval"],
+            ("timestep", "interval"),
         ],
     "groundwater":
         [
-            ["groundwater_hydro_connectivity", "groundwater_hydraulic_conductivity"],
-            ["groundwater_hydro_connectivity_file", "groundwater_hydraulic_conductivity_file"],
-            ["groundwater_hydro_connectivity_type", "groundwater_hydraulic_conductivity_aggregation"],
-            ["groundwater_impervious_layer_level_type", "groundwater_impervious_layer_level_aggregation"],
-            ["infiltration_decay_period_type", "infiltration_decay_period_aggregation"],
-            ["initial_infiltration_rate_type", "initial_infiltration_rate_aggregation"],
-            ["phreatic_storage_capacity_type", "phreatic_storage_capacity_aggregation"],
+            ("groundwater_hydro_connectivity", "groundwater_hydraulic_conductivity"),
+            ("groundwater_hydro_connectivity_file", "groundwater_hydraulic_conductivity_file"),
+            ("groundwater_hydro_connectivity_type", "groundwater_hydraulic_conductivity_aggregation"),
+            ("groundwater_impervious_layer_level_type", "groundwater_impervious_layer_level_aggregation"),
+            ("infiltration_decay_period_type", "infiltration_decay_period_aggregation"),
+            ("initial_infiltration_rate_type", "initial_infiltration_rate_aggregation"),
+            ("phreatic_storage_capacity_type", "phreatic_storage_capacity_aggregation"),
         ],
     "numerical_settings":
         [
-            ["frict_shallow_water_correction", "friction_shallow_water_depth_correction"],
-            ["thin_water_layer_definition", "limiter_slope_thin_water_layer"],
-            ["limiter_grad_1d", "limiter_waterlevel_gradient_1d"],
-            ["limiter_grad_2d", "limiter_waterlevel_gradient_2d"],
-            ["max_degree", "max_degree_gauss_seidel"],
-            ["max_nonlin_iterations", "max_non_linear_newton_iterations"],
-            ["minimum_friction_velocity", "min_friction_velocity"],
-            ["minimum_surface_area", "min_surface_area"],
-            ["integration_method", "time_integration_method"],
-            ["use_of_nested_newton", "use_nested_newton"],
-            ["precon_cg", "use_preconditioner_cg"],
+            ("frict_shallow_water_correction", "friction_shallow_water_depth_correction"),
+            ("thin_water_layer_definition", "limiter_slope_thin_water_layer"),
+            ("limiter_grad_1d", "limiter_waterlevel_gradient_1d"),
+            ("limiter_grad_2d", "limiter_waterlevel_gradient_2d"),
+            ("max_degree", "max_degree_gauss_seidel"),
+            ("max_nonlin_iterations", "max_non_linear_newton_iterations"),
+            ("minimum_friction_velocity", "min_friction_velocity"),
+            ("minimum_surface_area", "min_surface_area"),
+            ("integration_method", "time_integration_method"),
+            ("use_of_nested_newton", "use_nested_newton"),
+            ("precon_cg", "use_preconditioner_cg"),
         ],
     "simple_infiltration":
         [
-            ["max_infiltration_capacity", "max_infiltration_volume"],
-            ["max_infiltration_capacity_file", "max_infiltration_volume_file"],
+            ("max_infiltration_capacity", "max_infiltration_volume"),
+            ("max_infiltration_capacity_file", "max_infiltration_volume_file"),
         ],
     "model_settings":
         [
-            ["dist_calc_points", "calculation_point_distance_1d"],
-            ["frict_avg", "friction_averaging"],
-            ["frict_coef", "friction_coefficient"],
-            ["frict_coef_file", "friction_coefficient_file"],
-            ["frict_type", "friction_type"],
-            ["manhole_storage_area", "manhole_aboveground_storage_area"],
-            ["grid_space", "minimum_cell_size"],
-            ["kmax", "nr_grid_levels"],
-            ["table_step_size", "minimum_table_step_size"],
+            ("dist_calc_points", "calculation_point_distance_1d"),
+            ("frict_avg", "friction_averaging"),
+            ("frict_coef", "friction_coefficient"),
+            ("frict_coef_file", "friction_coefficient_file"),
+            ("frict_type", "friction_type"),
+            ("manhole_storage_area", "manhole_aboveground_storage_area"),
+            ("grid_space", "minimum_cell_size"),
+            ("kmax", "nr_grid_levels"),
+            ("table_step_size", "minimum_table_step_size"),
         ],
+}
+
+FORCE_NOT_NULLABLE = {
+    "aggregation_settings": "all",
+    "groundwater": "all",
+    "interflow": "all",
+    "numerical_settings": "all",
+    "simple_infiltration": "all",
+    "vegetation_drag": "all",
+    "model_settings": "all",
 }
 
 ADD_COLUMNS = [
@@ -180,6 +191,18 @@ def upgrade():
             f"DELETE FROM {settings_table} WHERE id NOT IN (SELECT {settings_col} FROM model_settings WHERE {settings_col} IS NOT NULL);")
         # TODO: drop columns
         # op.execute(sa.text(f'ALTER TABLE model_settings DROP COLUMN {settings_col};'))
+
+    # Make columns of the renamed tables, except for id, nullable
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    for table_name, columns in FORCE_NOT_NULLABLE.items():
+        if columns == "all":
+            _columns = [column['name'] for column in inspector.get_columns(table_name) if column['name'] == 'id']
+        else:
+            _columns = columns
+        with op.batch_alter_table(table) as batch_op:
+            for column in _columns:
+                batch_op.alter_column(column_name=column, nullable=True)
 
 
 def downgrade():

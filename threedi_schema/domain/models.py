@@ -136,7 +136,7 @@ class Floodfill(Base):
 class Interflow(Base):
     __tablename__ = "interflow"
     id = Column(Integer, primary_key=True)
-    interflow_type = Column(IntegerEnum(constants.InterflowType), nullable=False)
+    interflow_type = Column(IntegerEnum(constants.InterflowType))
     porosity = Column(Float)
     porosity_file = Column(String(255))
     porosity_layer_thickness = Column(Float)
@@ -353,7 +353,7 @@ class NumericalSettings(Base):
     limiter_slope_thin_water_layer = Column(Float)
     use_preconditioner_cg = Column(Integer)
     use_nested_newton = Column(IntegerEnum(constants.OffOrStandard))
-    flooding_threshold = Column(Float, nullable=False)
+    flooding_threshold = Column(Float)
 
 
 class VegetationDrag(Base):
@@ -376,25 +376,25 @@ class VegetationDrag(Base):
 class ModelSettings(Base):
     __tablename__ = "model_settings"
     id = Column(Integer, primary_key=True)
-    use_2d_flow = Column(Boolean, nullable=False)
-    use_1d_flow = Column(Boolean, nullable=False)
+    use_2d_flow = Column(Boolean)
+    use_1d_flow = Column(Boolean)
     manhole_aboveground_storage_area = Column(Float)
-    minimum_cell_size = Column(Float, nullable=False)
-    calculation_point_distance_1d = Column(Float, nullable=False)
-    nr_grid_levels = Column(Integer, nullable=False)
-    minimum_table_step_size = Column(Float, nullable=False)
+    minimum_cell_size = Column(Float)
+    calculation_point_distance_1d = Column(Float)
+    nr_grid_levels = Column(Integer)
+    minimum_table_step_size = Column(Float)
     maximum_table_step_size = Column(Float)
     dem_file = Column(String(255))
-    friction_type = Column(IntegerEnum(constants.FrictionType), nullable=False)
-    friction_coefficient = Column(Float, nullable=False)
+    friction_type = Column(IntegerEnum(constants.FrictionType))
+    friction_coefficient = Column(Float)
     friction_coefficient_file = Column(String(255))
     embedded_cutoff_threshold = Column(Float)
     epsg_code = Column(Integer)
     max_angle_1d_advection = Column(Float)
-    friction_averaging = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
-    use_0d_inflow = Column(IntegerEnum(constants.InflowType), nullable=False)
+    friction_averaging = Column(IntegerEnum(constants.OffOrStandard))
+    use_0d_inflow = Column(IntegerEnum(constants.InflowType))
     table_step_size_1d = Column(Float)
-    use_2d_rain = Column(Integer, nullable=False)
+    use_2d_rain = Column(Integer)
     use_interflow = Column(Boolean)
     use_structure_control = Column(Boolean)
     use_simple_infiltration = Column(Boolean)
@@ -431,11 +431,9 @@ class Interception(Base):
 class AggregationSettings(Base):
     __tablename__ = "aggregation_settings"
     id = Column(Integer, primary_key=True)
-    flow_variable = Column(VarcharEnum(constants.FlowVariable), nullable=False)
-    aggregation_method = Column(
-        VarcharEnum(constants.AggregationMethod), nullable=False
-    )
-    interval = Column(Integer, nullable=False)
+    flow_variable = Column(VarcharEnum(constants.FlowVariable))
+    aggregation_method = Column(VarcharEnum(constants.AggregationMethod))
+    interval = Column(Integer)
 
 
 class PhysicalSettings(Base):
@@ -445,7 +443,7 @@ class PhysicalSettings(Base):
     use_advection_2d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
 
 
-class SimulationTemplateSettings(Base):
+class groundwater(Base):
     __tablename__ = "simulation_template_settings"
     id = Column(Integer, primary_key=True)
     name = Column(String(128))
