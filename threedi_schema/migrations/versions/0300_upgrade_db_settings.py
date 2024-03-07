@@ -196,6 +196,11 @@ def upgrade():
         #     except:
         #         print(f"oepsie, {src_table}.{src}")
 
+    # Drop columns
+    with op.batch_alter_table("model_settings") as batch_op:
+        batch_op.drop_column("output_time_step")
+        batch_op.drop_column("minimum_sim_time_step")
+
     # TODO use_groundwater_flow: True if either groundwater.hydro_connectivity or groundwater.hydro_connectivity_file is NOT NULL
     session = Session(bind=op.get_bind())
     for settings_col, settings_table in GLOBAL_SETTINGS_ID_TO_BOOL:
