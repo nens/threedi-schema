@@ -11,6 +11,8 @@ from alembic import op
 
 from sqlalchemy.orm import declarative_base, Session
 
+from threedi_schema.domain.models import ModelSettings
+
 # revision identifiers, used by Alembic.
 revision = "0300"
 down_revision = "0220"
@@ -196,7 +198,6 @@ def upgrade():
         #     except:
         #         print(f"oepsie, {src_table}.{src}")
 
-    # TODO use_groundwater_flow: True if either groundwater.hydro_connectivity or groundwater.hydro_connectivity_file is NOT NULL
     session = Session(bind=op.get_bind())
     for settings_col, settings_table in GLOBAL_SETTINGS_ID_TO_BOOL:
         op.execute(f"UPDATE model_settings SET {settings_col} = 1 WHERE groundwater_settings_id IS NOT NULL;")
@@ -212,6 +213,10 @@ def upgrade():
         END;
         """
     op.execute(sql)
+
+    # remove path - this will not work with nested paths!
+    op.execute(f"UPDATE model_settings SET dem_file = SUBSTR(dem_file, INSTR(dem_file, '/') + 1)")
+    op.execute(f"UPDATE model_settings SET dem_file = SUBSTR(dem_file, INSTR(dem_file, '\') + 1)")
 
     # Make columns of the renamed tables, except for id, nullable
     conn = op.get_bind()
