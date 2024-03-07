@@ -19,7 +19,6 @@ depends_on = None
 
 Base = declarative_base()
 
-
 RENAME_TABLES = [
     ("v2_aggregation_settings", "aggregation_settings"),
     ("v2_groundwater", "groundwater"),
@@ -154,6 +153,16 @@ GLOBAL_SETTINGS_ID_TO_BOOL = [
 
 
 def upgrade():
+    # disable triggers
+    # trigger_names = ['gpkg_metadata_reference_row_id_value_update', 'gpkg_metadata_reference_row_id_value_insert']
+    # trigger_map = {}
+    # # conn = sqlite3.connect(tmp_sqlite)
+    # # cursor = conn.cursor()
+    # # trigger_map = {name : op.execute(f"-- SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = '{name}';").fetchall()[0][0]
+    #                # for name in trigger_names}
+    # for name in trigger_map:
+    #     op.execute(f"DROP TRIGGER IF EXISTS {name}")
+
     # Rename tables
     for old_name, new_name in RENAME_TABLES:
         op.rename_table(old_name, new_name)
@@ -180,8 +189,12 @@ def upgrade():
         op.execute(sa.text(f'INSERT INTO {dst_table} ({dst_cols}) SELECT {src_cols} FROM {src_table}'))
         # Remove columns specified in src_columns from src_table
         # for src, _ in columns:
-        #     op.execute(sa.text(f'ALTER TABLE {src_table} DROP COLUMN {src};'))
-
+        #     # op.drop_column(src_table, src)
+        #     try:
+        #         op.drop_column(src_table, src)
+        #     # op.execute(sa.text(f'-- ALTER TABLE {src_table} DROP COLUMN {src};'))
+        #     except:
+        #         print(f"oepsie, {src_table}.{src}")
 
     # TODO use_groundwater_flow: True if either groundwater.hydro_connectivity or groundwater.hydro_connectivity_file is NOT NULL
     session = Session(bind=op.get_bind())
@@ -191,6 +204,14 @@ def upgrade():
             f"DELETE FROM {settings_table} WHERE id NOT IN (SELECT {settings_col} FROM model_settings WHERE {settings_col} IS NOT NULL);")
         # TODO: drop columns
         # op.execute(sa.text(f'ALTER TABLE model_settings DROP COLUMN {settings_col};'))
+    sql = """
+        UPDATE model_settings
+        SET use_groundwater_flow = CASE
+            WHEN (SELECT groundwater_hydraulic_conductivity FROM groundwater LIMIT 1) IS NOT NULL OR (SELECT groundwater_hydraulic_conductivity_file FROM groundwater LIMIT 1) IS NOT NULL THEN 1
+            ELSE 0
+        END;
+        """
+    op.execute(sql)
 
     # Make columns of the renamed tables, except for id, nullable
     conn = op.get_bind()
