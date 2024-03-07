@@ -80,16 +80,6 @@ RENAME_COLUMNS = {
         ],
 }
 
-FORCE_NOT_NULLABLE = {
-    "aggregation_settings": "all",
-    "groundwater": "all",
-    "interflow": "all",
-    "numerical_settings": "all",
-    "simple_infiltration": "all",
-    "vegetation_drag": "all",
-    "model_settings": "all",
-}
-
 ADD_COLUMNS = [
     ("numerical_settings", Column("flooding_threshold", Float)),
     ("initial_conditions", Column("initial_groundwater_level", Float)),
@@ -145,72 +135,72 @@ COPY_FROM_GLOBAL = {
     ],
 }
 
+# Columns set to True if a mapping between use_* and settings table exists
+# (boolean column, setting id, setting table)
 GLOBAL_SETTINGS_ID_TO_BOOL = [
-    ("use_groundwater_storage", "groundwater"),
-    ("use_interflow", "interflow"),
-    ("use_structure_control", "v2_control_group"),
-    ("use_simple_infiltration", "simple_infiltration"),
-    ("use_vegetation_drag_2d", "vegetation_drag")
+    ("use_groundwater_storage", "groundwater_settings_id", "groundwater"),
+    ("use_interflow", "interflow_settings_id", "interflow"),
+    ("use_structure_control", "control_group_id", "v2_control_group"),
+    ("use_simple_infiltration", "simple_infiltration_settings_id", "simple_infiltration"),
+    ("use_vegetation_drag_2d", "vegetation_drag_settings_id", "vegetation_drag")
 ]
 
 
-def upgrade():
-    # disable triggers
-    # trigger_names = ['gpkg_metadata_reference_row_id_value_update', 'gpkg_metadata_reference_row_id_value_insert']
-    # trigger_map = {}
-    # # conn = sqlite3.connect(tmp_sqlite)
-    # # cursor = conn.cursor()
-    # # trigger_map = {name : op.execute(f"-- SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = '{name}';").fetchall()[0][0]
-    #                # for name in trigger_names}
-    # for name in trigger_map:
-    #     op.execute(f"DROP TRIGGER IF EXISTS {name}")
-
-    # Rename tables
+def rename_tables_and_columns():
+    # Rename existing tables
     for old_name, new_name in RENAME_TABLES:
         op.rename_table(old_name, new_name)
 
-    # Rename columns
+    # Rename existing columns
     for table, columns in RENAME_COLUMNS.items():
         with op.batch_alter_table(table) as batch_op:
             for old_name, new_name in columns:
                 batch_op.alter_column(old_name, new_column_name=new_name)
 
-    # Add tables
+    # Make all columns in the renamed tables nullable (except for the id)
+    connection = op.get_bind()
+    for _, table_name in RENAME_TABLES:
+        table = sa.Table(table_name, sa.MetaData(), autoload_with=connection)
+        with op.batch_alter_table(table_name) as batch_op:
+            for column in table.columns:
+                if column.name == 'id':
+                    continue
+                batch_op.alter_column(column_name=column.name, nullable=True)
+
+
+def create_and_populate_new_tables():
+    # Add new tables
     for table_name in COPY_FROM_GLOBAL.keys():
         op.create_table(table_name, sa.Column("id", sa.Integer(), primary_key=True))
 
-    # Add columns
+    # Add columns to the new tables
     for dst_table, col in ADD_COLUMNS:
-        op.add_column(dst_table, col)
+        with op.batch_alter_table(dst_table) as batch_op:
+            batch_op.add_column(col)
 
-    # Move columns
+    # Move (copy and delte) columns from model_settings to new tables
     src_table = "model_settings"
     for dst_table, columns in COPY_FROM_GLOBAL.items():
         dst_cols = ', '.join(dst for _, dst in columns)
         src_cols = ', '.join(src for src, _ in columns)
         op.execute(sa.text(f'INSERT INTO {dst_table} ({dst_cols}) SELECT {src_cols} FROM {src_table}'))
         # Remove columns specified in src_columns from src_table
-        # for src, _ in columns:
-        #     # op.drop_column(src_table, src)
-        #     try:
-        #         op.drop_column(src_table, src)
-        #     # op.execute(sa.text(f'-- ALTER TABLE {src_table} DROP COLUMN {src};'))
-        #     except:
-        #         print(f"oepsie, {src_table}.{src}")
+        with op.batch_alter_table("model_settings") as batch_op:
+            for src, _ in columns:
+                batch_op.drop_column(src)
 
-    # Drop columns
-    with op.batch_alter_table("model_settings") as batch_op:
-        batch_op.drop_column("output_time_step")
-        batch_op.drop_column("minimum_sim_time_step")
 
-    # TODO use_groundwater_flow: True if either groundwater.hydro_connectivity or groundwater.hydro_connectivity_file is NOT NULL
-    session = Session(bind=op.get_bind())
-    for settings_col, settings_table in GLOBAL_SETTINGS_ID_TO_BOOL:
-        op.execute(f"UPDATE model_settings SET {settings_col} = 1 WHERE groundwater_settings_id IS NOT NULL;")
+def set_bool_settings():
+    for settings_col, settings_id, settings_table in GLOBAL_SETTINGS_ID_TO_BOOL:
+        # set boolean 'use_*' in model_settings if a relationship exists
+        op.execute(f"UPDATE model_settings SET {settings_col} = 1 WHERE {settings_id} IS NOT NULL;")
+        # remove all settings rows, exact for the one matching
         op.execute(
             f"DELETE FROM {settings_table} WHERE id NOT IN (SELECT {settings_col} FROM model_settings WHERE {settings_col} IS NOT NULL);")
-        # TODO: drop columns
-        # op.execute(sa.text(f'ALTER TABLE model_settings DROP COLUMN {settings_col};'))
+    with op.batch_alter_table('model_settings') as batch_op:
+        for _, settings_id, _ in GLOBAL_SETTINGS_ID_TO_BOOL:
+            batch_op.drop_column(settings_id)
+    # set use_groundwater_flow
     sql = """
         UPDATE model_settings
         SET use_groundwater_flow = CASE
@@ -220,21 +210,18 @@ def upgrade():
         """
     op.execute(sql)
 
+
+def correct_dem_paths():
     # remove path - this will not work with nested paths!
     op.execute(f"UPDATE model_settings SET dem_file = SUBSTR(dem_file, INSTR(dem_file, '/') + 1)")
     op.execute(f"UPDATE model_settings SET dem_file = SUBSTR(dem_file, INSTR(dem_file, '\') + 1)")
 
-    # Make columns of the renamed tables, except for id, nullable
-    conn = op.get_bind()
-    inspector = sa.inspect(conn)
-    for table_name, columns in FORCE_NOT_NULLABLE.items():
-        if columns == "all":
-            _columns = [column['name'] for column in inspector.get_columns(table_name) if column['name'] == 'id']
-        else:
-            _columns = columns
-        with op.batch_alter_table(table) as batch_op:
-            for column in _columns:
-                batch_op.alter_column(column_name=column, nullable=True)
+
+def upgrade():
+    rename_tables_and_columns()
+    create_and_populate_new_tables()
+    set_bool_settings()
+    correct_dem_paths()
 
 
 def downgrade():
