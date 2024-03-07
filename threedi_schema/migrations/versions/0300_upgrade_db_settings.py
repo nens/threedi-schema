@@ -11,6 +11,8 @@ from alembic import op
 
 from sqlalchemy.orm import declarative_base, Session
 
+from threedi_schema.domain.models import ModelSettings
+
 # revision identifiers, used by Alembic.
 revision = "0300"
 down_revision = "0220"
@@ -217,6 +219,10 @@ def upgrade():
         END;
         """
     op.execute(sql)
+
+    # remove path - this will not work with nested paths!
+    op.execute(f"UPDATE model_settings SET dem_file = SUBSTR(dem_file, INSTR(dem_file, '/') + 1)")
+    op.execute(f"UPDATE model_settings SET dem_file = SUBSTR(dem_file, INSTR(dem_file, '\') + 1)")
 
     # Make columns of the renamed tables, except for id, nullable
     conn = op.get_bind()
