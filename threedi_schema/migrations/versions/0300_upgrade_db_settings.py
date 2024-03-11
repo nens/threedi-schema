@@ -7,11 +7,12 @@ Create Date: 2024-03-04 10:06
 """
 import sqlalchemy as sa
 from sqlalchemy import Boolean, Column, Float, Integer, String
+from sqlalchemy import inspect, text
 from alembic import op
 
 from sqlalchemy.orm import declarative_base, Session
 
-from threedi_schema.domain.models import ModelSettings
+from typing import Dict, List, Tuple
 
 # revision identifiers, used by Alembic.
 revision = "0300"
@@ -21,13 +22,14 @@ depends_on = None
 
 Base = declarative_base()
 
+# (source table, destination table)
 RENAME_TABLES = [
     ("v2_aggregation_settings", "aggregation_settings"),
     ("v2_groundwater", "groundwater"),
     ("v2_interflow", "interflow"),
     ("v2_numerical_settings", "numerical_settings"),
     ("v2_simple_infiltration", "simple_infiltration"),
-    ("v2_vegetation_drag", "vegetation_drag"),
+    ("v2_vegetation_drag", "vegetation_drag_2d"),
     ("v2_global_settings", "model_settings")
 ]
 
@@ -65,6 +67,7 @@ RENAME_COLUMNS = {
         [
             ("max_infiltration_capacity", "max_infiltration_volume"),
             ("max_infiltration_capacity_file", "max_infiltration_volume_file"),
+            ("infiltration_rate", "infiltration_rate")
         ],
     "model_settings":
         [
@@ -142,58 +145,69 @@ GLOBAL_SETTINGS_ID_TO_BOOL = [
     ("use_interflow", "interflow_settings_id", "interflow"),
     ("use_structure_control", "control_group_id", "v2_control_group"),
     ("use_simple_infiltration", "simple_infiltration_settings_id", "simple_infiltration"),
-    ("use_vegetation_drag_2d", "vegetation_drag_settings_id", "vegetation_drag")
+    ("use_vegetation_drag_2d", "vegetation_drag_settings_id", "vegetation_drag_2d")
 ]
 
 
-def rename_tables_and_columns():
-    # Rename existing tables
-    for old_name, new_name in RENAME_TABLES:
-        op.rename_table(old_name, new_name)
+def rename_tables(table_sets: List[Tuple[str, str]]):
+    # no checks for existence are done, this will fail if a source table doesn't exist
+    for src_name, dst_name in table_sets:
+        op.rename_table(src_name, dst_name)
 
-    # Rename existing columns
-    for table, columns in RENAME_COLUMNS.items():
-        with op.batch_alter_table(table) as batch_op:
-            for old_name, new_name in columns:
-                batch_op.alter_column(old_name, new_column_name=new_name)
 
-    # Make all columns in the renamed tables nullable (except for the id)
+def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
+    # no checks for existence are done, this will fail if table or any source column doesn't exist
+    with op.batch_alter_table(table_name) as batch_op:
+        for src_name, dst_name in columns:
+            batch_op.alter_column(src_name, new_column_name=dst_name)
+
+
+def make_all_columns_nullable(table_name, id_name: str = 'id'):
+    # no checks for existence are done, this will fail if table doesn't exist
     connection = op.get_bind()
-    for _, table_name in RENAME_TABLES:
-        table = sa.Table(table_name, sa.MetaData(), autoload_with=connection)
-        with op.batch_alter_table(table_name) as batch_op:
-            for column in table.columns:
-                if column.name == 'id':
-                    continue
-                batch_op.alter_column(column_name=column.name, nullable=True)
+    table = sa.Table(table_name, sa.MetaData(), autoload_with=connection)
+    with op.batch_alter_table(table_name) as batch_op:
+        for column in table.columns:
+            if column.name == id_name:
+                continue
+            batch_op.alter_column(column_name=column.name, nullable=True)
 
 
-def create_and_populate_new_tables():
-    # Add new tables
-    for table_name in COPY_FROM_GLOBAL.keys():
+def create_new_tables(table_names: List[str]):
+    # no checks for existence are done, this will fail if any table already exists
+    for table_name in table_names:
         op.create_table(table_name, sa.Column("id", sa.Integer(), primary_key=True))
 
-    # Add columns to the new tables
-    for dst_table, col in ADD_COLUMNS:
+
+def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
+    # no checks for existence are done, this will fail if any column already exists
+    for dst_table, col in table_columns:
         with op.batch_alter_table(dst_table) as batch_op:
             batch_op.add_column(col)
 
-    # Move (copy and delte) columns from model_settings to new tables
-    src_table = "model_settings"
-    for dst_table, columns in COPY_FROM_GLOBAL.items():
-        dst_cols = ', '.join(dst for _, dst in columns)
-        src_cols = ', '.join(src for src, _ in columns)
-        op.execute(sa.text(f'INSERT INTO {dst_table} ({dst_cols}) SELECT {src_cols} FROM {src_table}'))
-        # Remove columns specified in src_columns from src_table
-        with op.batch_alter_table("model_settings") as batch_op:
-            for src, _ in columns:
-                batch_op.drop_column(src)
+
+def move_values(src_table: str, dst_table: str, columns: List[str]):
+    # move values from one table to another
+    # no checks for existence are done, this will fail if any table or column doesn't exist
+    dst_cols = ', '.join(dst for _, dst in columns)
+    src_cols = ', '.join(src for src, _ in columns)
+    op.execute(sa.text(f'INSERT INTO {dst_table} ({dst_cols}) SELECT {src_cols} FROM {src_table}'))
+    remove_columns_from_table(src_table, [src for src, _ in columns])
+
+
+def remove_columns_from_table(table_name: str, columns: List[str]):
+    # no checks for existence are done, this will fail if any table or column doesn't exist
+    with op.batch_alter_table(table_name) as batch_op:
+        for column in columns:
+            batch_op.drop_column(column)
 
 
 def set_bool_settings():
+    conn = op.get_bind()
     for settings_col, settings_id, settings_table in GLOBAL_SETTINGS_ID_TO_BOOL:
         # set boolean 'use_*' in model_settings if a relationship exists
-        op.execute(f"UPDATE model_settings SET {settings_col} = 1 WHERE {settings_id} IS NOT NULL;")
+        op.execute(f"UPDATE model_settings SET {settings_col} = TRUE WHERE {settings_id} IS NOT NULL;")
+        op.execute(f"UPDATE model_settings SET {settings_col} = FALSE WHERE {settings_id} IS NULL;")
         # remove all settings rows, exact for the one matching
         op.execute(
             f"DELETE FROM {settings_table} WHERE id NOT IN (SELECT {settings_col} FROM model_settings WHERE {settings_col} IS NOT NULL);")
@@ -218,24 +232,32 @@ def correct_dem_paths():
 
 
 def upgrade():
-    rename_tables_and_columns()
-    create_and_populate_new_tables()
+    rename_tables(RENAME_TABLES)
+    # rename columns in renamed tables
+    for table_name, columns in RENAME_COLUMNS.items():
+        rename_columns(table_name, columns)
+    # make all columns in renamed tables, except id, nullable
+    for _, table_name in RENAME_TABLES:
+        make_all_columns_nullable(table_name)
+    # create new tables
+    create_new_tables(COPY_FROM_GLOBAL.keys())
+    # add empty columns to tables
+    add_columns_to_tables(ADD_COLUMNS)
+    # copy data from model_settings to new tables and columns
+    for dst_table, columns in COPY_FROM_GLOBAL.items():
+        move_values("model_settings", dst_table, columns)
+
     set_bool_settings()
     correct_dem_paths()
 
+    # TODO: organize this better
+    src_tbl = 'model_settings'
+    src_col = 'flooding_threshold'
+    dst_tbl = 'numerical_settings'
+    dst_col = 'flooding_threshold'
+    op.execute(f'UPDATE {dst_tbl} SET {dst_col} = (SELECT {src_col} FROM {src_tbl} LIMIT 1)')
+
 
 def downgrade():
-    # TODO: implement
-    # Do all steps in the reverse order as upgrade
-    # Revert move columns: move columns back to source table
-    # Revert add columns: drop columns
-    # Revert add tables: drop tables
-    # Revert rename columns: restore original name
-    for table, columns in RENAME_COLUMNS.items():
-        with op.batch_alter_table(table) as batch_op:
-            for old_name, new_name in columns:
-                batch_op.alter_column(new_name, new_column_name=old_name)
-
-    # Revert rename tables: restore original name
-    for old_name, new_name in RENAME_TABLES:
-        op.rename_table(new_name, old_name)
+    # Not implemented on purpose
+    print("Downgrade back from 0.3xx is not supported")

@@ -357,7 +357,7 @@ class NumericalSettings(Base):
 
 
 class VegetationDrag(Base):
-    __tablename__ = "vegetation_drag"
+    __tablename__ = "vegetation_drag_2d"
     id = Column(Integer, primary_key=True)
 
     vegetation_height = Column(Float)
@@ -443,7 +443,7 @@ class PhysicalSettings(Base):
     use_advection_2d = Column(IntegerEnum(constants.OffOrStandard))
 
 
-class groundwater(Base):
+class SimulationTemplateSettings(Base):
     __tablename__ = "simulation_template_settings"
     id = Column(Integer, primary_key=True)
     name = Column(String(128))
