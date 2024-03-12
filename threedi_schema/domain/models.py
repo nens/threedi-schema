@@ -401,10 +401,6 @@ class ModelSettings(Base):
     use_groundwater_flow = Column(Boolean)
     use_groundwater_storage = Column(Boolean)
     use_vegetation_drag_2d = Column(Boolean)
-    # TODO: FIX THIS
-    # Removing these items will break 'copy_models'
-    # output_time_step = Column(Float, nullable=False)
-    # minimum_sim_time_step = Column(Float, nullable=False)
 
 
 class InitialConditions(Base):
