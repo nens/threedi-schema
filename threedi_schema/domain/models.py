@@ -411,9 +411,9 @@ class InitialConditions(Base):
     initial_groundwater_level_aggregation = Column(
         IntegerEnum(constants.InitializationType)
     )
-    initial_waterlevel = Column(Float)
+    initial_water_level = Column(Float)
     initial_water_level_aggregation = Column(IntegerEnum(constants.InitializationType))
-    initial_waterlevel_file = Column(String(255))
+    initial_water_level_file = Column(String(255))
 
 
 class Interception(Base):
