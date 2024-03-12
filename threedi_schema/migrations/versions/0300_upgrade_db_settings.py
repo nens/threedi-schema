@@ -5,14 +5,12 @@ Revises:
 Create Date: 2024-03-04 10:06
 
 """
+from typing import List, Tuple
+
 import sqlalchemy as sa
-from sqlalchemy import Boolean, Column, Float, Integer, String
-from sqlalchemy import inspect, text
 from alembic import op
-
-from sqlalchemy.orm import declarative_base, Session
-
-from typing import Dict, List, Tuple
+from sqlalchemy import Boolean, Column, Float, Integer, String
+from sqlalchemy.orm import declarative_base
 
 # revision identifiers, used by Alembic.
 revision = "0300"
@@ -186,13 +184,18 @@ def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
             batch_op.add_column(col)
 
 
-def move_values(src_table: str, dst_table: str, columns: List[str]):
+def move_multiple_values_to_empty_table(src_table: str, dst_table: str, columns: List[str]):
     # move values from one table to another
     # no checks for existence are done, this will fail if any table or column doesn't exist
     dst_cols = ', '.join(dst for _, dst in columns)
     src_cols = ', '.join(src for src, _ in columns)
     op.execute(sa.text(f'INSERT INTO {dst_table} ({dst_cols}) SELECT {src_cols} FROM {src_table}'))
     remove_columns_from_table(src_table, [src for src, _ in columns])
+
+
+def move_values_to_table(src_table: str, src_col: str, dst_table: str, dst_col: str):
+    op.execute(f'UPDATE {dst_table} SET {dst_col} = (SELECT {src_col} FROM {src_table} LIMIT 1)')
+    remove_columns_from_table(src_table, [src_col])
 
 
 def remove_columns_from_table(table_name: str, columns: List[str]):
@@ -207,7 +210,6 @@ def set_bool_settings():
     for settings_col, settings_id, settings_table in GLOBAL_SETTINGS_ID_TO_BOOL:
         # set boolean 'use_*' in model_settings if a relationship exists
         op.execute(f"UPDATE model_settings SET {settings_col} = TRUE WHERE {settings_id} IS NOT NULL;")
-        op.execute(f"UPDATE model_settings SET {settings_col} = FALSE WHERE {settings_id} IS NULL;")
         # remove all settings rows, exact for the one matching
         op.execute(
             f"DELETE FROM {settings_table} WHERE id NOT IN (SELECT {settings_col} FROM model_settings WHERE {settings_col} IS NOT NULL);")
@@ -245,17 +247,13 @@ def upgrade():
     add_columns_to_tables(ADD_COLUMNS)
     # copy data from model_settings to new tables and columns
     for dst_table, columns in COPY_FROM_GLOBAL.items():
-        move_values("model_settings", dst_table, columns)
-
+        move_multiple_values_to_empty_table("model_settings", dst_table, columns)
+    # copy data from model_settings to existing table
+    move_values_to_table('model_settings', 'flooding_threshold', 'numerical_settings', 'flooding_threshold')
+    # set several 'use' columns based on other settings
     set_bool_settings()
+    # remove relative path prefix from dem path
     correct_dem_paths()
-
-    # TODO: organize this better
-    src_tbl = 'model_settings'
-    src_col = 'flooding_threshold'
-    dst_tbl = 'numerical_settings'
-    dst_col = 'flooding_threshold'
-    op.execute(f'UPDATE {dst_tbl} SET {dst_col} = (SELECT {src_col} FROM {src_tbl} LIMIT 1)')
 
 
 def downgrade():
