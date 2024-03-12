@@ -230,7 +230,6 @@ def set_bool_settings():
 def correct_dem_paths():
     # remove path - this will not work with nested paths!
     op.execute(f"UPDATE model_settings SET dem_file = SUBSTR(dem_file, INSTR(dem_file, '/') + 1)")
-    op.execute(f"UPDATE model_settings SET dem_file = SUBSTR(dem_file, INSTR(dem_file, '\') + 1)")
 
 
 def upgrade():

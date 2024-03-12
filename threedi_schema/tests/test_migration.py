@@ -100,15 +100,17 @@ class TestMigration300:
         cursor_220 = get_cursor_for_schema(schema_220)
         cursor_300 = get_cursor_for_schema(schema_300)
         for src_tbl, src_col, dst_tbl, dst_col in self.migration_map:
-            # dem_file should be different
-            if src_col == 'dem_file':
-                continue
             # use settings are tested seperately
             if f'use_{dst_tbl}' in get_columns_from_schema(schema_300, 'model_settings'):
                 continue
             values_220 = get_values_from_sqlite(cursor_220, src_tbl, src_col)
             values_300 = get_values_from_sqlite(cursor_300, dst_tbl, dst_col)
-            assert values_220 == values_300
+            # dem_file should be different
+            if src_col == 'dem_file':
+                path_220 = Path(values_220[0][0])
+                assert str(path_220.name) == values_300[0][0]
+            else:
+                assert values_220 == values_300
 
     def test_boolean_setting(self, schema_220, schema_300):
         cursor_220 = get_cursor_for_schema(schema_220)
@@ -127,3 +129,5 @@ class TestMigration300:
                 assert settings == []
             if use_val == 1:
                 assert len(settings) == 1
+
+
