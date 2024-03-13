@@ -351,7 +351,7 @@ class NumericalSettings(Base):
     preissmann_slot = Column(Float)
     pump_implicit_ratio = Column(Float)
     limiter_slope_thin_water_layer = Column(Float)
-    use_preconditioner_cg = Column(Integer)
+    use_of_cg = Column(Integer)
     use_nested_newton = Column(IntegerEnum(constants.OffOrStandard))
     flooding_threshold = Column(Float)
 
