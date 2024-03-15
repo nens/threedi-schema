@@ -392,7 +392,6 @@ class ModelSettings(Base):
     epsg_code = Column(Integer)
     max_angle_1d_advection = Column(Float)
     friction_averaging = Column(IntegerEnum(constants.OffOrStandard))
-    use_0d_inflow = Column(IntegerEnum(constants.InflowType))
     table_step_size_1d = Column(Float)
     use_2d_rain = Column(Integer)
     use_interflow = Column(Boolean)
@@ -443,6 +442,7 @@ class SimulationTemplateSettings(Base):
     __tablename__ = "simulation_template_settings"
     id = Column(Integer, primary_key=True)
     name = Column(String(128))
+    use_0d_inflow = Column(IntegerEnum(constants.InflowType))
 
 
 class TimeStepSettings(Base):

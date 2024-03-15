@@ -94,6 +94,7 @@ ADD_COLUMNS = [
     ("physical_settings", Column("use_advection_1d", Integer)),
     ("physical_settings", Column("use_advection_2d", Integer)),
     ("simulation_template_settings", Column("name", String)),
+    ("simulation_template_settings", Column("use_0d_inflow", Integer)),
     ("time_step_settings", Column("max_time_step", Float)),
     ("time_step_settings", Column("min_time_step", Float)),
     ("time_step_settings", Column("output_time_step", Float)),
@@ -110,6 +111,7 @@ ADD_COLUMNS = [
 COPY_FROM_GLOBAL = {
     "simulation_template_settings": [
         ("name", "name"),
+        ("use_0d_inflow", "use_0d_inflow")
     ],
     "time_step_settings": [
         ("maximum_sim_time_step", "max_time_step"),
