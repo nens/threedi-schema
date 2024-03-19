@@ -126,6 +126,8 @@ class TestMigration300:
                 assert use_val == 1
             # check if matching settings tables consist of 1 (use = True) or 0 (use = False) rows
             if use_val == 0 or use_val is None:
+                print(col, id, table)
+                print(use_val, id_val)
                 assert settings == []
             if use_val == 1:
                 assert len(settings) == 1
