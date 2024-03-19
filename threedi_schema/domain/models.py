@@ -395,6 +395,7 @@ class ModelSettings(Base):
     table_step_size_1d = Column(Float)
     use_2d_rain = Column(Integer)
     use_interflow = Column(Boolean)
+    use_interception = Column(Boolean)
     use_structure_control = Column(Boolean)
     use_simple_infiltration = Column(Boolean)
     use_groundwater_flow = Column(Boolean)
