@@ -71,13 +71,23 @@ class TestMigration300:
         migration_map = [[row[0], row[1], row[2], row[3]] for row in csv.reader(file)]
     removed_tables = list(set([row[0] for row in migration_map]))
     added_tables = list(set([row[2] for row in migration_map]))
-    bool_settings = [
+    bool_settings_id = [
         ("use_groundwater_storage", "groundwater_settings_id", "groundwater"),
         ("use_interflow", "interflow_settings_id", "interflow"),
         ("use_structure_control", "control_group_id", "v2_control_group"),
         ("use_simple_infiltration", "simple_infiltration_settings_id", "simple_infiltration"),
         ("use_vegetation_drag_2d", "vegetation_drag_settings_id", "vegetation_drag_2d")
     ]
+    bool_settings_exist = [
+        ("use_interception", "interception")
+    ]
+    single_row_tables = ["model_settings",
+                         "simulation_template_settings",
+                         "time_step_settings",
+                         "numerical_settings",
+                         "physical_settings",
+                         "initial_conditions",
+                         "interception"]
 
     def test_tables(self, schema_220, schema_300):
         # Test whether renaming removed the correct columns,
@@ -112,10 +122,10 @@ class TestMigration300:
             else:
                 assert values_220 == values_300
 
-    def test_boolean_setting(self, schema_220, schema_300):
+    def test_boolean_setting_id(self, schema_220, schema_300):
         cursor_220 = get_cursor_for_schema(schema_220)
         cursor_300 = get_cursor_for_schema(schema_300)
-        for col, id, table in self.bool_settings:
+        for col, id, table in self.bool_settings_id:
             id_val = get_values_from_sqlite(cursor_220, 'v2_global_settings', id)[0][0]
             use_val = get_values_from_sqlite(cursor_300, 'model_settings', col)[0][0]
             settings = get_values_from_sqlite(cursor_300, table, 'id')
@@ -132,4 +142,18 @@ class TestMigration300:
             if use_val == 1:
                 assert len(settings) == 1
 
+    def test_boolean_setting_exist(self, schema_300):
+        cursor_300 = get_cursor_for_schema(schema_300)
+        for col, table in self.bool_settings_exist:
+            use_val = get_values_from_sqlite(cursor_300, 'model_settings', col)[0][0]
+            settings = get_values_from_sqlite(cursor_300, table, 'id')
+            if use_val == 0 or use_val is None:
+                assert settings == []
+            if use_val == 1:
+                assert len(settings) == 1
 
+    def test_column_length(self, schema_300):
+        cursor_300 = get_cursor_for_schema(schema_300)
+        for table in self.single_row_tables:
+            settings = get_values_from_sqlite(cursor_300, table, 'id')
+            assert len(settings) == 1
