@@ -213,6 +213,7 @@ def set_bool_settings():
         # set boolean 'use_*' in model_settings if a relationship exists
         op.execute(f"UPDATE model_settings SET {settings_col} = TRUE WHERE {settings_id} IS NOT NULL;")
         # remove all settings rows, exact for the one matching
+        op.execute(f"DELETE FROM {settings_table} WHERE id NOT IN (SELECT {settings_id} FROM model_settings);")
         op.execute(
             f"DELETE FROM {settings_table} WHERE id NOT IN (SELECT {settings_col} FROM model_settings WHERE {settings_col} IS NOT NULL);")
     with op.batch_alter_table('model_settings') as batch_op:
@@ -229,12 +230,34 @@ def set_bool_settings():
     op.execute(sql)
 
 
+KEEP_FIRST_ROW = [
+    ("numerical_settings", "numerical_settings_id"),
+]
+
+
+def keep_first_row():
+    conn = op.get_bind()
+    for settings_table, settings_id in KEEP_FIRST_ROW:
+        # remove all settings rows, exact for the one matching
+        op.execute(f"DELETE FROM {settings_table} WHERE id NOT IN (SELECT {settings_id} FROM model_settings);")
+    with op.batch_alter_table('model_settings') as batch_op:
+        for _, settings_id in KEEP_FIRST_ROW:
+            batch_op.drop_column(settings_id)
+
+
+def delete_all_but_first_row(table):
+    op.execute(f"DELETE FROM {table} WHERE id NOT IN ("
+               f"SELECT id FROM "
+               f"(SELECT id FROM {table} ORDER BY id LIMIT 1) AS subquery);")
+
+
 def correct_dem_paths():
     # remove path - this will not work with nested paths!
     op.execute(f"UPDATE model_settings SET dem_file = SUBSTR(dem_file, INSTR(dem_file, '/') + 1)")
 
 
 def upgrade():
+    delete_all_but_first_row("v2_global_settings")
     rename_tables(RENAME_TABLES)
     # rename columns in renamed tables
     for table_name, columns in RENAME_COLUMNS.items():
@@ -253,6 +276,8 @@ def upgrade():
     move_values_to_table('model_settings', 'flooding_threshold', 'numerical_settings', 'flooding_threshold')
     # set several 'use' columns based on other settings
     set_bool_settings()
+    # keep first row of settings tables that have no explicit mapping
+    keep_first_row()
     # remove relative path prefix from dem path
     correct_dem_paths()
 

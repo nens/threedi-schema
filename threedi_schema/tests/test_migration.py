@@ -78,6 +78,12 @@ class TestMigration300:
         ("use_simple_infiltration", "simple_infiltration_settings_id", "simple_infiltration"),
         ("use_vegetation_drag_2d", "vegetation_drag_settings_id", "vegetation_drag_2d")
     ]
+    single_row_tables = ["model_settings",
+                         "simulation_template_settings",
+                         "time_step_settings",
+                         "numerical_settings",
+                         "physical_settings",
+                         "initial_conditions"]
 
     def test_tables(self, schema_220, schema_300):
         # Test whether renaming removed the correct columns,
@@ -130,4 +136,8 @@ class TestMigration300:
             if use_val == 1:
                 assert len(settings) == 1
 
-
+    def test_column_length(self, schema_300):
+        cursor_300 = get_cursor_for_schema(schema_300)
+        for table in self.single_row_tables:
+            settings = get_values_from_sqlite(cursor_300, table, 'id')
+            assert len(settings) == 1
