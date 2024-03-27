@@ -221,7 +221,7 @@ def set_use_from_settings_id():
         # command above doesn't catch id = None, so an extra command is needed for those cases
         op.execute(
             f"DELETE FROM {settings_table} WHERE id != "
-            f"(SELECT 1 FROM model_settings WHERE model_settings.{settings_id} IS NOT NULL);")
+            f"(SELECT {settings_id} FROM model_settings);")
 
     # set use_groundwater_flow
     sql = """
