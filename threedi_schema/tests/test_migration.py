@@ -113,6 +113,8 @@ class TestMigration300:
             # use settings are tested seperately
             if f'use_{dst_tbl}' in get_columns_from_schema(schema_300, 'model_settings'):
                 continue
+            if dst_col.startswith('use_'):
+                continue
             values_220 = get_values_from_sqlite(cursor_220, src_tbl, src_col)
             values_300 = get_values_from_sqlite(cursor_300, dst_tbl, dst_col)
             # dem_file should be different
@@ -132,12 +134,10 @@ class TestMigration300:
             # check if `use_` columns are set properly
             if id_val is None:
                 assert (use_val is None or use_val == 0)
-            if id_val == 1:
+            else:
                 assert use_val == 1
             # check if matching settings tables consist of 1 (use = True) or 0 (use = False) rows
             if use_val == 0 or use_val is None:
-                print(col, id, table)
-                print(use_val, id_val)
                 assert settings == []
             if use_val == 1:
                 assert len(settings) == 1

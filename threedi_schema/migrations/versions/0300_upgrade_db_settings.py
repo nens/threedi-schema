@@ -214,8 +214,15 @@ def set_use_from_settings_id():
             # set boolean 'use_*' in model_settings if a relationship exists
             op.execute(f"UPDATE model_settings SET {settings_col} = TRUE WHERE {settings_id} IS NOT NULL;")
         # remove all settings rows, exact for the one matching
+        # delete_all_but_matching_id(settings_table, settings_id)
         op.execute(
-            f"DELETE FROM {settings_table} WHERE id NOT IN (SELECT {settings_col} FROM model_settings WHERE {settings_col} IS NOT NULL);")
+            f"DELETE FROM {settings_table} WHERE NOT EXISTS "
+            f"(SELECT 1 FROM model_settings WHERE model_settings.{settings_id} IS NOT NULL);")
+        # command above doesn't catch id = None, so an extra command is needed for those cases
+        op.execute(
+            f"DELETE FROM {settings_table} WHERE id != "
+            f"(SELECT 1 FROM model_settings WHERE model_settings.{settings_id} IS NOT NULL);")
+
     # set use_groundwater_flow
     sql = """
         UPDATE model_settings
