@@ -8,6 +8,9 @@ Changelog of threedi-schema
 - Update action versions to use a new NodeJS.
 - Make CrossSectionLocation.friction_value nullable
 
+0.219.2 (2024-04-02)
+--------------------
+- Update v2_cross_section_location_view with vegetation columns
 
 0.218.0 (2024-01-08)
 --------------------
