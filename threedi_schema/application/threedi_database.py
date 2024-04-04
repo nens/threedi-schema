@@ -1,9 +1,11 @@
+import os
 import shutil
 import tempfile
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
+from geoalchemy2 import load_spatialite, load_spatialite_gpkg
 from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.event import listen
@@ -11,6 +13,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
 from .schema import ModelSchema
+
+os.environ["SPATIALITE_LIBRARY_PATH"] = "mod_spatialite.so"
 
 __all__ = ["ThreediDatabase"]
 
@@ -35,45 +39,10 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.close()
 
 
-def load_spatialite(con, connection_record):
-    """Load spatialite extension as described in
-    https://geoalchemy-2.readthedocs.io/en/latest/spatialite_tutorial.html"""
-    import sqlite3
-
-    con.enable_load_extension(True)
-    cur = con.cursor()
-    libs = [
-        # SpatiaLite >= 4.2 and Sqlite >= 3.7.17, should work on all platforms
-        ("mod_spatialite", "sqlite3_modspatialite_init"),
-        # SpatiaLite >= 4.2 and Sqlite < 3.7.17 (Travis)
-        ("mod_spatialite.so", "sqlite3_modspatialite_init"),
-        # SpatiaLite < 4.2 (linux)
-        ("libspatialite.so", "sqlite3_extension_init"),
-    ]
-    found = False
-    for lib, entry_point in libs:
-        try:
-            cur.execute("select load_extension('{}', '{}')".format(lib, entry_point))
-        except sqlite3.OperationalError:
-            continue
-        else:
-            found = True
-            break
-    try:
-        cur.execute("select EnableGpkgAmphibiousMode()")
-    except sqlite3.OperationalError:
-        pass
-    if not found:
-        raise RuntimeError("Cannot find any suitable spatialite module")
-    cur.close()
-    con.enable_load_extension(False)
-
-
 class ThreediDatabase:
     def __init__(self, path, echo=False):
         self.path = path
         self.echo = echo
-
         self._engine = None
         self._base_metadata = None
 
@@ -90,22 +59,27 @@ class ThreediDatabase:
         return Path(self.path).absolute().parent
 
     def get_engine(self, get_seperate_engine=False):
+        # Ensure that path is a Path so checks below don't break
+        path = Path(self.path)
         if self._engine is None or get_seperate_engine:
-            if self.path == "":
+            if path == Path(""):
                 # Special case in-memory SQLite:
                 # https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#threading-pooling-behavior
                 poolclass = None
             else:
                 poolclass = NullPool
-            engine = create_engine(
-                "sqlite:///{0}".format(self.path), echo=self.echo, poolclass=poolclass
-            )
-            listen(engine, "connect", load_spatialite)
+            if path.suffix.lower() == ".gpkg":
+                engine_path = f"gpkg:///{path}"
+                engine_fn = load_spatialite_gpkg
+            else:
+                engine_path = "sqlite:///" if path == Path("") else f"sqlite:///{path}"
+                engine_fn = load_spatialite
+            engine = create_engine(engine_path, echo=self.echo, poolclass=poolclass)
+            listen(engine, "connect", engine_fn)
             if get_seperate_engine:
                 return engine
             else:
                 self._engine = engine
-
         return self._engine
 
     def get_session(self, **kwargs):
@@ -133,7 +107,7 @@ class ThreediDatabase:
             session.close()
 
     @contextmanager
-    def file_transaction(self, start_empty=False):
+    def file_transaction(self, start_empty=False, copy_results=True):
         """Copy the complete database into a tmpdir and work on that one.
 
         On contextmanager exit, the database is copied back and the real
@@ -150,7 +124,8 @@ class ThreediDatabase:
             except Exception as e:
                 raise e
             else:
-                shutil.copy(str(work_file), self.path)
+                if copy_results:
+                    shutil.copy(str(work_file), self.path)
 
     def check_connection(self):
         """Check if there a connection can be started with the database
