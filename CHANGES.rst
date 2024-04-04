@@ -1,16 +1,17 @@
 Changelog of threedi-schema
 ===================================================
 
+
+0.219.2 (unreleased)
+--------------------
+- Update v2_cross_section_location_view with vegetation columns
+
 0.219.1 (2024-01-30)
 --------------------
 
 - Fix migration to nullable friction_value that resulted in string type for friction_value.
 - Update action versions to use a new NodeJS.
 - Make CrossSectionLocation.friction_value nullable
-
-0.219.2 (unreleased)
---------------------
-- Update v2_cross_section_location_view with vegetation columns
 
 0.218.0 (2024-01-08)
 --------------------
