@@ -84,23 +84,6 @@ RENAME_COLUMNS = {
 
 ADD_COLUMNS = [
     ("numerical_settings", Column("flooding_threshold", Float)),
-    ("initial_conditions", Column("initial_groundwater_level", Float)),
-    ("initial_conditions", Column("initial_groundwater_level_aggregation", Integer)),
-    ("initial_conditions", Column("initial_groundwater_level_file", String)),
-    ("initial_conditions", Column("initial_water_level", Float)),
-    ("initial_conditions", Column("initial_water_level_aggregation", Integer)),
-    ("initial_conditions", Column("initial_water_level_file", String)),
-    ("interception", Column("interception", Float)),
-    ("interception", Column("interception_file", String)),
-    ("physical_settings", Column("use_advection_1d", Integer)),
-    ("physical_settings", Column("use_advection_2d", Integer)),
-    ("simulation_template_settings", Column("name", String)),
-    ("simulation_template_settings", Column("use_0d_inflow", Integer)),
-    ("time_step_settings", Column("max_time_step", Float)),
-    ("time_step_settings", Column("min_time_step", Float)),
-    ("time_step_settings", Column("output_time_step", Float)),
-    ("time_step_settings", Column("time_step", Float)),
-    ("time_step_settings", Column("use_time_step_stretch", Boolean)),
     ("model_settings", Column("use_groundwater_flow", Boolean)),
     ("model_settings", Column("use_groundwater_storage", Boolean)),
     ("model_settings", Column("use_structure_control", Boolean)),
@@ -109,6 +92,30 @@ ADD_COLUMNS = [
     ("model_settings", Column("use_interflow", Boolean)),
     ("model_settings", Column("use_interception", Boolean)),
 ]
+
+ADD_TABLES = {
+    "initial_conditions":
+        [Column("initial_groundwater_level", Float),
+         Column("initial_groundwater_level_aggregation", Integer),
+         Column("initial_groundwater_level_file", String),
+         Column("initial_water_level", Float),
+         Column("initial_water_level_aggregation", Integer),
+         Column("initial_water_level_file", String)],
+    "interception":
+        [Column("interception", Float),
+         Column("interception_file", String)],
+    "physical_settings":
+        [Column("use_advection_1d", Integer),
+         Column("use_advection_2d", Integer)],
+    "simulation_template_settings":
+        [Column("name", String), Column("use_0d_inflow", Integer)],
+    "time_step_settings":
+        [Column("max_time_step", Float),
+         Column("min_time_step", Float),
+         Column("output_time_step", Float),
+         Column("time_step", Float),
+         Column("use_time_step_stretch", Boolean)],
+}
 
 COPY_FROM_GLOBAL = {
     "simulation_template_settings": [
@@ -175,10 +182,11 @@ def make_all_columns_nullable(table_name, id_name: str = 'id'):
             batch_op.alter_column(column_name=column.name, nullable=True)
 
 
-def create_new_tables(table_names: List[str]):
+def create_new_tables(new_tables: dict[str, sa.Column]):
     # no checks for existence are done, this will fail if any table already exists
-    for table_name in table_names:
-        op.create_table(table_name, sa.Column("id", sa.Integer(), primary_key=True))
+    for table_name, columns in new_tables.items():
+        op.create_table(table_name, sa.Column("id", sa.Integer(), primary_key=True),
+                        *columns)
 
 
 def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
@@ -266,7 +274,6 @@ def correct_dem_paths():
 
 
 def upgrade():
-    print('upgrade')
     op.get_bind()
     # Only use first row of global settings
     delete_all_but_first_row("v2_global_settings")
@@ -278,7 +285,7 @@ def upgrade():
     for _, table_name in RENAME_TABLES:
         make_all_columns_nullable(table_name)
     # create new tables
-    create_new_tables(COPY_FROM_GLOBAL.keys())
+    create_new_tables(ADD_TABLES)
     # add empty columns to tables
     add_columns_to_tables(ADD_COLUMNS)
     # copy data from model_settings to new tables and columns

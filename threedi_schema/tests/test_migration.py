@@ -65,10 +65,10 @@ def get_values_from_sqlite(cursor, table_name, column_name):
     return cursor.fetchall()
 
 
-class TestMigration300:
-    pytestmark = pytest.mark.migration_300
+class TestMigration222:
+    pytestmark = pytest.mark.migration_222
 
-    with open(data_dir.joinpath('migration_300.csv'), 'r') as file:
+    with open(data_dir.joinpath('migration_222.csv'), 'r') as file:
         # src_table, src_column, dst_table, dst_column
         migration_map = [[row[0], row[1], row[2], row[3]] for row in csv.reader(file)]
     removed_tables = list(set([row[0] for row in migration_map]))
@@ -95,9 +95,9 @@ class TestMigration300:
         # Test whether renaming removed the correct columns,
         # and whether adding/renaming added the correct columns.
         tables_221 = set(get_sql_tables(get_cursor_for_schema(schema_221)))
-        tables_300 = set(get_sql_tables(get_cursor_for_schema(schema_300)))
-        assert sorted(self.removed_tables) == sorted(list(tables_221 - tables_300))
-        assert sorted(self.added_tables) == sorted(list(tables_300 - tables_221))
+        tables_222 = set(get_sql_tables(get_cursor_for_schema(schema_300)))
+        assert sorted(self.removed_tables) == sorted(list(tables_221 - tables_222))
+        assert sorted(self.added_tables) == sorted(list(tables_222 - tables_221))
 
     def test_columns_added_tables(self, schema_300):
         # Note that only the added tables are touched.
@@ -110,7 +110,7 @@ class TestMigration300:
 
     def test_copied_values(self, schema_221, schema_300):
         cursor_221 = get_cursor_for_schema(schema_221)
-        cursor_300 = get_cursor_for_schema(schema_300)
+        cursor_222 = get_cursor_for_schema(schema_300)
         for src_tbl, src_col, dst_tbl, dst_col in self.migration_map:
             # use settings are tested seperately
             if f'use_{dst_tbl}' in get_columns_from_schema(schema_300, 'model_settings'):
@@ -118,7 +118,7 @@ class TestMigration300:
             if dst_col.startswith('use_'):
                 continue
             values_221 = get_values_from_sqlite(cursor_221, src_tbl, src_col)
-            values_300 = get_values_from_sqlite(cursor_300, dst_tbl, dst_col)
+            values_300 = get_values_from_sqlite(cursor_222, dst_tbl, dst_col)
             # dem_file should be different
             if src_col == 'dem_file':
                 path_221 = Path(values_221[0][0])
