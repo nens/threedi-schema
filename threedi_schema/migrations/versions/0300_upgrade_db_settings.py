@@ -6,6 +6,7 @@ Create Date: 2024-03-04 10:06
 
 """
 from typing import List, Tuple
+from pathlib import Path
 
 import sqlalchemy as sa
 from alembic import op
@@ -256,11 +257,17 @@ def delete_all_but_first_row(table):
 
 def correct_dem_paths():
     # remove path - this will not work with nested paths!
-    op.execute(f"UPDATE model_settings SET dem_file = SUBSTR(dem_file, INSTR(dem_file, '/') + 1)")
+    conn = op.get_bind()
+    # model_settings only has one row, so we can just grab that one
+    result = conn.execute(sa.text(f"SELECT id, dem_file FROM model_settings")).fetchall()
+    if len(result) == 1:
+        settings_id, dem_path = result[0]
+        op.execute(f"UPDATE model_settings SET dem_file = '{str(Path(dem_path).name)}' WHERE id = {settings_id}")
 
 
 def upgrade():
-    conn = op.get_bind()
+    print('upgrade')
+    op.get_bind()
     # Only use first row of global settings
     delete_all_but_first_row("v2_global_settings")
     rename_tables(RENAME_TABLES)
