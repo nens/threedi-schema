@@ -199,14 +199,14 @@ def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
 def move_multiple_values_to_empty_table(src_table: str, dst_table: str, columns: List[str]):
     # move values from one table to another
     # no checks for existence are done, this will fail if any table or column doesn't exist
-    dst_cols = ', '.join(dst for _, dst in columns)
+    dst_cols = ', '.join(f'"{dst}"' for _, dst in columns)
     src_cols = ', '.join(src for src, _ in columns)
     op.execute(sa.text(f'INSERT INTO {dst_table} ({dst_cols}) SELECT {src_cols} FROM {src_table}'))
     remove_columns_from_table(src_table, [src for src, _ in columns])
 
 
 def move_values_to_table(src_table: str, src_col: str, dst_table: str, dst_col: str):
-    op.execute(f'UPDATE {dst_table} SET {dst_col} = (SELECT {src_col} FROM {src_table} LIMIT 1)')
+    op.execute(f'UPDATE {dst_table} SET {dst_col} = (SELECT {src_col} FROM {src_table} ORDER BY id LIMIT 1)')
     remove_columns_from_table(src_table, [src_col])
 
 
