@@ -4,7 +4,7 @@ Changelog of threedi-schema
 
 0.221 (unreleased)
 ------------------
-- Nothing changed yet.
+- Remove column vegetation_drag_coeficients from v2_cross_section_location (sqlite only) that was added in migration 218
 
 0.220 (2024-02-29)
 ------------------
