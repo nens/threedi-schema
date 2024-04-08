@@ -1,17 +1,19 @@
 Changelog of threedi-schema
 ===================================================
 
+
 0.221 (unreleased)
 ------------------
-
 - Remove column vegetation_drag_coeficients from v2_cross_section_location (sqlite only) that was added in migration 218
-
 
 0.220 (2024-02-29)
 ------------------
 - Add support for geopackage
 - Remove `the_geom_linestring` from `v2_connection_nodes` because geopackage does not support multiple geometry objects in one table
 
+0.219.2 (2024-04-04)
+--------------------
+- Update v2_cross_section_location_view with vegetation columns
 
 0.219.1 (2024-01-30)
 --------------------
@@ -19,7 +21,6 @@ Changelog of threedi-schema
 - Fix migration to nullable friction_value that resulted in string type for friction_value.
 - Update action versions to use a new NodeJS.
 - Make CrossSectionLocation.friction_value nullable
-
 
 0.218.0 (2024-01-08)
 --------------------
