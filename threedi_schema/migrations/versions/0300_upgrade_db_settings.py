@@ -308,4 +308,4 @@ def upgrade():
 
 def downgrade():
     # Not implemented on purpose
-    print("Downgrade back from 0.3xx is not supported")
+    raise NotImplementedError("Downgrade back from 0.3xx is not supported")
