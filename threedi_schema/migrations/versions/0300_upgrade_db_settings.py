@@ -270,7 +270,8 @@ def correct_dem_paths():
     result = conn.execute(sa.text(f"SELECT id, dem_file FROM model_settings")).fetchall()
     if len(result) == 1:
         settings_id, dem_path = result[0]
-        op.execute(f"UPDATE model_settings SET dem_file = '{str(Path(dem_path).name)}' WHERE id = {settings_id}")
+        if isinstance(dem_path, str):
+            op.execute(f"UPDATE model_settings SET dem_file = '{str(Path(dem_path).name)}' WHERE id = {settings_id}")
 
 
 def upgrade():
