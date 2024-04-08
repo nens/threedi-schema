@@ -24,7 +24,7 @@ def sqlite_path():
     return data_dir.joinpath("v2_bergermeer_221.gpkg")
 
 @pytest.fixture(scope="session")
-def schema_300(tmp_path_factory, sqlite_path):
+def schema_upgraded(tmp_path_factory, sqlite_path):
     tmp_sqlite = tmp_path_factory.mktemp("custom_dir").joinpath(sqlite_path.name)
     shutil.copy(sqlite_path, tmp_sqlite)
     schema = ModelSchema(ThreediDatabase(tmp_sqlite))
@@ -33,7 +33,7 @@ def schema_300(tmp_path_factory, sqlite_path):
 
 
 @pytest.fixture(scope="session")
-def schema_221(tmp_path_factory, sqlite_path):
+def schema_ref(tmp_path_factory, sqlite_path):
     # Last pre-upgrade version
     tmp_sqlite = tmp_path_factory.mktemp("custom_dir").joinpath(sqlite_path.name)
     shutil.copy(sqlite_path, tmp_sqlite)
@@ -91,48 +91,48 @@ class TestMigration222:
                          "initial_conditions",
                          "interception"]
 
-    def test_tables(self, schema_221, schema_300):
+    def test_tables(self, schema_ref, schema_upgraded):
         # Test whether renaming removed the correct columns,
         # and whether adding/renaming added the correct columns.
-        tables_221 = set(get_sql_tables(get_cursor_for_schema(schema_221)))
-        tables_222 = set(get_sql_tables(get_cursor_for_schema(schema_300)))
-        assert sorted(self.removed_tables) == sorted(list(tables_221 - tables_222))
-        assert sorted(self.added_tables) == sorted(list(tables_222 - tables_221))
+        tables_ref = set(get_sql_tables(get_cursor_for_schema(schema_ref)))
+        tables_new = set(get_sql_tables(get_cursor_for_schema(schema_upgraded)))
+        assert sorted(self.removed_tables) == sorted(list(tables_ref - tables_new))
+        assert sorted(self.added_tables) == sorted(list(tables_new - tables_ref))
 
-    def test_columns_added_tables(self, schema_300):
+    def test_columns_added_tables(self, schema_upgraded):
         # Note that only the added tables are touched.
         # So this check covers both added and removed columns.
-        cursor = get_cursor_for_schema(schema_300)
+        cursor = get_cursor_for_schema(schema_upgraded)
         for table in self.added_tables:
             cols_sqlite = get_columns_from_sqlite(cursor, table)
-            cols_schema = get_columns_from_schema(schema_300, table)
+            cols_schema = get_columns_from_schema(schema_upgraded, table)
             assert cols_sqlite == cols_schema
 
-    def test_copied_values(self, schema_221, schema_300):
-        cursor_221 = get_cursor_for_schema(schema_221)
-        cursor_222 = get_cursor_for_schema(schema_300)
+    def test_copied_values(self, schema_ref, schema_upgraded):
+        cursor_ref = get_cursor_for_schema(schema_ref)
+        cursor_new = get_cursor_for_schema(schema_upgraded)
         for src_tbl, src_col, dst_tbl, dst_col in self.migration_map:
             # use settings are tested seperately
-            if f'use_{dst_tbl}' in get_columns_from_schema(schema_300, 'model_settings'):
+            if f'use_{dst_tbl}' in get_columns_from_schema(schema_upgraded, 'model_settings'):
                 continue
             if dst_col.startswith('use_'):
                 continue
-            values_221 = get_values_from_sqlite(cursor_221, src_tbl, src_col)
-            values_300 = get_values_from_sqlite(cursor_222, dst_tbl, dst_col)
+            values_ref = get_values_from_sqlite(cursor_ref, src_tbl, src_col)
+            values_new = get_values_from_sqlite(cursor_new, dst_tbl, dst_col)
             # dem_file should be different
             if src_col == 'dem_file':
-                path_221 = Path(values_221[0][0])
-                assert str(path_221.name) == values_300[0][0]
+                path_ref = Path(values_ref[0][0])
+                assert str(path_ref.name) == values_new[0][0]
             else:
-                assert values_221 == values_300
+                assert values_ref == values_new
 
-    def test_boolean_setting_id(self, schema_221, schema_300):
-        cursor_221 = get_cursor_for_schema(schema_221)
-        cursor_300 = get_cursor_for_schema(schema_300)
+    def test_boolean_setting_id(self, schema_ref, schema_upgraded):
+        cursor_ref = get_cursor_for_schema(schema_ref)
+        cursor_new = get_cursor_for_schema(schema_upgraded)
         for col, id, table in self.bool_settings_id:
-            id_val = get_values_from_sqlite(cursor_221, 'v2_global_settings', id)[0][0]
-            use_val = get_values_from_sqlite(cursor_300, 'model_settings', col)[0][0]
-            settings = get_values_from_sqlite(cursor_300, table, 'id')
+            id_val = get_values_from_sqlite(cursor_ref, 'v2_global_settings', id)[0][0]
+            use_val = get_values_from_sqlite(cursor_new, 'model_settings', col)[0][0]
+            settings = get_values_from_sqlite(cursor_new, table, 'id')
             # check if `use_` columns are set properly
             if id_val is None:
                 assert (use_val is None or use_val == 0)
@@ -144,18 +144,18 @@ class TestMigration222:
             if use_val == 1:
                 assert len(settings) == 1
 
-    def test_boolean_setting_exist(self, schema_300):
-        cursor_300 = get_cursor_for_schema(schema_300)
+    def test_boolean_setting_exist(self, schema_upgraded):
+        cursor_new = get_cursor_for_schema(schema_upgraded)
         for col, table in self.bool_settings_exist:
-            use_val = get_values_from_sqlite(cursor_300, 'model_settings', col)[0][0]
-            settings = get_values_from_sqlite(cursor_300, table, 'id')
+            use_val = get_values_from_sqlite(cursor_new, 'model_settings', col)[0][0]
+            settings = get_values_from_sqlite(cursor_new, table, 'id')
             if use_val == 0 or use_val is None:
                 assert settings == []
             if use_val == 1:
                 assert len(settings) == 1
 
-    def test_column_length(self, schema_300):
-        cursor_300 = get_cursor_for_schema(schema_300)
+    def test_column_length(self, schema_upgraded):
+        cursor_new = get_cursor_for_schema(schema_upgraded)
         for table in self.single_row_tables:
-            settings = get_values_from_sqlite(cursor_300, table, 'id')
+            settings = get_values_from_sqlite(cursor_new, table, 'id')
             assert len(settings) == 1

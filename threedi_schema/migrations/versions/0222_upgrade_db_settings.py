@@ -1,6 +1,6 @@
 """Upgrade settings in schema
 
-Revision ID: 0300
+Revision ID: 0222
 Revises:
 Create Date: 2024-03-04 10:06
 
@@ -14,7 +14,7 @@ from sqlalchemy import Boolean, Column, Float, Integer, String
 from sqlalchemy.orm import declarative_base
 
 # revision identifiers, used by Alembic.
-revision = "0300"
+revision = "0222"
 down_revision = "0221"
 branch_labels = None
 depends_on = None
