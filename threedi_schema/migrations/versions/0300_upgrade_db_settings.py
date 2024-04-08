@@ -1,4 +1,4 @@
-"""Migration the old friction_type 4 to 2 (MANNING)
+"""Upgrade settings in schema
 
 Revision ID: 0300
 Revises:
