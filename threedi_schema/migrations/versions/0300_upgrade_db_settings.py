@@ -5,7 +5,7 @@ Revises:
 Create Date: 2024-03-04 10:06
 
 """
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from pathlib import Path
 
 import sqlalchemy as sa
@@ -182,7 +182,7 @@ def make_all_columns_nullable(table_name, id_name: str = 'id'):
             batch_op.alter_column(column_name=column.name, nullable=True)
 
 
-def create_new_tables(new_tables: dict[str, sa.Column]):
+def create_new_tables(new_tables: Dict[str, sa.Column]):
     # no checks for existence are done, this will fail if any table already exists
     for table_name, columns in new_tables.items():
         op.create_table(table_name, sa.Column("id", sa.Integer(), primary_key=True),
