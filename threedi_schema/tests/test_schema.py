@@ -190,6 +190,7 @@ def test_upgrade_without_backup(south_latest_sqlite):
         (False, False, True),
     ],
 )
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_set_views(
     oldest_sqlite, set_views, upgrade_spatialite_version, convert_to_geopackage
 ):
