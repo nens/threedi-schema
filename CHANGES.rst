@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.219.3 (unreleased)
+0.219.3 (2024-04-16)
 --------------------
 
 - Fix not setting views when using upgrade with upgrade_spatialite_version=True on up to date spatialite
