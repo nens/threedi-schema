@@ -106,8 +106,10 @@ class ModelSchema:
         spatialite file version after the upgrade.
         """
         if upgrade_spatialite_version and not set_views:
-            raise ValueError(
-                "Cannot upgrade the spatialite version without setting the views."
+            set_views = True
+            warnings.warn(
+                "Setting set_views to True becuase the spatialite version cannot be upgraded without setting the views",
+                UserWarning,
             )
         v = self.get_version()
         if v is not None and v < constants.LATEST_SOUTH_MIGRATION_ID:
@@ -123,10 +125,8 @@ class ModelSchema:
                 _upgrade_database(work_db, revision=revision, unsafe=True)
         else:
             _upgrade_database(self.db, revision=revision, unsafe=False)
-
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
-            set_views = True
         if set_views:
             self.set_views()
 

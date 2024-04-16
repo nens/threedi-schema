@@ -201,6 +201,12 @@ def test_set_views(oldest_sqlite, set_views, upgrade_spatialite_version):
             session.execute(text(f"SELECT * FROM {view_name} LIMIT 1")).fetchall()
 
 
+def test_set_views_warning(oldest_sqlite):
+    schema = ModelSchema(oldest_sqlite)
+    with pytest.warns(UserWarning):
+        schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=True)
+
+
 def test_upgrade_spatialite_3(oldest_sqlite):
     lib_version, file_version_before = get_spatialite_version(oldest_sqlite)
     if lib_version == file_version_before:
