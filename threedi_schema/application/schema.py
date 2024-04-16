@@ -1,11 +1,16 @@
+import re
+import subprocess
 import warnings
+from pathlib import Path
 
+# This import is needed for alembic to recognize the geopackage dialect
+import geoalchemy2.alembic_helpers  # noqa: F401
 from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import Column, Integer, MetaData, Table
+from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
 from ..domain import constants, models, views
@@ -73,7 +78,6 @@ class ModelSchema:
                 connection, opts={"version_table": constants.VERSION_TABLE_NAME}
             )
             version = context.get_current_revision()
-
         if version is not None:
             return int(version)
         else:
@@ -85,6 +89,7 @@ class ModelSchema:
         backup=True,
         set_views=True,
         upgrade_spatialite_version=False,
+        convert_to_geopackage=False,
     ):
         """Upgrade the database to the latest version.
 
@@ -104,6 +109,9 @@ class ModelSchema:
 
         Specify 'upgrade_spatialite_version=True' to also upgrade the
         spatialite file version after the upgrade.
+
+        Specify 'convert_to_geopackage=True' to also convert from spatialite
+        to geopackage file version after the upgrade.
         """
         if upgrade_spatialite_version and not set_views:
             set_views = True
@@ -127,6 +135,8 @@ class ModelSchema:
             _upgrade_database(self.db, revision=revision, unsafe=False)
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
+        elif convert_to_geopackage:
+            self.convert_to_geopackage()
         if set_views:
             self.set_views()
 
@@ -201,3 +211,103 @@ class ModelSchema:
                     copy_models(self.db, work_db, self.declared_models)
                 except IntegrityError as e:
                     raise UpgradeFailedError(e.orig.args[0])
+
+    def convert_to_geopackage(self):
+        """
+        Convert spatialite to geopackage using gdal's ogr2ogr.
+
+        Does nothing if the current database is already a geopackage.
+
+        Raises UpgradeFailedError if the conversion of spatialite to geopackage with ogr2ogr fails.
+        """
+        if self.db.get_engine().dialect.name == "geopackage":
+            return
+        # Check if ogr2ogr
+        result = subprocess.run(
+            "ogr2ogr --version",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        ## ogr2ogr is installed; make sure the version is high enough and return if not
+        if result.returncode == 0:
+            # get version
+            version = re.findall(r"\b(\d+\.\d+\.\d+)\b", result.stdout)[0]
+            # trim patch version and convert to float
+            float_version = float(version[0 : version.rfind(".")])
+            if float_version < 3.4:
+                warnings.warn(
+                    f"ogr2ogr 3.4 (part of GDAL) or newer is needed to convert spatialite to geopackage "
+                    f"but ogr2ogr {version} was found. {self.db.path} will not be converted"
+                    f"to geopackage."
+                )
+                return
+        # ogr2ogr is not (properly) installed; return
+        elif result.returncode != 0:
+            warnings.warn(
+                f"ogr2ogr (part of GDAL) is needed to convert spatialite to geopackage but no working"
+                f"working installation was found:\n{result.stderr}"
+            )
+            return
+        # Ensure database is upgraded and views are recreated
+        self.upgrade()
+        self.validate_schema()
+        # Make necessary modifications for conversion on temporary database
+        with self.db.file_transaction(start_empty=False, copy_results=False) as work_db:
+            # remove spatialite specific tables that break conversion
+            with work_db.get_session() as session:
+                session.execute(text("DROP TABLE IF EXISTS spatialite_history;"))
+                session.execute(text("DROP TABLE IF EXISTS views_geometry_columns;"))
+            cmd = [
+                "ogr2ogr",
+                "-skipfailures",
+                "-f",
+                "gpkg",
+                str(Path(self.db.path).with_suffix(".gpkg")),
+                str(work_db.path),
+                "-oo",
+                "LIST_ALL_TABLES=YES",
+            ]
+            try:
+                p = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1
+                )
+            except Exception as e:
+                raise UpgradeFailedError(f"ogr2ogr failed conversion:\n{e}")
+            _, out = p.communicate()
+        # Error handling
+        # convert bytes to utf and split lines
+        out_list = out.decode("utf-8").split("\n")
+        # collect only errors and remove 'ERROR #:'
+        errors = [
+            [idx, ": ".join(item.split(": ")[1:])]
+            for idx, item in enumerate(out_list)
+            if item.lower().startswith("error")
+        ]
+        # While creating the geopackage with ogr2ogr an error occurs
+        # because ogr2ogr tries to create a table `sqlite_sequence`, which
+        # is reserved for internal use. The resulting database seems fine,
+        # so this specific error is ignored
+        # convert error output to list
+        expected_error = 'sqlite3_exec(CREATE TABLE "sqlite_sequence" ( "rowid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT, "seq" TEXT)) failed: object name reserved for internal use: sqlite_sequence'
+        unexpected_error_indices = [
+            idx for idx, error in errors if error.lower() != expected_error.lower()
+        ]
+        if len(unexpected_error_indices) > 0:
+            error_str = "\n".join(
+                [out_list[idx].decode("utf-8") for idx in unexpected_error_indices]
+            )
+            raise UpgradeFailedError(f"ogr2ogr didn't finish as expected:\n{error_str}")
+        # Correct path of current database
+        self.db.path = Path(self.db.path).with_suffix(".gpkg")
+        # Reset engine so new path is used on the next call of get_engine()
+        self.db._engine = None
+        # Recreate views_geometry_columns so set_views works as expected
+        with self.db.get_session() as session:
+            session.execute(
+                text(
+                    "CREATE TABLE views_geometry_columns(view_name TEXT, view_geometry TEXT, view_rowid TEXT, f_table_name VARCHAR(256), f_geometry_column VARCHAR(256))"
+                )
+            )
+        self.set_views()

@@ -222,7 +222,6 @@ def test_upgrade_spatialite_3(oldest_sqlite):
         check_result = connection.execute(
             text("SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')")
         ).scalar()
-
     assert check_result == 1
 
 
