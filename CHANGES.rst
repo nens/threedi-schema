@@ -10,16 +10,27 @@ Changelog of threedi-schema
 
 0.221 (2024-04-08)
 ------------------
+
 - Remove column vegetation_drag_coeficients from v2_cross_section_location (sqlite only) that was added in migration 218
 
 0.220 (2024-02-29)
 ------------------
+
 - Add support for geopackage
 - Remove `the_geom_linestring` from `v2_connection_nodes` because geopackage does not support multiple geometry objects in one table
 
+
+0.219.3 (2024-04-16)
+--------------------
+
+- Fix not setting views when using upgrade with upgrade_spatialite_version=True on up to date spatialite
+
+
 0.219.2 (2024-04-04)
 --------------------
+
 - Update v2_cross_section_location_view with vegetation columns
+
 
 0.219.1 (2024-01-30)
 --------------------

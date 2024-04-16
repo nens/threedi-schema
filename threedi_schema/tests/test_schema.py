@@ -180,16 +180,40 @@ def test_upgrade_without_backup(south_latest_sqlite):
     assert db is south_latest_sqlite
 
 
-def test_set_views(oldest_sqlite):
+@pytest.mark.parametrize(
+    "set_views, upgrade_spatialite_version, convert_to_geopackage",
+    [
+        (True, False, False),
+        (False, True, False),
+        (True, True, False),
+        (True, False, True),
+        (False, False, True),
+    ],
+)
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_set_views(
+    oldest_sqlite, set_views, upgrade_spatialite_version, convert_to_geopackage
+):
     """Make sure that the views are regenerated"""
     schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(backup=False, set_views=True, upgrade_spatialite_version=False)
+    schema.upgrade(
+        backup=False,
+        set_views=set_views,
+        upgrade_spatialite_version=upgrade_spatialite_version,
+        convert_to_geopackage=convert_to_geopackage,
+    )
     assert schema.get_version() == get_schema_version()
 
     # Test all views
     with oldest_sqlite.session_scope() as session:
         for view_name in ALL_VIEWS:
             session.execute(text(f"SELECT * FROM {view_name} LIMIT 1")).fetchall()
+
+
+def test_set_views_warning(oldest_sqlite):
+    schema = ModelSchema(oldest_sqlite)
+    with pytest.warns(UserWarning):
+        schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=True)
 
 
 def test_upgrade_spatialite_3(oldest_sqlite):

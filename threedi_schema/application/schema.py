@@ -113,9 +113,11 @@ class ModelSchema:
         Specify 'convert_to_geopackage=True' to also convert from spatialite
         to geopackage file version after the upgrade.
         """
-        if (upgrade_spatialite_version or convert_to_geopackage) and not set_views:
-            raise ValueError(
-                "Cannot upgrade the spatialite version without setting the views."
+        if upgrade_spatialite_version and not set_views:
+            set_views = True
+            warnings.warn(
+                "Setting set_views to True because the spatialite version cannot be upgraded without setting the views",
+                UserWarning,
             )
         v = self.get_version()
         if v is not None and v < constants.LATEST_SOUTH_MIGRATION_ID:
@@ -135,7 +137,8 @@ class ModelSchema:
             self.upgrade_spatialite_version()
         elif convert_to_geopackage:
             self.convert_to_geopackage()
-        elif set_views:
+            set_views = True
+        if set_views:
             self.set_views()
 
     def validate_schema(self):
@@ -205,13 +208,6 @@ class ModelSchema:
 
             with self.db.file_transaction(start_empty=True) as work_db:
                 _upgrade_database(work_db, revision="head", unsafe=True)
-                recreate_views(
-                    work_db,
-                    file_version=4,
-                    all_views=views.ALL_VIEWS,
-                    views_to_delete=views.VIEWS_TO_DELETE,
-                )
-
                 try:
                     copy_models(self.db, work_db, self.declared_models)
                 except IntegrityError as e:
@@ -315,4 +311,3 @@ class ModelSchema:
                     "CREATE TABLE views_geometry_columns(view_name TEXT, view_geometry TEXT, view_rowid TEXT, f_table_name VARCHAR(256), f_geometry_column VARCHAR(256))"
                 )
             )
-        self.set_views()
