@@ -185,7 +185,6 @@ def test_upgrade_without_backup(south_latest_sqlite):
     [(True, False), (False, True), (True, True)],
 )
 def test_set_views(oldest_sqlite, set_views, upgrade_spatialite_version):
-    # TODO: change this test
     """Make sure that the views are regenerated"""
     schema = ModelSchema(oldest_sqlite)
     schema.upgrade(
