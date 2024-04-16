@@ -4,11 +4,15 @@ Changelog of threedi-schema
 
 0.219.3 (unreleased)
 --------------------
+
 - Fix not setting views when using upgrade with upgrade_spatialite_version=True on up to date spatialite
+
 
 0.219.2 (2024-04-04)
 --------------------
+
 - Update v2_cross_section_location_view with vegetation columns
+
 
 0.219.1 (2024-01-30)
 --------------------
@@ -16,6 +20,7 @@ Changelog of threedi-schema
 - Fix migration to nullable friction_value that resulted in string type for friction_value.
 - Update action versions to use a new NodeJS.
 - Make CrossSectionLocation.friction_value nullable
+
 
 0.218.0 (2024-01-08)
 --------------------
