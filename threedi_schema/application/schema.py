@@ -137,6 +137,7 @@ class ModelSchema:
             self.upgrade_spatialite_version()
         elif convert_to_geopackage:
             self.convert_to_geopackage()
+            set_views = True
         if set_views:
             self.set_views()
 
@@ -310,4 +311,3 @@ class ModelSchema:
                     "CREATE TABLE views_geometry_columns(view_name TEXT, view_geometry TEXT, view_rowid TEXT, f_table_name VARCHAR(256), f_geometry_column VARCHAR(256))"
                 )
             )
-        self.set_views()

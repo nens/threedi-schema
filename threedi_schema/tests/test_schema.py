@@ -181,16 +181,25 @@ def test_upgrade_without_backup(south_latest_sqlite):
 
 
 @pytest.mark.parametrize(
-    "set_views, upgrade_spatialite_version",
-    [(True, False), (False, True), (True, True)],
+    "set_views, upgrade_spatialite_version, convert_to_geopackage",
+    [
+        (True, False, False),
+        (False, True, False),
+        (True, True, False),
+        (True, False, True),
+        (False, False, True),
+    ],
 )
-def test_set_views(oldest_sqlite, set_views, upgrade_spatialite_version):
+def test_set_views(
+    oldest_sqlite, set_views, upgrade_spatialite_version, convert_to_geopackage
+):
     """Make sure that the views are regenerated"""
     schema = ModelSchema(oldest_sqlite)
     schema.upgrade(
         backup=False,
         set_views=set_views,
         upgrade_spatialite_version=upgrade_spatialite_version,
+        convert_to_geopackage=convert_to_geopackage,
     )
     assert schema.get_version() == get_schema_version()
 
