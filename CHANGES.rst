@@ -2,6 +2,10 @@ Changelog of threedi-schema
 ===================================================
 
 
+0.219.3 (unreleased)
+--------------------
+- Fix not setting views when using upgrade with upgrade_spatialite_version=True on up to date spatialite
+
 0.219.2 (2024-04-04)
 --------------------
 - Update v2_cross_section_location_view with vegetation columns
