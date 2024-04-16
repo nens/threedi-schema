@@ -126,7 +126,8 @@ class ModelSchema:
 
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
-        elif set_views:
+            set_views = True
+        if set_views:
             self.set_views()
 
     def validate_schema(self):
@@ -196,13 +197,6 @@ class ModelSchema:
 
             with self.db.file_transaction(start_empty=True) as work_db:
                 _upgrade_database(work_db, revision="head", unsafe=True)
-                recreate_views(
-                    work_db,
-                    file_version=4,
-                    all_views=views.ALL_VIEWS,
-                    views_to_delete=views.VIEWS_TO_DELETE,
-                )
-
                 try:
                     copy_models(self.db, work_db, self.declared_models)
                 except IntegrityError as e:
