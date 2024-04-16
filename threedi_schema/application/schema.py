@@ -108,7 +108,7 @@ class ModelSchema:
         if upgrade_spatialite_version and not set_views:
             set_views = True
             warnings.warn(
-                "Setting set_views to True becuase the spatialite version cannot be upgraded without setting the views",
+                "Setting set_views to True because the spatialite version cannot be upgraded without setting the views",
                 UserWarning,
             )
         v = self.get_version()
