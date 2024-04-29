@@ -156,6 +156,11 @@ class SimpleInfiltration(Base):
     max_infiltration_volume = Column(Float)
     max_infiltration_volume_file = Column(Text)
 
+    # Alias needed for API compatibility
+    @property
+    def max_infiltration_volume_file(self):
+        return self.max_infiltration_volume_file
+
 
 class SurfaceParameter(Base):
     __tablename__ = "v2_surface_parameters"
@@ -232,6 +237,11 @@ class GroundWater(Base):
     )
     leakage = Column(Float)
     leakage_file = Column(String(255))
+
+    # Alias needed for API compatibility
+    @property
+    def groundwater_hydro_connectivity_file(self):
+        return self.groundwater_hydraulic_conductivity_file
 
 
 class GridRefinement(Base):
@@ -402,6 +412,11 @@ class ModelSettings(Base):
     use_groundwater_storage = Column(Boolean)
     use_vegetation_drag_2d = Column(Boolean)
 
+    # Alias needed for API compatibility
+    @property
+    def frict_coef_file(self):
+        return self.friction_coefficient_file
+
 
 class InitialConditions(Base):
     __tablename__ = "initial_conditions"
@@ -414,6 +429,11 @@ class InitialConditions(Base):
     initial_water_level = Column(Float)
     initial_water_level_aggregation = Column(IntegerEnum(constants.InitializationType))
     initial_water_level_file = Column(String(255))
+
+    # Alias needed for API compatibility
+    @property
+    def initial_waterlevel_file(self):
+        return self.initial_water_level_file
 
 
 class Interception(Base):
