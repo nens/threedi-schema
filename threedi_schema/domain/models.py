@@ -158,7 +158,7 @@ class SimpleInfiltration(Base):
 
     # Alias needed for API compatibility
     @property
-    def max_infiltration_volume_file(self):
+    def max_infiltration_capacity_file(self):
         return self.max_infiltration_volume_file
 
 
