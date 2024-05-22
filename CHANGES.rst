@@ -2,8 +2,8 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.222 (unreleased)
-------------------
+0.222.0 (2024-05-22)
+--------------------
 
 - Implement changes for schema version 300 concerning simulation settings
 - Reduce all settings tables to a single row. Multiple settings per schematisation are no longer allowed.
