@@ -134,35 +134,32 @@ class Floodfill(Base):
 
 
 class Interflow(Base):
-    __tablename__ = "v2_interflow"
+    __tablename__ = "interflow"
     id = Column(Integer, primary_key=True)
-    interflow_type = Column(IntegerEnum(constants.InterflowType), nullable=False)
+    interflow_type = Column(IntegerEnum(constants.InterflowType))
     porosity = Column(Float)
     porosity_file = Column(String(255))
     porosity_layer_thickness = Column(Float)
     impervious_layer_elevation = Column(Float)
     hydraulic_conductivity = Column(Float)
     hydraulic_conductivity_file = Column(String(255))
-    display_name = Column(String(255))
-
-    global_settings = relationship("GlobalSetting", back_populates="interflow_settings")
 
 
 class SimpleInfiltration(Base):
-    __tablename__ = "v2_simple_infiltration"
+    __tablename__ = "simple_infiltration"
     id = Column(Integer, primary_key=True)
     infiltration_rate = Column(Float)
     infiltration_rate_file = Column(String(255))
     infiltration_surface_option = Column(
         IntegerEnum(constants.InfiltrationSurfaceOption)
     )
-    max_infiltration_capacity = Column(Float)
-    max_infiltration_capacity_file = Column(Text)
-    display_name = Column(String(255))
+    max_infiltration_volume = Column(Float)
+    max_infiltration_volume_file = Column(Text)
 
-    global_settings = relationship(
-        "GlobalSetting", back_populates="simple_infiltration_settings"
-    )
+    # Alias needed for API compatibility
+    @property
+    def max_infiltration_capacity_file(self):
+        return self.max_infiltration_volume_file
 
 
 class SurfaceParameter(Base):
@@ -205,17 +202,19 @@ class Surface(Base):
 
 
 class GroundWater(Base):
-    __tablename__ = "v2_groundwater"
+    __tablename__ = "groundwater"
     id = Column(Integer, primary_key=True)
 
     groundwater_impervious_layer_level = Column(Float)
     groundwater_impervious_layer_level_file = Column(String(255))
-    groundwater_impervious_layer_level_type = Column(
+    groundwater_impervious_layer_level_aggregation = Column(
         IntegerEnum(constants.InitializationType)
     )
     phreatic_storage_capacity = Column(Float)
     phreatic_storage_capacity_file = Column(String(255))
-    phreatic_storage_capacity_type = Column(IntegerEnum(constants.InitializationType))
+    phreatic_storage_capacity_aggregation = Column(
+        IntegerEnum(constants.InitializationType)
+    )
     equilibrium_infiltration_rate = Column(Float)
     equilibrium_infiltration_rate_file = Column(String(255))
     equilibrium_infiltration_rate_type = Column(
@@ -223,22 +222,26 @@ class GroundWater(Base):
     )
     initial_infiltration_rate = Column(Float)
     initial_infiltration_rate_file = Column(String(255))
-    initial_infiltration_rate_type = Column(IntegerEnum(constants.InitializationType))
-    infiltration_decay_period = Column(Float)
-    infiltration_decay_period_file = Column(String(255))
-    infiltration_decay_period_type = Column(IntegerEnum(constants.InitializationType))
-    groundwater_hydro_connectivity = Column(Float)
-    groundwater_hydro_connectivity_file = Column(String(255))
-    groundwater_hydro_connectivity_type = Column(
+    initial_infiltration_rate_aggregation = Column(
         IntegerEnum(constants.InitializationType)
     )
-    display_name = Column(String(255))
+    infiltration_decay_period = Column(Float)
+    infiltration_decay_period_file = Column(String(255))
+    infiltration_decay_period_aggregation = Column(
+        IntegerEnum(constants.InitializationType)
+    )
+    groundwater_hydraulic_conductivity = Column(Float)
+    groundwater_hydraulic_conductivity_file = Column(String(255))
+    groundwater_hydraulic_conductivity_aggregation = Column(
+        IntegerEnum(constants.InitializationType)
+    )
     leakage = Column(Float)
     leakage_file = Column(String(255))
 
-    global_settings = relationship(
-        "GlobalSetting", back_populates="groundwater_settings"
-    )
+    # Alias needed for API compatibility
+    @property
+    def groundwater_hydro_connectivity_file(self):
+        return self.groundwater_hydraulic_conductivity_file
 
 
 class GridRefinement(Base):
@@ -332,42 +335,40 @@ class Manhole(Base):
 
 
 class NumericalSettings(Base):
-    __tablename__ = "v2_numerical_settings"
+    __tablename__ = "numerical_settings"
     id = Column(Integer, primary_key=True)
     cfl_strictness_factor_1d = Column(Float)
     cfl_strictness_factor_2d = Column(Float)
     convergence_cg = Column(Float)
     convergence_eps = Column(Float)
     flow_direction_threshold = Column(Float)
-    frict_shallow_water_correction = Column(
+    friction_shallow_water_depth_correction = Column(
         IntegerEnum(constants.FrictionShallowWaterDepthCorrection)
     )
     general_numerical_threshold = Column(Float)
-    integration_method = Column(IntegerEnum(constants.IntegrationMethod))
-    limiter_grad_1d = Column(IntegerEnum(constants.OffOrStandard))
-    limiter_grad_2d = Column(IntegerEnum(constants.OffOrStandard))
+    time_integration_method = Column(IntegerEnum(constants.IntegrationMethod))
+    limiter_waterlevel_gradient_1d = Column(IntegerEnum(constants.OffOrStandard))
+    limiter_waterlevel_gradient_2d = Column(IntegerEnum(constants.OffOrStandard))
     limiter_slope_crossectional_area_2d = Column(
         IntegerEnum(constants.LimiterSlopeXArea)
     )
     limiter_slope_friction_2d = Column(IntegerEnum(constants.OffOrStandard))
-    max_nonlin_iterations = Column(Integer)
-    max_degree = Column(Integer)
-    minimum_friction_velocity = Column(Float)
-    minimum_surface_area = Column(Float)
-    precon_cg = Column(IntegerEnum(constants.OffOrStandard))
+    max_non_linear_newton_iterations = Column(Integer)
+    max_degree_gauss_seidel = Column(Integer)
+    min_friction_velocity = Column(Float)
+    min_surface_area = Column(Float)
+    use_preconditioner_cg = Column(IntegerEnum(constants.OffOrStandard))
     preissmann_slot = Column(Float)
     pump_implicit_ratio = Column(Float)
-    thin_water_layer_definition = Column(Float)
+    limiter_slope_thin_water_layer = Column(Float)
     use_of_cg = Column(Integer)
-    use_of_nested_newton = Column(IntegerEnum(constants.OffOrStandard))
-
-    global_settings = relationship("GlobalSetting", back_populates="numerical_settings")
+    use_nested_newton = Column(IntegerEnum(constants.OffOrStandard))
+    flooding_threshold = Column(Float)
 
 
 class VegetationDrag(Base):
-    __tablename__ = "v2_vegetation_drag"
+    __tablename__ = "vegetation_drag_2d"
     id = Column(Integer, primary_key=True)
-    display_name = Column(String(255))
 
     vegetation_height = Column(Float)
     vegetation_height_file = Column(String(255))
@@ -381,113 +382,98 @@ class VegetationDrag(Base):
     vegetation_drag_coefficient = Column(Float)
     vegetation_drag_coefficient_file = Column(String(255))
 
-    global_settings = relationship(
-        "GlobalSetting", back_populates="vegetation_drag_settings"
-    )
 
-
-class GlobalSetting(Base):
-    __tablename__ = "v2_global_settings"
+class ModelSettings(Base):
+    __tablename__ = "model_settings"
     id = Column(Integer, primary_key=True)
-    use_2d_flow = Column(Boolean, nullable=False)
-    use_1d_flow = Column(Boolean, nullable=False)
-    manhole_storage_area = Column(Float)
-    name = Column(String(128))
-    sim_time_step = Column(Float, nullable=False)
-    output_time_step = Column(Float, nullable=False)
-    nr_timesteps = Column(Integer)
-    start_time = Column(Text)
-    start_date = Column(Text)
-    grid_space = Column(Float, nullable=False)
-    dist_calc_points = Column(Float, nullable=False)
-    kmax = Column(Integer, nullable=False)
-    guess_dams = Column(Integer)
-    table_step_size = Column(Float, nullable=False)
+    use_2d_flow = Column(Boolean)
+    use_1d_flow = Column(Boolean)
+    manhole_aboveground_storage_area = Column(Float)
+    minimum_cell_size = Column(Float)
+    calculation_point_distance_1d = Column(Float)
+    nr_grid_levels = Column(Integer)
+    minimum_table_step_size = Column(Float)
     maximum_table_step_size = Column(Float)
-    flooding_threshold = Column(Float, nullable=False)
-    advection_1d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
-    advection_2d = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
     dem_file = Column(String(255))
-    frict_type = Column(IntegerEnum(constants.FrictionType), nullable=False)
-    frict_coef = Column(Float, nullable=False)
-    frict_coef_file = Column(String(255))
-    water_level_ini_type = Column(IntegerEnum(constants.InitializationType))
-    initial_waterlevel = Column(Float, nullable=False)
-    initial_waterlevel_file = Column(String(255))
-    interception_global = Column(Float)
-    interception_file = Column(String(255))
-    dem_obstacle_detection = Column(Boolean, nullable=False)
-    dem_obstacle_height = Column(Float)
+    friction_type = Column(IntegerEnum(constants.FrictionType))
+    friction_coefficient = Column(Float)
+    friction_coefficient_file = Column(String(255))
     embedded_cutoff_threshold = Column(Float)
     epsg_code = Column(Integer)
-    timestep_plus = Column(Boolean, nullable=False)
     max_angle_1d_advection = Column(Float)
-    minimum_sim_time_step = Column(Float, nullable=False)
-    maximum_sim_time_step = Column(Float)
-    frict_avg = Column(IntegerEnum(constants.OffOrStandard), nullable=False)
-    wind_shielding_file = Column(String(255))
-    use_0d_inflow = Column(IntegerEnum(constants.InflowType), nullable=False)
+    friction_averaging = Column(IntegerEnum(constants.OffOrStandard))
     table_step_size_1d = Column(Float)
-    use_2d_rain = Column(Integer, nullable=False)
+    use_2d_rain = Column(Integer)
+    use_interflow = Column(Boolean)
+    use_interception = Column(Boolean)
+    use_structure_control = Column(Boolean)
+    use_simple_infiltration = Column(Boolean)
+    use_groundwater_flow = Column(Boolean)
+    use_groundwater_storage = Column(Boolean)
+    use_vegetation_drag_2d = Column(Boolean)
+
+    # Alias needed for API compatibility
+    @property
+    def frict_coef_file(self):
+        return self.friction_coefficient_file
+
+
+class InitialConditions(Base):
+    __tablename__ = "initial_conditions"
+    id = Column(Integer, primary_key=True)
     initial_groundwater_level = Column(Float)
     initial_groundwater_level_file = Column(String(255))
-    initial_groundwater_level_type = Column(IntegerEnum(constants.InitializationType))
+    initial_groundwater_level_aggregation = Column(
+        IntegerEnum(constants.InitializationType)
+    )
+    initial_water_level = Column(Float)
+    initial_water_level_aggregation = Column(IntegerEnum(constants.InitializationType))
+    initial_water_level_file = Column(String(255))
 
-    numerical_settings_id = Column(
-        Integer, ForeignKey(NumericalSettings.__tablename__ + ".id"), nullable=False
-    )
-    numerical_settings = relationship(
-        NumericalSettings,
-        foreign_keys=numerical_settings_id,
-        back_populates="global_settings",
-    )
-    interflow_settings_id = Column(Integer, ForeignKey(Interflow.__tablename__ + ".id"))
-    interflow_settings = relationship(
-        Interflow,
-        foreign_keys=interflow_settings_id,
-        back_populates="global_settings",
-    )
-    control_group_id = Column(Integer, ForeignKey(ControlGroup.__tablename__ + ".id"))
-    simple_infiltration_settings_id = Column(
-        Integer, ForeignKey(SimpleInfiltration.__tablename__ + ".id")
-    )
-    simple_infiltration_settings = relationship(
-        SimpleInfiltration,
-        foreign_keys=simple_infiltration_settings_id,
-        back_populates="global_settings",
-    )
-    groundwater_settings_id = Column(
-        Integer, ForeignKey(GroundWater.__tablename__ + ".id")
-    )
-    groundwater_settings = relationship(
-        GroundWater,
-        foreign_keys=groundwater_settings_id,
-        back_populates="global_settings",
-    )
-    vegetation_drag_settings_id = Column(
-        Integer, ForeignKey(VegetationDrag.__tablename__ + ".id")
-    )
-    vegetation_drag_settings = relationship(
-        VegetationDrag,
-        foreign_keys=vegetation_drag_settings_id,
-        back_populates="global_settings",
-    )
+    # Alias needed for API compatibility
+    @property
+    def initial_waterlevel_file(self):
+        return self.initial_water_level_file
 
 
-class AggregationSettings(Base):
-    __tablename__ = "v2_aggregation_settings"
+class Interception(Base):
+    __tablename__ = "interception"
     id = Column(Integer, primary_key=True)
+    interception = Column(Float)
+    interception_file = Column(String(255))
 
-    global_settings_id = Column(
-        Integer, ForeignKey(GlobalSetting.__tablename__ + ".id")
-    )
 
-    var_name = Column(String(100), nullable=False)
-    flow_variable = Column(VarcharEnum(constants.FlowVariable), nullable=False)
-    aggregation_method = Column(
-        VarcharEnum(constants.AggregationMethod), nullable=False
-    )
-    timestep = Column(Integer, nullable=False)
+# class PhysicalSettings
+class AggregationSettings(Base):
+    __tablename__ = "aggregation_settings"
+    id = Column(Integer, primary_key=True)
+    flow_variable = Column(VarcharEnum(constants.FlowVariable))
+    aggregation_method = Column(VarcharEnum(constants.AggregationMethod))
+    interval = Column(Integer)
+
+
+class PhysicalSettings(Base):
+    __tablename__ = "physical_settings"
+    id = Column(Integer, primary_key=True)
+    use_advection_1d = Column(IntegerEnum(constants.OffOrStandard))
+    use_advection_2d = Column(IntegerEnum(constants.OffOrStandard))
+
+
+class SimulationTemplateSettings(Base):
+    __tablename__ = "simulation_template_settings"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(128))
+    use_0d_inflow = Column(IntegerEnum(constants.InflowType))
+
+
+class TimeStepSettings(Base):
+    __tablename__ = "time_step_settings"
+    id = Column(Integer, primary_key=True)
+    time_step = Column(Float)
+    min_time_step = Column(Float)
+    max_time_step = Column(Float)
+    output_time_step = Column(Float)
+    use_time_step_stretch = Column(Boolean)
 
 
 class BoundaryCondition1D(Base):
@@ -878,7 +864,7 @@ DECLARED_MODELS = [
     DemAverageArea,
     ExchangeLine,
     Floodfill,
-    GlobalSetting,
+    ModelSettings,
     GridRefinement,
     GridRefinementArea,
     GroundWater,

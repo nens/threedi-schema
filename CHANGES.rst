@@ -5,7 +5,12 @@ Changelog of threedi-schema
 0.222 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Implement changes for schema version 300 concerning simulation settings
+- Reduce all settings tables to a single row. Multiple settings per schematisation are no longer allowed.
+- A full overview can most easily be obtained from the migration; to summarize:
+    - Rename settings tables from "v2_foo" to "foo"
+    - Rename several columns in settings tables
+    - Move settings to context specific tables instead of a single generic table
 
 
 0.221 (2024-04-08)
