@@ -45,25 +45,26 @@ def test_copy_invalid_geometry(empty_sqlite_v3, empty_sqlite_v4):
     """Copying an invalid geometry (ST_IsValid evaluates to False) is possible"""
     db_from = empty_sqlite_v3
     db_to = empty_sqlite_v4
-
-    obj = models.Surface(
+    # Note MP: this only works when this object is not involved in a migratin
+    # This may cause issues with future database upgrades
+    obj = models.GridRefinementArea(
         id=3,
         code="test",
         display_name="test",
         the_geom="SRID=4326;POLYGON((0 0, 10 10, 0 10, 10 0, 0 0))",
-        surface_parameters_id=1,
+        refinement_level=1,
     )
     with db_from.session_scope() as session:
         session.add(obj)
         session.commit()
 
-    copy_model(db_from, db_to, models.Surface)
+    copy_model(db_from, db_to, models.GridRefinementArea)
 
     with db_to.session_scope() as session:
         records = list(
             session.query(
-                models.Surface.id,
-                func.ST_AsText(models.Surface.the_geom),
+                models.GridRefinementArea.id,
+                func.ST_AsText(models.GridRefinementArea.the_geom),
             )
         )
 
