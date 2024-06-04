@@ -5,7 +5,11 @@ Changelog of threedi-schema
 0.222.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Implement changes for schema version 300 concerning inflow
+- Replace v2_surface and v2_impervious_surface (and maps) with surface and dry_weather_flow tables
+- Redistribute data from v2_surface or v2_impervious_surface, depending on simulation_template_settings.use_0d_inflow, over suface and dry_weather_flow tables
+- Populate surface_parameters and dry_weather_flow_distribution tables with default data
+- A full overview can be obtained from the migration
 
 
 0.222.0 (2024-05-22)
