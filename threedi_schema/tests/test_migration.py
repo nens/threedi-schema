@@ -67,6 +67,22 @@ def get_values_from_sqlite(cursor, table_name, column_name):
     return cursor.fetchall()
 
 
+@pytest.mark.parametrize("sqlite_file",
+                         ["v2_bergermeer_221.gpkg",
+                          "staging-test-0d1d2d-simple-infiltration.sqlite",
+                          "staging-test-0d1d2d-simple-infiltration_surface.sqlite"])
+def test_upgrade_success(sqlite_file, tmp_path_factory):
+    tmp_sqlite = tmp_path_factory.mktemp("custom_dir").joinpath(sqlite_file)
+    shutil.copy(data_dir.joinpath(sqlite_file), tmp_sqlite)
+    schema = ModelSchema(ThreediDatabase(tmp_sqlite))
+    # Test if running upgrade doesn't run into any exceptions
+    try:
+        schema.upgrade(backup=False)
+    except Exception:
+        pytest.fail(f"Failed to upgrade {sqlite_file}")
+
+
+
 class TestMigration223:
     pytestmark = pytest.mark.migration_223
     removed_tables = set(['v2_surface', 'v2_surface_parameters', 'v2_surface_map',
