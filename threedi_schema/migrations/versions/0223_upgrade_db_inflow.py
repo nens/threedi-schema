@@ -202,7 +202,8 @@ def fix_dry_weather_flow_geometries(src_table):
              f"JOIN {src_table}_map ON v2_connection_nodes.id = {src_table}_map.connection_node_id "
              f"WHERE {src_table}.id = {src_table}_map.{src_table.strip('v2_')}_id "
              f"AND {src_table}.the_geom IS NULL "
-             f"AND {src_table}.nr_of_inhabitants > 0;")
+             f"AND {src_table}.nr_of_inhabitants > 0 "
+             f"AND {src_table}.dry_weather_flow > 0;")
     op.execute(sa.text(query))
 
 
