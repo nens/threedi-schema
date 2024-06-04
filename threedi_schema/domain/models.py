@@ -172,11 +172,6 @@ class SurfaceParameter(Base):
     min_infiltration_capacity = Column(Float, nullable=False)
     infiltration_decay_constant = Column(Float, nullable=False)
     infiltration_recovery_constant = Column(Float, nullable=False)
-    # TODO: should this stay?
-    surface = relationship(
-        "Surface",
-        back_populates="surface_parameters",
-    )
     tags = Column(Text)
     description = Column(Text)
 
@@ -193,10 +188,6 @@ class Surface(Base):
     geom = Column(
         Geometry("POLYGON"),
         nullable=True,
-    )
-    # TODO: should this stay?
-    surface_parameters = relationship(
-        SurfaceParameter, foreign_keys=surface_parameters_id, back_populates="surface"
     )
     tags = Column(Text)
 
