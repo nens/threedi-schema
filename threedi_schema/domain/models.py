@@ -205,6 +205,7 @@ class DryWeatherFlow(Base):
         Geometry("POLYGON"),
         nullable=False,
     )
+    tags = Column(Text)
 
 
 class DryWeatherFlowMap(Base):
@@ -218,7 +219,6 @@ class DryWeatherFlowMap(Base):
         Geometry("POLYGON"),
         nullable=False,
     )
-    # TODO: correct type in migration!
     percentage = Column(Float)
     tags = Column(Text)
 
