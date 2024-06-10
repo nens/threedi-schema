@@ -216,7 +216,7 @@ class DryWeatherFlowMap(Base):
     display_name = Column(String(255))
     code = Column(String(100))
     geom = Column(
-        Geometry("POLYGON"),
+        Geometry("LINESTRING"),
         nullable=False,
     )
     percentage = Column(Float)
