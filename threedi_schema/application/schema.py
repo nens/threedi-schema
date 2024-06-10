@@ -90,6 +90,7 @@ class ModelSchema:
         set_views=True,
         upgrade_spatialite_version=False,
         convert_to_geopackage=False,
+        allow_convert_to_geopackage=True,
     ):
         """Upgrade the database to the latest version.
 
@@ -126,20 +127,20 @@ class ModelSchema:
                 f"{constants.LATEST_SOUTH_MIGRATION_ID}. Please consult the "
                 f"3Di documentation on how to update legacy databases."
             )
-        if set_views and revision not in ("head", get_schema_version()):
+
+        rev_num = get_schema_version() if revision == "head" else int(revision)
+        if set_views and rev_num != get_schema_version():
             raise ValueError(f"Cannot set views when upgrading to version '{revision}'")
         # All migrations > 222 expect a geopackage, so force conversion and upgrade database 222
         # Then continue upgrade normally
         rev_num = get_schema_version() if revision == "head" else int(revision)
         is_gpkg = self.db.get_engine().dialect.name == "geopackage"
-        print(f"{rev_num=}")
-        if not is_gpkg:
-            if rev_num > 222:
-                print("oh oh")
-                print(f"{self.get_version=} - {self.db.path=}")
-                print("convert to gpkg")
+        print(f'{rev_num=} - {is_gpkg=}')
+        if not is_gpkg and allow_convert_to_geopackage:
+            if rev_num > constants.GPKG_MIGRATION_REQUIRED:
+                print('upgrade before geopackage')
                 self.upgrade(
-                    revision="0222",
+                    revision=f"{constants.GPKG_MIGRATION_REQUIRED:04}",
                     backup=backup,
                     set_views=False,
                     upgrade_spatialite_version=upgrade_spatialite_version,
@@ -147,19 +148,20 @@ class ModelSchema:
                 )
                 upgrade_spatialite_version = False
                 convert_to_geopackage = False
-                print(f"{self.get_version=} - {self.db.path=}")
-            elif rev_num == 222:
+                print('upgrade before done')
+            elif rev_num == constants.GPKG_MIGRATION_REQUIRED:
                 convert_to_geopackage = True
-            print(f"{convert_to_geopackage=}")
+        print(f'upgrade db to {revision=}')
         if backup:
             with self.db.file_transaction() as work_db:
                 _upgrade_database(work_db, revision=revision, unsafe=True)
         else:
             _upgrade_database(self.db, revision=revision, unsafe=False)
-        print(f"{self.get_version()=}")
+        print(f'current version = {self.get_version()=}')
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
-        if convert_to_geopackage:
+        if convert_to_geopackage and allow_convert_to_geopackage:
+            print('convert to geopackage')
             self.convert_to_geopackage()
             set_views = True
         if set_views:
@@ -277,8 +279,8 @@ class ModelSchema:
             )
             return
         # Ensure database is upgraded and views are recreated
-        if allow_upgrade:
-            self.upgrade()
+        # if allow_upgrade:
+        self.upgrade(allow_convert_to_geopackage=False)
         self.validate_schema()
         # Make necessary modifications for conversion on temporary database
         with self.db.file_transaction(start_empty=False, copy_results=False) as work_db:

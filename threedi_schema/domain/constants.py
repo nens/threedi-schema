@@ -2,7 +2,7 @@ from enum import Enum
 
 LATEST_SOUTH_MIGRATION_ID = 160
 VERSION_TABLE_NAME = "schema_version"
-
+GPKG_MIGRATION_REQUIRED = 220
 
 class BoundaryType(Enum):
     WATERLEVEL = 1
