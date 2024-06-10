@@ -213,7 +213,7 @@ class ModelSchema:
                 except IntegrityError as e:
                     raise UpgradeFailedError(e.orig.args[0])
 
-    def convert_to_geopackage(self):
+    def convert_to_geopackage(self, allow_upgrade=False):
         """
         Convert spatialite to geopackage using gdal's ogr2ogr.
 
@@ -252,7 +252,8 @@ class ModelSchema:
             )
             return
         # Ensure database is upgraded and views are recreated
-        self.upgrade()
+        if allow_upgrade:
+            self.upgrade()
         self.validate_schema()
         # Make necessary modifications for conversion on temporary database
         with self.db.file_transaction(start_empty=False, copy_results=False) as work_db:
