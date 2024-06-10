@@ -113,6 +113,10 @@ class ModelSchema:
 
         Specify 'convert_to_geopackage=True' to also convert from spatialite
         to geopackage file version after the upgrade.
+
+        Specify 'allow_convert_to_geopackage=False' to prevent conversion to geopackage. This is
+        needed to prevent recursion via the convert_to_geopackage function.
+
         """
         if upgrade_spatialite_version and not set_views:
             set_views = True
@@ -135,10 +139,11 @@ class ModelSchema:
         # Then continue upgrade normally
         rev_num = get_schema_version() if revision == "head" else int(revision)
         is_gpkg = self.db.get_engine().dialect.name == "geopackage"
-        print(f'{rev_num=} - {is_gpkg=}')
+        # When the database is a spatialite and geopackage conversion is allowed, check if conversion should happen
         if not is_gpkg and allow_convert_to_geopackage:
+            # If an upgrade past the geopackage required revision is requested the database is
+            # first upgraded to the geopackage required revision and converted to geopackage
             if rev_num > constants.GPKG_MIGRATION_REQUIRED:
-                print('upgrade before geopackage')
                 self.upgrade(
                     revision=f"{constants.GPKG_MIGRATION_REQUIRED:04}",
                     backup=backup,
@@ -148,20 +153,17 @@ class ModelSchema:
                 )
                 upgrade_spatialite_version = False
                 convert_to_geopackage = False
-                print('upgrade before done')
+            # if the geopackage required revision is requested, the db must be converted to geopackage
             elif rev_num == constants.GPKG_MIGRATION_REQUIRED:
                 convert_to_geopackage = True
-        print(f'upgrade db to {revision=}')
         if backup:
             with self.db.file_transaction() as work_db:
                 _upgrade_database(work_db, revision=revision, unsafe=True)
         else:
             _upgrade_database(self.db, revision=revision, unsafe=False)
-        print(f'current version = {self.get_version()=}')
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
         if convert_to_geopackage and allow_convert_to_geopackage:
-            print('convert to geopackage')
             self.convert_to_geopackage()
             set_views = True
         if set_views:
@@ -239,7 +241,7 @@ class ModelSchema:
                 except IntegrityError as e:
                     raise UpgradeFailedError(e.orig.args[0])
 
-    def convert_to_geopackage(self, allow_upgrade=False):
+    def convert_to_geopackage(self):
         """
         Convert spatialite to geopackage using gdal's ogr2ogr.
 
@@ -249,7 +251,6 @@ class ModelSchema:
         """
         if self.db.get_engine().dialect.name == "geopackage":
             return
-        print(f"Convert to geopackage from {self.get_version()}")
         # Check if ogr2ogr
         result = subprocess.run(
             "ogr2ogr --version",
@@ -279,7 +280,6 @@ class ModelSchema:
             )
             return
         # Ensure database is upgraded and views are recreated
-        # if allow_upgrade:
         self.upgrade(allow_convert_to_geopackage=False)
         self.validate_schema()
         # Make necessary modifications for conversion on temporary database
