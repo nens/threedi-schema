@@ -127,8 +127,7 @@ def add_geometry_column(table: str, geocol: Column):
     # Adding geometry columns via alembic doesn't work
     # https://postgis.net/docs/AddGeometryColumn.html
     geotype = geocol.type
-    query = (f"SELECT AddGeometryColumn('{table}', '{geocol.name}', {geotype.srid}, '{geotype.geometry_type}', "
-             f"'{geotype.dimension}')")
+    query = (f"SELECT gpkgAddGeometryColumn('{table}', '{geocol.name}', '{geotype.geometry_type}', 0, 0, {geotype.srid});")
     op.execute(sa.text(query))
 
 
@@ -167,7 +166,6 @@ def copy_v2_data_to_surface_map(src_table: str):
     src_columns = ["connection_node_id", "percentage", src_table.strip('v2_').replace('_map', '_id')]
     dst_columns = ["connection_node_id", "percentage", "surface_id"]
     copy_values_to_new_table(src_table, src_columns, "surface_map", dst_columns)
-
 
 def add_map_geometries(src_table: str):
     # Add geometries to a map table that connects the connection node and the surface / dry_weather_flow
@@ -268,17 +266,38 @@ def populate_dry_weather_flow_distribution():
 def fix_geometry_columns():
     # make geo columns not nullable
     # recover geometry columns
+    # retrieve geometry srid's
+    conn = op.get_bind()
+    use_0d_inflow = conn.execute(sa.text("SELECT use_0d_inflow FROM simulation_template_settings LIMIT 1")).fetchone()
+    if use_0d_inflow is None:
+        return
+    srid_global = 28992
+    srid = conn.execute(sa.text("SELECT epsg_code FROM model_settings LIMIT 1")).fetchone()
+    if (srid is not None) and (srid[0] is not None):
+        srid_global = srid[0]
+    srid_surface = srid_global
+    if (use_0d_inflow is not None) and (len(use_0d_inflow) == 2) and (use_0d_inflow[0] in [1, 2]):
+        src_table = "v2_impervious_surface" if use_0d_inflow[0] == 1 else "v2_surface"
+        query = f"SELECT srid FROM geometry_columns WHERE f_table_name ='{src_table}' AND f_geometry_column = 'the_geom' LIMIT 1"
+        srid = conn.execute(sa.text(query)).fetchone()
+        if (srid is not None) and (srid[0] is not None):
+            srid_surface = srid[0]
+    # srid_surface = srid_global
+    print(f'{srid_surface=} - {srid_global=}')
     GEO_COLUMNS = [
-        ('dry_weather_flow', 'geom', 'POLYGON'),
-        ('dry_weather_flow_map', 'geom', 'LINESTRING'),
-        ('surface', 'geom', 'POLYGON'),
-        ('surface_map', 'geom', 'LINESTRING'),
+        ('dry_weather_flow', 'geom', 'POLYGON', srid_surface),
+        ('dry_weather_flow_map', 'geom', 'LINESTRING', srid_global),
+        ('surface', 'geom', 'POLYGON', srid_surface),
+        ('surface_map', 'geom', 'LINESTRING', srid_global),
     ]
-    for table, column, geotype in GEO_COLUMNS:
+    for table, column, geotype, srid in GEO_COLUMNS:
+        srid = 28992
         with op.batch_alter_table(table) as batch_op:
             batch_op.alter_column(column_name=column, nullable=False)
-        migration_query = f"SELECT RecoverGeometryColumn('{table}', '{column}', 4326, '{geotype}', 'XY')"
+        migration_query = f"SELECT RecoverGeometryColumn('{table}', '{column}', {srid}, '{geotype}', 'XY')"
         op.execute(sa.text(migration_query))
+        # op.execute(sa.text(f"UPDATE gpkg_geometry_columns SET srs_id = 28992 WHERE table_name = '{table}' AND column_name = 'geom';"))
+        op.execute(sa.text(f"SELECT UpdateGeometrySRID('{table}', '{column}',{srid})"))
 
 
 def upgrade():
@@ -292,10 +311,11 @@ def upgrade():
     add_columns_to_tables(NEW_GEOM_COLUMNS)
     # migrate values from old tables to new tables
     populate_surface_and_dry_weather_flow()
-    # remove old tables
-    remove_tables(REMOVE_TABLES)
     # recover geometry columns
     fix_geometry_columns()
+    # remove old tables
+    remove_tables(REMOVE_TABLES)
+
 
 
 def downgrade():
