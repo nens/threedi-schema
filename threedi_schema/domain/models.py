@@ -319,10 +319,6 @@ class ConnectionNode(Base):
     boundary_conditions = relationship(
         "BoundaryCondition1D", back_populates="connection_node"
     )
-    # TODO: figure out what to do with this
-    # impervious_surface_maps = relationship(
-    #     "DryWeatherflowMap", back_populates="connection_node"
-    # )
     laterals1d = relationship("Lateral1d", back_populates="connection_node")
 
 
