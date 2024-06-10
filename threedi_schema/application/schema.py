@@ -128,14 +128,38 @@ class ModelSchema:
             )
         if set_views and revision not in ("head", get_schema_version()):
             raise ValueError(f"Cannot set views when upgrading to version '{revision}'")
+        # All migrations > 222 expect a geopackage, so force conversion and upgrade database 222
+        # Then continue upgrade normally
+        rev_num = get_schema_version() if revision == "head" else int(revision)
+        is_gpkg = self.db.get_engine().dialect.name == "geopackage"
+        print(f"{rev_num=}")
+        if not is_gpkg:
+            if rev_num > 222:
+                print("oh oh")
+                print(f"{self.get_version=} - {self.db.path=}")
+                print("convert to gpkg")
+                self.upgrade(
+                    revision="0222",
+                    backup=backup,
+                    set_views=False,
+                    upgrade_spatialite_version=upgrade_spatialite_version,
+                    convert_to_geopackage=True,
+                )
+                upgrade_spatialite_version = False
+                convert_to_geopackage = False
+                print(f"{self.get_version=} - {self.db.path=}")
+            elif rev_num == 222:
+                convert_to_geopackage = True
+            print(f"{convert_to_geopackage=}")
         if backup:
             with self.db.file_transaction() as work_db:
                 _upgrade_database(work_db, revision=revision, unsafe=True)
         else:
             _upgrade_database(self.db, revision=revision, unsafe=False)
+        print(f"{self.get_version()=}")
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
-        elif convert_to_geopackage:
+        if convert_to_geopackage:
             self.convert_to_geopackage()
             set_views = True
         if set_views:
@@ -223,6 +247,7 @@ class ModelSchema:
         """
         if self.db.get_engine().dialect.name == "geopackage":
             return
+        print(f"Convert to geopackage from {self.get_version()}")
         # Check if ogr2ogr
         result = subprocess.run(
             "ogr2ogr --version",
@@ -281,6 +306,7 @@ class ModelSchema:
         # Error handling
         # convert bytes to utf and split lines
         out_list = out.decode("utf-8").split("\n")
+        print(out_list)
         # collect only errors and remove 'ERROR #:'
         errors = [
             [idx, ": ".join(item.split(": ")[1:])]
