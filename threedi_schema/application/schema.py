@@ -131,13 +131,9 @@ class ModelSchema:
                 f"{constants.LATEST_SOUTH_MIGRATION_ID}. Please consult the "
                 f"3Di documentation on how to update legacy databases."
             )
-
         rev_num = get_schema_version() if revision == "head" else int(revision)
         if set_views and rev_num != get_schema_version():
             raise ValueError(f"Cannot set views when upgrading to version '{revision}'")
-        # All migrations > 222 expect a geopackage, so force conversion and upgrade database 222
-        # Then continue upgrade normally
-        rev_num = get_schema_version() if revision == "head" else int(revision)
         is_gpkg = self.db.get_engine().dialect.name == "geopackage"
         # When the database is a spatialite and geopackage conversion is allowed, check if conversion should happen
         if not is_gpkg and allow_convert_to_geopackage:
@@ -308,7 +304,6 @@ class ModelSchema:
         # Error handling
         # convert bytes to utf and split lines
         out_list = out.decode("utf-8").split("\n")
-        print(out_list)
         # collect only errors and remove 'ERROR #:'
         errors = [
             [idx, ": ".join(item.split(": ")[1:])]
