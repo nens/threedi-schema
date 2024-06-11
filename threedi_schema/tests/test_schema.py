@@ -181,26 +181,21 @@ def test_upgrade_without_backup(south_latest_sqlite):
 
 
 @pytest.mark.parametrize(
-    "set_views, upgrade_spatialite_version, convert_to_geopackage",
+    "set_views, upgrade_spatialite_version",
     [
-        (True, False, False),
-        (False, True, False),
-        (True, True, False),
-        (True, False, True),
-        (False, False, True),
+        (True, False),
+        (False, True),
+        (True, True),
     ],
 )
 @pytest.mark.filterwarnings("ignore::UserWarning")
-def test_set_views(
-    oldest_sqlite, set_views, upgrade_spatialite_version, convert_to_geopackage
-):
+def test_set_views(oldest_sqlite, set_views, upgrade_spatialite_version):
     """Make sure that the views are regenerated"""
     schema = ModelSchema(oldest_sqlite)
     schema.upgrade(
         backup=False,
         set_views=set_views,
         upgrade_spatialite_version=upgrade_spatialite_version,
-        convert_to_geopackage=convert_to_geopackage,
     )
     assert schema.get_version() == get_schema_version()
 
@@ -214,6 +209,25 @@ def test_set_views_warning(oldest_sqlite):
     schema = ModelSchema(oldest_sqlite)
     with pytest.warns(UserWarning):
         schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=True)
+
+
+def test_convert_to_geopackage_warning(oldest_sqlite):
+    if get_schema_version() >= 300:
+        pytest.skip("Warning not expected beyond schema 300")
+    schema = ModelSchema(oldest_sqlite)
+    with pytest.warns(UserWarning):
+        schema.upgrade(
+            backup=False,
+            set_views=False,
+            upgrade_spatialite_version=False,
+            convert_to_geopackage=True,
+        )
+
+
+def test_upgrade_revision_exception(oldest_sqlite):
+    schema = ModelSchema(oldest_sqlite)
+    with pytest.raises(ValueError):
+        schema.upgrade(revision="foo")
 
 
 def test_upgrade_spatialite_3(oldest_sqlite):

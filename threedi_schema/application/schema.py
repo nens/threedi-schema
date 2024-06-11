@@ -113,6 +113,19 @@ class ModelSchema:
         Specify 'convert_to_geopackage=True' to also convert from spatialite
         to geopackage file version after the upgrade.
         """
+        try:
+            rev_nr = get_schema_version() if revision == "head" else int(revision)
+        except ValueError:
+            raise ValueError(
+                f"Incorrect version format: {revision}. Expected 'head' or a numeric value."
+            )
+        if convert_to_geopackage and rev_nr < 300:
+            warnings.warn(
+                "Cannot convert to geopackage for revision {=revision.str} because geopackage support is "
+                "enabled from revision 300",
+                UserWarning,
+            )
+            convert_to_geopackage = False
         if upgrade_spatialite_version and not set_views:
             set_views = True
             warnings.warn(
