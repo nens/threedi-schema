@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.222.1 (unreleased)
+0.222.2 (unreleased)
 --------------------
 
 - Implement changes for schema version 300 concerning inflow
@@ -10,6 +10,13 @@ Changelog of threedi-schema
 - Redistribute data from v2_surface or v2_impervious_surface, depending on simulation_template_settings.use_0d_inflow, over suface and dry_weather_flow tables
 - Populate surface_parameters and dry_weather_flow_distribution tables with default data
 - A full overview can be obtained from the migration
+
+
+0.222.1 (2024-06-13)
+--------------------
+
+- Disable `convert_to_geopackage` in `schema.upgrade` for schema version before 300
+- Ensure `revision` format in `schema.upgrade` is correctly formatted
 
 
 0.222.0 (2024-05-22)
