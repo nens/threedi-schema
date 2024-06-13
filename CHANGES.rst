@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.222.2 (unreleased)
+0.222.2 (2024-06-13)
 --------------------
 
 - Skip testing convert to geopackage
