@@ -5,7 +5,8 @@ Changelog of threedi-schema
 0.222.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Disable `convert_to_geopackage` in `schema.upgrade` for schema version before 300
+- Ensure `revision` format in `schema.upgrade` is correctly formatted
 
 
 0.222.0 (2024-05-22)
