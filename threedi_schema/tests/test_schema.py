@@ -211,11 +211,11 @@ def test_set_views_warning(oldest_sqlite):
         schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=True)
 
 
-def test_convert_to_geopackage_warning(oldest_sqlite):
+def test_convert_to_geopackage_raise(oldest_sqlite):
     if get_schema_version() >= 300:
         pytest.skip("Warning not expected beyond schema 300")
     schema = ModelSchema(oldest_sqlite)
-    with pytest.warns(UserWarning):
+    with pytest.raises(errors.UpgradeFailedError):
         schema.upgrade(
             backup=False,
             set_views=False,

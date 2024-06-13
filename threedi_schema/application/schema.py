@@ -120,12 +120,10 @@ class ModelSchema:
                 f"Incorrect version format: {revision}. Expected 'head' or a numeric value."
             )
         if convert_to_geopackage and rev_nr < 300:
-            warnings.warn(
-                "Cannot convert to geopackage for revision {=revision.str} because geopackage support is "
+            raise UpgradeFailedError(
+                f"Cannot convert to geopackage for {revision=} because geopackage support is "
                 "enabled from revision 300",
-                UserWarning,
             )
-            convert_to_geopackage = False
         if upgrade_spatialite_version and not set_views:
             set_views = True
             warnings.warn(
