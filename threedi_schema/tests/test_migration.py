@@ -22,7 +22,7 @@ data_dir = Path(__file__).parent / "data"
 
 @pytest.fixture(scope="session")
 def sqlite_path():
-    return data_dir.joinpath("v2_bergermeer_221.gpkg")
+    return data_dir.joinpath("v2_bergermeer_221.sqlite")
 
 @pytest.fixture(scope="session")
 def schema_upgraded(tmp_path_factory, sqlite_path):
@@ -68,7 +68,7 @@ def get_values_from_sqlite(cursor, table_name, column_name):
 
 
 @pytest.mark.parametrize("sqlite_file",
-                         ["v2_bergermeer_221.gpkg",
+                         ["v2_bergermeer_221.sqlite",
                           "staging-test-0d1d2d-simple-infiltration.sqlite",
                           "staging-test-0d1d2d-simple-infiltration_surface.sqlite"])
 def test_upgrade_success(sqlite_file, tmp_path_factory):
