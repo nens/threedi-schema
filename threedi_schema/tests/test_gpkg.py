@@ -3,8 +3,12 @@ import subprocess
 
 import pytest
 
+from threedi_schema.application.schema import get_schema_version
+
 
 def test_convert_to_geopackage(oldest_sqlite):
+    if get_schema_version() < 300:
+        pytest.skip("Gpkg not supported for schema < 300")
     # In case the fixture changes and refers to a geopackage,
     # convert_to_geopackage will be ignored because the db is already a geopackage
     assert oldest_sqlite.get_engine().dialect.name == "sqlite"
