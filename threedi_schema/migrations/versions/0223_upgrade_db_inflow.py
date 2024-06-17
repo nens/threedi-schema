@@ -41,7 +41,6 @@ ADD_COLUMNS = [
 ADD_TABLES = {
     "surface": [
         Column("area", Float),
-        # TODO: set value to one
         Column("surface_parameters_id", Integer, default=1),
         Column("tags", Text),
         Column("code", String(100)),
@@ -49,7 +48,6 @@ ADD_TABLES = {
     ],
     "dry_weather_flow": [
         Column("multiplier", Float),
-        # TODO: set value to one
         Column("dry_weather_flow_distribution_id", Integer, default=1),
         Column("daily_total", Float),
         Column("interpolate", Boolean, default=False),
@@ -127,7 +125,8 @@ def add_geometry_column(table: str, geocol: Column):
     # Adding geometry columns via alembic doesn't work
     # https://postgis.net/docs/AddGeometryColumn.html
     geotype = geocol.type
-    query = (f"SELECT gpkgAddGeometryColumn('{table}', '{geocol.name}', '{geotype.geometry_type}', 0, 0, {geotype.srid});")
+    query = (
+        f"SELECT AddGeometryColumn('{table}', '{geocol.name}', {geotype.srid}, '{geotype.geometry_type}', 'XY', 0);")
     op.execute(sa.text(query))
 
 
@@ -142,18 +141,26 @@ def copy_values_to_new_table(src_table: str, src_columns: List[str], dst_table: 
 
 
 def copy_v2_data_to_surface(src_table: str):
-    src_columns = ["id", "code", "display_name", "the_geom", "area"]
+    src_columns = ["id", "code", "display_name", "sur_geom", "area"]
     dst_columns = ["id", "code", "display_name", "geom", "area"]
     if src_table == "v2_surface":
         src_columns += ["surface_parameters_id"]
         dst_columns += ["surface_parameters_id"]
     copy_values_to_new_table(src_table, src_columns, "surface", dst_columns)
+    op.execute(sa.text("DELETE FROM surface WHERE area = 0 OR area IS NULL;"))
 
 
 def copy_v2_data_to_dry_weather_flow(src_table: str):
-    src_columns = ["id", "code", "display_name", "the_geom", "nr_of_inhabitants", "dry_weather_flow"]
+    src_columns = ["id", "code", "display_name", "dwf_geom", "nr_of_inhabitants", "dry_weather_flow"]
     dst_columns = ["id", "code", "display_name", "geom", "multiplier", "daily_total"]
     copy_values_to_new_table(src_table, src_columns, "dry_weather_flow", dst_columns)
+    op.execute(sa.text("DELETE FROM dry_weather_flow "
+                       "WHERE multiplier = 0 OR daily_total = 0 OR multiplier IS NULL OR daily_total IS NULL;"))
+
+
+def remove_orphans_from_map(basename: str):
+    query = f"DELETE FROM {basename}_map WHERE {basename}_id NOT IN (SELECT id FROM {basename});"
+    op.execute(sa.text(query))
 
 
 def copy_v2_data_to_dry_weather_flow_map(src_table: str):
@@ -166,6 +173,7 @@ def copy_v2_data_to_surface_map(src_table: str):
     src_columns = ["connection_node_id", "percentage", src_table.strip('v2_').replace('_map', '_id')]
     dst_columns = ["connection_node_id", "percentage", "surface_id"]
     copy_values_to_new_table(src_table, src_columns, "surface_map", dst_columns)
+
 
 def add_map_geometries(src_table: str):
     # Add geometries to a map table that connects the connection node and the surface / dry_weather_flow
@@ -180,29 +188,39 @@ def add_map_geometries(src_table: str):
     op.execute(sa.text(query))
 
 
-def fix_surface_geometries(src_table):
-    # For cases without defined geometry, create a circular polygon with radius based on the area
-    query = (f"UPDATE {src_table} "
-             "SET the_geom = ST_Buffer(v2_connection_nodes.the_geom, SQRT(area / PI())) "
-             "FROM v2_connection_nodes "
-             f"JOIN {src_table}_map ON v2_connection_nodes.id = {src_table}_map.connection_node_id "
-             f"WHERE {src_table}.id = {src_table}_map.{src_table.strip('v2_')}_id "
-             f"AND {src_table}.the_geom IS NULL "
-             f"AND {src_table}.area > 0;")
-    op.execute(sa.text(query))
+def get_global_srid():
+    conn = op.get_bind()
+    use_0d_inflow = conn.execute(sa.text("SELECT use_0d_inflow FROM simulation_template_settings LIMIT 1")).fetchone()
+    if use_0d_inflow is not None:
+        srid = conn.execute(sa.text("SELECT epsg_code FROM model_settings LIMIT 1")).fetchone()
+        if (srid is not None) and (srid[0] is not None):
+            return srid[0]
+    return 28992
 
 
-def fix_dry_weather_flow_geometries(src_table):
-    # For cases without defined geometry,create a circular polygon with radius of 1
-    query = (f"UPDATE {src_table} "
-             "SET the_geom = ST_Buffer(v2_connection_nodes.the_geom, 1) "
-             "FROM v2_connection_nodes "
-             f"JOIN {src_table}_map ON v2_connection_nodes.id = {src_table}_map.connection_node_id "
-             f"WHERE {src_table}.id = {src_table}_map.{src_table.strip('v2_')}_id "
-             f"AND {src_table}.the_geom IS NULL "
-             f"AND {src_table}.nr_of_inhabitants > 0 "
-             f"AND {src_table}.dry_weather_flow > 0;")
-    op.execute(sa.text(query))
+def fix_src_geometry(src_table: str, tmp_geom: str, radius_expr: str):
+    srid = get_global_srid()
+    # create columns to store the derived geometries to
+    op.execute(sa.text(f"SELECT AddGeometryColumn('{src_table}', '{tmp_geom}', 4326, 'POLYGON', 'XY', 0);"))
+    # copy existing geometries to new columns
+    op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = the_geom;"))
+    # create missing geometries
+    query_str = f"""
+    UPDATE {src_table} AS surface
+    SET {tmp_geom} = subquery.buffered_centroid_geom
+    FROM (
+        SELECT {src_table}.id AS surface_id,
+            ST_Transform(ST_Buffer(ST_Centroid(ST_Collect(ST_Transform(v2_connection_nodes.the_geom, {srid}))), 
+            {radius_expr}), 4326) AS buffered_centroid_geom
+        FROM {src_table}_map
+        JOIN {src_table} ON {src_table}_map.{src_table.strip('v2_')}_id = {src_table}.id
+        JOIN v2_connection_nodes ON v2_connection_nodes.id = {src_table}_map.connection_node_id
+        GROUP BY {src_table}.id, {src_table}.area
+    ) AS subquery
+    WHERE surface.id = subquery.surface_id
+    AND surface.{tmp_geom} IS NULL; """
+    print(query_str)
+    op.execute(sa.text(query_str))
 
 
 def populate_surface_and_dry_weather_flow():
@@ -213,15 +231,20 @@ def populate_surface_and_dry_weather_flow():
     use_0d_inflow = use_0d_inflow[0]
     # Use use_0d_inflow setting to determine wether to copy any data and if so from what table
     src_table = "v2_impervious_surface" if use_0d_inflow == 1 else "v2_surface"
-    # Create geometries for rows without defined geometry and remove remaining rows without geometry
-    fix_surface_geometries(src_table)
-    fix_dry_weather_flow_geometries(src_table)
-    op.execute(sa.text(f"DELETE FROM {src_table} WHERE the_geom IS NULL;"))
+    # Remove rows with insufficient data
+    op.execute(sa.text(f"DELETE FROM {src_table} WHERE area = 0 "
+                       "AND (nr_of_inhabitants = 0 OR dry_weather_flow = 0);"))
+    # Create missing geometries
+    fix_src_geometry(src_table, 'sur_geom', f'SQRT(AVG({src_table}.area) / PI())')
+    fix_src_geometry(src_table, 'dwf_geom', '1')
     # Copy data to new tables
     copy_v2_data_to_surface(src_table)
     copy_v2_data_to_dry_weather_flow(src_table)
     copy_v2_data_to_surface_map(f"{src_table}_map")
     copy_v2_data_to_dry_weather_flow_map(f"{src_table}_map")
+    # Remove rows in maps that refer to non-existing objects
+    remove_orphans_from_map(basename="surface")
+    remove_orphans_from_map(basename="dry_weather_flow")
     # Create geometries in new maps
     add_map_geometries("surface")
     add_map_geometries("dry_weather_flow")
@@ -264,40 +287,17 @@ def populate_dry_weather_flow_distribution():
 
 
 def fix_geometry_columns():
-    # make geo columns not nullable
-    # recover geometry columns
-    # retrieve geometry srid's
-    conn = op.get_bind()
-    use_0d_inflow = conn.execute(sa.text("SELECT use_0d_inflow FROM simulation_template_settings LIMIT 1")).fetchone()
-    if use_0d_inflow is None:
-        return
-    srid_global = 28992
-    srid = conn.execute(sa.text("SELECT epsg_code FROM model_settings LIMIT 1")).fetchone()
-    if (srid is not None) and (srid[0] is not None):
-        srid_global = srid[0]
-    srid_surface = srid_global
-    if (use_0d_inflow is not None) and (len(use_0d_inflow) == 2) and (use_0d_inflow[0] in [1, 2]):
-        src_table = "v2_impervious_surface" if use_0d_inflow[0] == 1 else "v2_surface"
-        query = f"SELECT srid FROM geometry_columns WHERE f_table_name ='{src_table}' AND f_geometry_column = 'the_geom' LIMIT 1"
-        srid = conn.execute(sa.text(query)).fetchone()
-        if (srid is not None) and (srid[0] is not None):
-            srid_surface = srid[0]
-    # srid_surface = srid_global
-    print(f'{srid_surface=} - {srid_global=}')
-    GEO_COLUMNS = [
-        ('dry_weather_flow', 'geom', 'POLYGON', srid_surface),
-        ('dry_weather_flow_map', 'geom', 'LINESTRING', srid_global),
-        ('surface', 'geom', 'POLYGON', srid_surface),
-        ('surface_map', 'geom', 'LINESTRING', srid_global),
+    GEO_COL_INFO = [
+        ('dry_weather_flow', 'geom', 'POLYGON'),
+        ('dry_weather_flow_map', 'geom', 'LINESTRING'),
+        ('surface', 'geom', 'POLYGON'),
+        ('surface_map', 'geom', 'LINESTRING'),
     ]
-    for table, column, geotype, srid in GEO_COLUMNS:
-        srid = 28992
+    for table, column, geotype in GEO_COL_INFO:
         with op.batch_alter_table(table) as batch_op:
             batch_op.alter_column(column_name=column, nullable=False)
-        migration_query = f"SELECT RecoverGeometryColumn('{table}', '{column}', {srid}, '{geotype}', 'XY')"
+        migration_query = f"SELECT RecoverGeometryColumn('{table}', '{column}', {4326}, '{geotype}', 'XY')"
         op.execute(sa.text(migration_query))
-        # op.execute(sa.text(f"UPDATE gpkg_geometry_columns SET srs_id = 28992 WHERE table_name = '{table}' AND column_name = 'geom';"))
-        op.execute(sa.text(f"SELECT UpdateGeometrySRID('{table}', '{column}',{srid})"))
 
 
 def upgrade():
@@ -315,7 +315,6 @@ def upgrade():
     fix_geometry_columns()
     # remove old tables
     remove_tables(REMOVE_TABLES)
-
 
 
 def downgrade():
