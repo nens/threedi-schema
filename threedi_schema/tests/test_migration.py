@@ -58,8 +58,13 @@ def get_columns_from_schema(schema, table_name):
 
 def get_columns_from_sqlite(cursor, table_name):
     cursor.execute(f"PRAGMA table_info({table_name})")
-    columns = cursor.fetchall()
-    return {c[1]: (c[2], not c[3]) for c in columns if not 'geom' in c[1]}
+    col_map = {}
+    for c in cursor.fetchall():
+        if 'geom' in c[1]:
+            continue
+        type_str = c[2] if c[2] != 'bool' else 'BOOLEAN'
+        col_map[c[1]] = (type_str, not c[3])
+    return col_map
 
 
 def get_values_from_sqlite(cursor, table_name, column_name):
@@ -90,7 +95,6 @@ class TestMigration223:
     added_tables = set(['surface', 'surface_map', 'surface_parameters', 'tags',
                         'dry_weather_flow', 'dry_weather_flow_map','dry_weather_flow_distribution'])
 
-    @pytest.mark.skip(reason="broken, to fix")
     def test_tables(self, schema_ref, schema_upgraded):
         # Test whether the added tables are present
         # and whether the removed tables are not present*
@@ -98,7 +102,6 @@ class TestMigration223:
         assert self.added_tables.issubset(tables_new)
         assert self.removed_tables.isdisjoint(tables_new)
 
-    @pytest.mark.skip(reason="broken, to fix")
     def test_columns_added_tables(self, schema_upgraded):
         # Note that only the added tables are touched.
         # So this check covers both added and removed columns.
