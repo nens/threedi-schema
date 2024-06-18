@@ -210,16 +210,16 @@ def fix_src_geometry(src_table: str, tmp_geom: str, radius_expr: str):
     SET {tmp_geom} = subquery.buffered_centroid_geom
     FROM (
         SELECT {src_table}.id AS surface_id,
-            ST_Transform(ST_Buffer(ST_Centroid(ST_Collect(ST_Transform(v2_connection_nodes.the_geom, {srid}))), 
+            ST_Transform(ST_Buffer(ST_Centroid(ST_Collect(ST_Transform(v2_connection_nodes.the_geom, {srid}))),
             {radius_expr}), 4326) AS buffered_centroid_geom
         FROM {src_table}_map
         JOIN {src_table} ON {src_table}_map.{src_table.strip('v2_')}_id = {src_table}.id
         JOIN v2_connection_nodes ON v2_connection_nodes.id = {src_table}_map.connection_node_id
+        WHERE {src_table}.sur_geom IS NULL        
         GROUP BY {src_table}.id, {src_table}.area
     ) AS subquery
     WHERE surface.id = subquery.surface_id
     AND surface.{tmp_geom} IS NULL; """
-    print(query_str)
     op.execute(sa.text(query_str))
 
 
