@@ -6,6 +6,7 @@ Create Date: 2024-05-27 10:35
 
 """
 import json
+import sqlite3
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -202,8 +203,16 @@ def fix_src_geometry(src_table: str, tmp_geom: str, radius_expr: str):
     srid = get_global_srid()
     # create columns to store the derived geometries to
     op.execute(sa.text(f"SELECT AddGeometryColumn('{src_table}', '{tmp_geom}', 4326, 'POLYGON', 'XY', 0);"))
-    # copy existing geometries to new columns
     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = the_geom;"))
+    # copy existing geometries to new columns
+    # try:
+    #     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = the_geom;"))
+    # except:
+    #     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = NULL;"))
+    # except:
+    #     print('Could not copy existing geometries')
+    #     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = NULL;"))
+
     # create missing geometries
     query_str = f"""
     UPDATE {src_table} AS surface
@@ -215,7 +224,7 @@ def fix_src_geometry(src_table: str, tmp_geom: str, radius_expr: str):
         FROM {src_table}_map
         JOIN {src_table} ON {src_table}_map.{src_table.strip('v2_')}_id = {src_table}.id
         JOIN v2_connection_nodes ON v2_connection_nodes.id = {src_table}_map.connection_node_id
-        WHERE {src_table}.sur_geom IS NULL        
+        WHERE {src_table}.{tmp_geom} IS NULL        
         GROUP BY {src_table}.id, {src_table}.area
     ) AS subquery
     WHERE surface.id = subquery.surface_id
