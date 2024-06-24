@@ -115,7 +115,6 @@ def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
     # no checks for existence are done, this will fail if any column already exists
     for dst_table, col in table_columns:
         if isinstance(col.type, Geometry):
-            # TODO make sure type and projection are correct!!
             add_geometry_column(dst_table, col)
         else:
             with op.batch_alter_table(dst_table) as batch_op:
@@ -199,36 +198,60 @@ def get_global_srid():
     return 28992
 
 
-def fix_src_geometry(src_table: str, tmp_geom: str, radius_expr: str):
+def fix_src_geometry(src_table: str, tmp_geom: str, side_expr: str):
     srid = get_global_srid()
     # create columns to store the derived geometries to
     op.execute(sa.text(f"SELECT AddGeometryColumn('{src_table}', '{tmp_geom}', 4326, 'POLYGON', 'XY', 0);"))
-    op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = the_geom;"))
-    # copy existing geometries to new columns
-    # try:
-    #     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = the_geom;"))
-    # except:
-    #     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = NULL;"))
-    # except:
-    #     print('Could not copy existing geometries')
-    #     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = NULL;"))
-
-    # create missing geometries
+    # Copy polygons directly
+    op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = the_geom WHERE GeometryType(the_geom) = 'POLYGON';"))
+    # Copy first polygon from multipolygons when the multipolygon only contains one polygon
+    op.execute(sa.text(f"""
+    UPDATE {src_table} SET {tmp_geom} = ST_GeometryN(the_geom,1) 
+    WHERE GeometryType(the_geom) = 'MULTIPOLYGON' 
+    AND NumGeometries(the_geom) == 1 
+    AND GeometryType(ST_GeometryN(the_geom,1))  = 'POLYGON';
+    """))
+    # Check if any existing geometries where not copied
+    conn = op.get_bind()
+    not_copied = conn.execute(sa.text(f'SELECT id FROM {src_table} '
+                                      f'WHERE {tmp_geom} IS NULL '
+                                      f'AND the_geom IS NOT NULL')).fetchall()
+    if len(not_copied) > 0:
+        raise BaseException(f'Found {len(not_copied)} geometries in {src_table} that could not'
+                            f'be converted to a POLYGON geometry: {not_copied}')
     query_str = f"""
-    UPDATE {src_table} AS surface
-    SET {tmp_geom} = subquery.buffered_centroid_geom
-    FROM (
-        SELECT {src_table}.id AS surface_id,
-            ST_Transform(ST_Buffer(ST_Centroid(ST_Collect(ST_Transform(v2_connection_nodes.the_geom, {srid}))),
-            {radius_expr}), 4326) AS buffered_centroid_geom
-        FROM {src_table}_map
-        JOIN {src_table} ON {src_table}_map.{src_table.strip('v2_')}_id = {src_table}.id
-        JOIN v2_connection_nodes ON v2_connection_nodes.id = {src_table}_map.connection_node_id
-        WHERE {src_table}.{tmp_geom} IS NULL        
-        GROUP BY {src_table}.id, {src_table}.area
-    ) AS subquery
-    WHERE surface.id = subquery.surface_id
-    AND surface.{tmp_geom} IS NULL; """
+        WITH center AS (
+          SELECT {src_table}.id AS item_id,
+                    ST_Centroid(ST_Collect(
+                        ST_Transform(v2_connection_nodes.the_geom, {srid}))) AS geom
+          FROM {src_table}_map
+          JOIN v2_connection_nodes ON {src_table}_map.connection_node_id = v2_connection_nodes.id
+          JOIN {src_table} ON {src_table}_map.{src_table.strip('v2_')}_id = {src_table}.id    
+          WHERE {src_table}_map.{src_table.strip('v2_')}_id = {src_table}.id
+          GROUP BY {src_table}.id
+        ),
+        side_length AS (
+          SELECT {side_expr} AS side
+        )
+        UPDATE {src_table}
+        SET {tmp_geom} = (
+            SELECT ST_Transform(
+                    SetSRID(
+                        ST_GeomFromText('POLYGON((' ||
+                            (ST_X(center.geom) - side_length.side / 2) || ' ' || (ST_Y(center.geom) - side_length.side / 2) || ',' ||
+                            (ST_X(center.geom) + side_length.side / 2) || ' ' || (ST_Y(center.geom) - side_length.side / 2) || ',' ||
+                            (ST_X(center.geom) + side_length.side / 2) || ' ' || (ST_Y(center.geom) + side_length.side / 2) || ',' ||
+                            (ST_X(center.geom) - side_length.side / 2) || ' ' || (ST_Y(center.geom) + side_length.side / 2) || ',' ||
+                            (ST_X(center.geom) - side_length.side / 2) || ' ' || (ST_Y(center.geom) - side_length.side / 2) ||
+                            '))'),
+                        {srid}),
+                4326
+            ) AS transformed_geom
+            FROM center, side_length
+            WHERE center.item_id = {src_table}.id
+        )
+        WHERE {tmp_geom} IS NULL;
+        """
     op.execute(sa.text(query_str))
 
 
@@ -244,7 +267,7 @@ def populate_surface_and_dry_weather_flow():
     op.execute(sa.text(f"DELETE FROM {src_table} WHERE area = 0 "
                        "AND (nr_of_inhabitants = 0 OR dry_weather_flow = 0);"))
     # Create missing geometries
-    fix_src_geometry(src_table, 'sur_geom', f'SQRT(AVG({src_table}.area) / PI())')
+    fix_src_geometry(src_table, 'sur_geom', f'sqrt({src_table}.area)')
     fix_src_geometry(src_table, 'dwf_geom', '1')
     # Copy data to new tables
     copy_v2_data_to_surface(src_table)
