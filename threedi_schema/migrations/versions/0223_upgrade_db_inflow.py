@@ -198,27 +198,58 @@ def get_global_srid():
     return 28992
 
 
-def fix_src_geometry(src_table: str, tmp_geom: str, side_expr: str):
-    srid = get_global_srid()
-    # create columns to store the derived geometries to
-    op.execute(sa.text(f"SELECT AddGeometryColumn('{src_table}', '{tmp_geom}', 4326, 'POLYGON', 'XY', 0);"))
+def get_area_str(geom_str) -> str:
+    return f'ST_Area(ST_Transform({geom_str},{get_global_srid()}))'
+
+
+def copy_polygons(src_table: str, tmp_geom: str):
+    conn = op.get_bind()
+    surf_id = f"{src_table.strip('v2_')}_id"
     # Copy polygons directly
     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = the_geom WHERE GeometryType(the_geom) = 'POLYGON';"))
-    # Copy first polygon from multipolygons when the multipolygon only contains one polygon
+    # Copy first polygon of each multipolygon and correct the area
     op.execute(sa.text(f"""
-    UPDATE {src_table} SET {tmp_geom} = ST_GeometryN(the_geom,1) 
+    UPDATE {src_table} 
+    SET {tmp_geom} = ST_GeometryN(the_geom,1), area = {get_area_str('ST_GeometryN(the_geom,1)')}
     WHERE GeometryType(the_geom) = 'MULTIPOLYGON' 
-    AND NumGeometries(the_geom) == 1 
     AND GeometryType(ST_GeometryN(the_geom,1))  = 'POLYGON';
     """))
-    # Check if any existing geometries where not copied
-    conn = op.get_bind()
-    not_copied = conn.execute(sa.text(f'SELECT id FROM {src_table} '
-                                      f'WHERE {tmp_geom} IS NULL '
-                                      f'AND the_geom IS NOT NULL')).fetchall()
-    if len(not_copied) > 0:
-        raise BaseException(f'Found {len(not_copied)} geometries in {src_table} that could not'
-                            f'be converted to a POLYGON geometry: {not_copied}')
+    # Copy the remaining polygons for multipolygons with more than one polygon
+    # select column names that we will copy directly
+    col_names = [col_info[1] for col_info in
+                 conn.execute(sa.text(f"PRAGMA table_info({src_table})")).fetchall()]
+    col_str = ', '.join(list(set(col_names) - {'id', 'the_geom', 'tmp_geom', 'area'}))
+    rows = conn.execute(sa.text(f"""
+        SELECT id, {col_str}, NumGeometries(the_geom) FROM {src_table}
+        WHERE GeometryType(the_geom) = 'MULTIPOLYGON'
+        AND GeometryType(ST_GeometryN(the_geom,1))  = 'POLYGON'
+        AND NumGeometries(the_geom) > 1;""")).fetchall()
+    id_next = conn.execute(sa.text(f"SELECT MAX(id) FROM {src_table}")).fetchall()[0][0]
+    for row in rows:
+        id = row[0]
+        nof_polygons = row[-1]
+        # Retrieve data from map table
+        conn_node_id, percentage = conn.execute(sa.text(f"""
+            SELECT connection_node_id, percentage FROM {src_table}_map
+            WHERE {surf_id} = {id}""")).fetchall()[0]
+        for i in range(2, nof_polygons + 1):
+            id_next += 1
+            op.execute(sa.text(f"""
+                INSERT INTO {src_table} (id, the_geom, {tmp_geom}, area, {col_str})
+                SELECT {id_next}, the_geom, ST_GeometryN(the_geom, {i}), 
+                {get_area_str(f'ST_GeometryN(the_geom,{i})')}, {col_str} 
+                FROM {src_table} WHERE id = {id} LIMIT 1
+            """))
+            op.execute(sa.text(f"""
+                INSERT INTO {src_table}_map ({surf_id}, connection_node_id, percentage)
+                VALUES ({id_next}, {conn_node_id}, {percentage})
+            """))
+
+
+def create_polygons(src_table: str, tmp_geom: str, side_expr: str):
+    # When no geometry is defined, a square with area matching the area column
+    # with the center at the connection node is added
+    srid = get_global_srid()
     query_str = f"""
         WITH center AS (
           SELECT {src_table}.id AS item_id,
@@ -253,6 +284,23 @@ def fix_src_geometry(src_table: str, tmp_geom: str, side_expr: str):
         WHERE {tmp_geom} IS NULL;
         """
     op.execute(sa.text(query_str))
+
+
+def fix_src_geometry(src_table: str, tmp_geom: str, side_expr: str):
+    # create columns to store the derived geometries to
+    op.execute(sa.text(f"SELECT AddGeometryColumn('{src_table}', '{tmp_geom}', 4326, 'POLYGON', 'XY', 0);"))
+    # Copy existing polygons
+    copy_polygons(src_table, tmp_geom)
+    # Check if any existing geometries where not copied
+    conn = op.get_bind()
+    not_copied = conn.execute(sa.text(f'SELECT id FROM {src_table} '
+                                      f'WHERE {tmp_geom} IS NULL '
+                                      f'AND the_geom IS NOT NULL')).fetchall()
+    if len(not_copied) > 0:
+        raise BaseException(f'Found {len(not_copied)} geometries in {src_table} that could not'
+                            f'be converted to a POLYGON geometry: {not_copied}')
+    # Create rectangles with matching area around the connection node
+    create_polygons(src_table, tmp_geom, side_expr)
 
 
 def populate_surface_and_dry_weather_flow():
