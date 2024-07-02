@@ -52,7 +52,7 @@ def get_cursor_for_schema(schema):
 def get_columns_from_schema(schema, table_name):
     inspector = inspect(schema.db.get_engine())
     columns = inspector.get_columns(table_name)
-    return {column['name']: (str(column['type']), column['nullable']) for column in columns
+    return {column['name']: (str(column['type']).lower(), column['nullable']) for column in columns
             if not 'geom' in column['name']}
 
 
@@ -62,7 +62,7 @@ def get_columns_from_sqlite(cursor, table_name):
     for c in cursor.fetchall():
         if 'geom' in c[1]:
             continue
-        type_str = c[2] if c[2] != 'bool' else 'BOOLEAN'
+        type_str = c[2].lower() if c[2] != 'bool' else 'boolean'
         col_map[c[1]] = (type_str, not c[3])
     return col_map
 
