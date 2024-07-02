@@ -6,9 +6,8 @@ Create Date: 2024-05-27 10:35
 
 """
 import json
-import sqlite3
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
 from alembic import op
@@ -141,7 +140,6 @@ def copy_values_to_new_table(src_table: str, src_columns: List[str], dst_table: 
 
 
 def copy_v2_data_to_surface(src_table: str):
-    conn = op.get_bind()
     src_columns = ["id", "code", "display_name", "sur_geom", "area"]
     dst_columns = ["id", "code", "display_name", "geom", "area"]
     if src_table == "v2_surface":
@@ -152,7 +150,6 @@ def copy_v2_data_to_surface(src_table: str):
 
 
 def copy_v2_data_to_dry_weather_flow(src_table: str):
-    conn = op.get_bind()
     src_columns = ["id", "code", "display_name", "dwf_geom", "nr_of_inhabitants", "dry_weather_flow"]
     dst_columns = ["id", "code", "display_name", "geom", "multiplier", "daily_total"]
     copy_values_to_new_table(src_table, src_columns, "dry_weather_flow", dst_columns)
@@ -201,12 +198,15 @@ def get_global_srid():
 
 
 def get_area_str(geom_str) -> str:
+    # Get SQLite statement to compute area for a given geometry
     return f'ST_Area(ST_Transform({geom_str},{get_global_srid()}))'
 
 
 def copy_polygons(src_table: str, tmp_geom: str):
-    conn = op.get_bind()
-    surf_id = f"{src_table.strip('v2_')}_id"
+    # Copy existing polygons in src_table to a new column (tmp_geom):
+    # - directly copy polygons
+    # - copy the first item of all multipolygons
+    # - add new rows for each extra polygon inside a multipolygon
     # Copy polygons directly
     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = the_geom WHERE GeometryType(the_geom) = 'POLYGON';"))
     # Copy first polygon of each multipolygon and correct the area
@@ -221,12 +221,14 @@ def copy_polygons(src_table: str, tmp_geom: str):
     col_names = [col_info[1] for col_info in
                  conn.execute(sa.text(f"PRAGMA table_info({src_table})")).fetchall()]
     col_str = ', '.join(list(set(col_names) - {'id', 'the_geom', 'tmp_geom', 'area'}))
+    conn = op.get_bind()
     rows = conn.execute(sa.text(f"""
         SELECT id, {col_str}, NumGeometries(the_geom) FROM {src_table}
         WHERE GeometryType(the_geom) = 'MULTIPOLYGON'
         AND GeometryType(ST_GeometryN(the_geom,1))  = 'POLYGON'
         AND NumGeometries(the_geom) > 1;""")).fetchall()
     id_next = conn.execute(sa.text(f"SELECT MAX(id) FROM {src_table}")).fetchall()[0][0]
+    surf_id = f"{src_table.strip('v2_')}_id"
     for row in rows:
         id = row[0]
         nof_polygons = row[-1]
@@ -236,12 +238,14 @@ def copy_polygons(src_table: str, tmp_geom: str):
             WHERE {surf_id} = {id}""")).fetchall()[0]
         for i in range(2, nof_polygons + 1):
             id_next += 1
+            # Copy polygon to new row
             op.execute(sa.text(f"""
                 INSERT INTO {src_table} (id, the_geom, {tmp_geom}, area, {col_str})
                 SELECT {id_next}, the_geom, ST_GeometryN(the_geom, {i}),
                 {get_area_str(f'ST_GeometryN(the_geom,{i})')}, {col_str}
                 FROM {src_table} WHERE id = {id} LIMIT 1
             """))
+            # Add new row to the map
             op.execute(sa.text(f"""
                 INSERT INTO {src_table}_map ({surf_id}, connection_node_id, percentage)
                 VALUES ({id_next}, {conn_node_id}, {percentage})
@@ -249,19 +253,28 @@ def copy_polygons(src_table: str, tmp_geom: str):
 
 
 def create_buffer_polygons(src_table: str, tmp_geom: str):
-    conn = op.get_bind()
+    # create circular polygon of area 1 around the connection node
     op.execute(sa.text(f"""
     UPDATE {src_table} 
     SET {tmp_geom} = (
         SELECT ST_Buffer(v2_connection_nodes.the_geom, 1)
         FROM v2_connection_nodes 
-        JOIN {src_table}_map ON v2_connection_nodes.id = {src_table}_map.connection_node_id
-        WHERE {src_table}.id = {src_table}_map.{src_table.strip('v2_')}_id
-        AND {src_table}.{tmp_geom} IS NULL);
+        JOIN {src_table}_map 
+        ON v2_connection_nodes.id = {src_table}_map.connection_node_id
+        WHERE {src_table}.id = {src_table}_map.impervious_surface_id
+    )
+    WHERE {tmp_geom} IS NULL
+    AND id IN (
+        SELECT {src_table}_map.{src_table.strip('v2_')}_id
+        FROM v2_connection_nodes 
+        JOIN {src_table}_map 
+        ON v2_connection_nodes.id = {src_table}_map.connection_node_id
+    );
     """))
 
 
 def create_square_polygons(src_table: str, tmp_geom: str):
+    # create square polygon with area area around the connection node
     side_expr = f'sqrt({src_table}.area)'
     # When no geometry is defined, a square with area matching the area column
     # with the center at the connection node is added
@@ -330,7 +343,11 @@ def populate_surface_and_dry_weather_flow():
     # Remove rows with insufficient data
     op.execute(sa.text(f"DELETE FROM {src_table} WHERE area = 0 "
                        "AND (nr_of_inhabitants = 0 OR dry_weather_flow = 0);"))
-    # Create missing geometries
+    # Create geometries for non-specified ones
+    # Add geometries for surfaces and dwf by adding extra columns
+    # This has to be done in advance because NULL geometries cannot be copied
+    # And this had to be done seperately because the geometries for surfaces and
+    # DWF are not by definition the same
     fix_src_geometry(src_table, 'sur_geom', create_square_polygons)
     fix_src_geometry(src_table, 'dwf_geom', create_buffer_polygons)
     # Copy data to new tables
