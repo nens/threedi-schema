@@ -255,6 +255,7 @@ def copy_polygons(src_table: str, tmp_geom: str):
 
 def create_buffer_polygons(src_table: str, tmp_geom: str):
     # create circular polygon of area 1 around the connection node
+    surf_id = f"{src_table.strip('v2_')}_id"
     op.execute(sa.text(f"""
     UPDATE {src_table} 
     SET {tmp_geom} = (
@@ -262,11 +263,11 @@ def create_buffer_polygons(src_table: str, tmp_geom: str):
         FROM v2_connection_nodes 
         JOIN {src_table}_map 
         ON v2_connection_nodes.id = {src_table}_map.connection_node_id
-        WHERE {src_table}.id = {src_table}_map.impervious_surface_id
+        WHERE {src_table}.id = {src_table}_map.{surf_id}
     )
     WHERE {tmp_geom} IS NULL
     AND id IN (
-        SELECT {src_table}_map.{src_table.strip('v2_')}_id
+        SELECT {src_table}_map.{surf_id}
         FROM v2_connection_nodes 
         JOIN {src_table}_map 
         ON v2_connection_nodes.id = {src_table}_map.connection_node_id
@@ -277,6 +278,7 @@ def create_buffer_polygons(src_table: str, tmp_geom: str):
 def create_square_polygons(src_table: str, tmp_geom: str):
     # create square polygon with area area around the connection node
     side_expr = f'sqrt({src_table}.area)'
+    surf_id = f"{src_table.strip('v2_')}_id"
     # When no geometry is defined, a square with area matching the area column
     # with the center at the connection node is added
     srid = get_global_srid()
@@ -287,8 +289,8 @@ def create_square_polygons(src_table: str, tmp_geom: str):
                         ST_Transform(v2_connection_nodes.the_geom, {srid}))) AS geom
           FROM {src_table}_map
           JOIN v2_connection_nodes ON {src_table}_map.connection_node_id = v2_connection_nodes.id
-          JOIN {src_table} ON {src_table}_map.{src_table.strip('v2_')}_id = {src_table}.id    
-          WHERE {src_table}_map.{src_table.strip('v2_')}_id = {src_table}.id
+          JOIN {src_table} ON {src_table}_map.{surf_id} = {src_table}.id    
+          WHERE {src_table}_map.{surf_id} = {src_table}.id
           GROUP BY {src_table}.id
         ),
         side_length AS (
