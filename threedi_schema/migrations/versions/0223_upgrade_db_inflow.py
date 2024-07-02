@@ -207,6 +207,7 @@ def copy_polygons(src_table: str, tmp_geom: str):
     # - directly copy polygons
     # - copy the first item of all multipolygons
     # - add new rows for each extra polygon inside a multipolygon
+    conn = op.get_bind()
     # Copy polygons directly
     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = the_geom WHERE GeometryType(the_geom) = 'POLYGON';"))
     # Copy first polygon of each multipolygon and correct the area
