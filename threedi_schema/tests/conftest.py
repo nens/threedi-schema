@@ -36,9 +36,8 @@ def empty_sqlite_v4(tmp_path):
 @pytest.fixture
 def south_latest_sqlite(tmp_path):
     """An empty SQLite that is in its latest South migration state"""
-    # TODO: replace with geopackage
-    tmp_sqlite = tmp_path / "south_latest.gpkg"
-    shutil.copyfile(data_dir / "south_latest.gpkg", tmp_sqlite)
+    tmp_sqlite = tmp_path / "south_latest.sqlite"
+    shutil.copyfile(data_dir / "south_latest.sqlite", tmp_sqlite)
     return ThreediDatabase(tmp_sqlite)
 
 
