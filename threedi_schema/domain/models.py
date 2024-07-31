@@ -323,12 +323,21 @@ class ConnectionNode(Base):
 
 
 class Lateral1d(Base):
-    __tablename__ = "v2_1d_lateral"
+    __tablename__ = "lateral_1d"
     id = Column(Integer, primary_key=True)
+    code = Column(Text)
+    display_name = Column(Text)
+    timeseries = Column(Text)
+    time_units = Column(Text)
+    interpolate = Column(Boolean)
+    offset = Column(Integer)
+    units = Column(Text)
+    tags = Column(Integer)
+    geom = Column(Geometry)
+
     connection_node_id = Column(
-        Integer, ForeignKey(ConnectionNode.__tablename__ + ".id"), nullable=False
+        Integer, ForeignKey(ConnectionNode.__tablename__ + ".id")
     )
-    timeseries = Column(Text, nullable=False)
     connection_node = relationship(ConnectionNode, back_populates="laterals1d")
 
 
