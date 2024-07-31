@@ -19,11 +19,13 @@ class Lateral2D(Base):
 class BoundaryConditions2D(Base):
     __tablename__ = "v2_2d_boundary_conditions"
     id = Column(Integer, primary_key=True)
-
-    display_name = Column(String(255))
-    timeseries = Column(Text, nullable=False)
-    boundary_type = Column(IntegerEnum(constants.BoundaryType), nullable=False)
-    the_geom = Column(Geometry("LINESTRING"), nullable=False)
+    code = Column(Text)
+    display_name = Column(Text)
+    type = Column(IntegerEnum(constants.BoundaryType))
+    timeseries = Column(Text)
+    time_units = Column(Text)
+    interpolate = Column(Boolean)
+    geom = Column(Geometry("LINESTRING"))
 
 
 class ControlDelta(Base):
@@ -333,7 +335,7 @@ class Lateral1d(Base):
     offset = Column(Integer)
     units = Column(Text)
     tags = Column(Integer)
-    geom = Column(Geometry)
+    geom = Column(Geometry("POINT"))
 
     connection_node_id = Column(
         Integer, ForeignKey(ConnectionNode.__tablename__ + ".id")
@@ -522,7 +524,7 @@ class BoundaryCondition1D(Base):
     timeseries = Column(Text)
     time_units = Column(Text)
     interpolate = Column(Boolean)
-    geom = Column(Geometry)
+    geom = Column(Geometry("POINT"))
 
     connection_node_id = Column(
         Integer,
