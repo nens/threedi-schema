@@ -41,16 +41,16 @@ ADD_COLUMNS = [
 ADD_TABLES = {
     "surface": [
         Column("area", Float),
-        Column("surface_parameters_id", Integer, server_default=1),
+        Column("surface_parameters_id", Integer, default=1),
         Column("tags", Text),
         Column("code", String(100)),
         Column("display_name", String(255)),
     ],
     "dry_weather_flow": [
         Column("multiplier", Float),
-        Column("dry_weather_flow_distribution_id", Integer, server_default=1),
+        Column("dry_weather_flow_distribution_id", Integer, default=1),
         Column("daily_total", Float),
-        Column("interpolate", Boolean, server_default=False),
+        Column("interpolate", Boolean, default=False),
         Column("tags", Text),
         Column("code", String(100)),
         Column("display_name", String(255)),
