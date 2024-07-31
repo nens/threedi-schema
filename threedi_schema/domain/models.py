@@ -8,12 +8,18 @@ Base = declarative_base()  # automap_base()
 
 
 class Lateral2D(Base):
-    __tablename__ = "v2_2d_lateral"
+    __tablename__ = "lateral_2d"
     id = Column(Integer, primary_key=True)
-
-    type = Column(IntegerEnum(constants.Later2dType), nullable=False)
-    the_geom = Column(Geometry("POINT"), nullable=False)
-    timeseries = Column(Text, nullable=False)
+    code = Column(Text)
+    display_name = Column(Text)
+    type = Column(IntegerEnum(constants.Later2dType))
+    timeseries = Column(Text)
+    time_units = Column(Text)
+    interpolate = Column(Boolean)
+    offset = Column(Integer)
+    units = Column(Text)
+    tags = Column(Integer)
+    geom = Column(Geometry("POINT"))
 
 
 class BoundaryConditions2D(Base):
