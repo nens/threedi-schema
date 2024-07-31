@@ -17,7 +17,7 @@ class Lateral2D(Base):
 
 
 class BoundaryConditions2D(Base):
-    __tablename__ = "v2_2d_boundary_conditions"
+    __tablename__ = "boundary_conditions_2d"
     id = Column(Integer, primary_key=True)
     code = Column(Text)
     display_name = Column(Text)
