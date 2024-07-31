@@ -504,16 +504,20 @@ class TimeStepSettings(Base):
 
 
 class BoundaryCondition1D(Base):
-    __tablename__ = "v2_1d_boundary_conditions"
+    __tablename__ = "boundary_condition_1d"
 
     id = Column(Integer, primary_key=True)
-    boundary_type = Column(IntegerEnum(constants.BoundaryType), nullable=False)
-    timeseries = Column(Text, nullable=False)
+    code = Column(Text)
+    display_name = Column(Text)
+    type = Column(IntegerEnum(constants.BoundaryType))
+    timeseries = Column(Text)
+    time_units = Column(Text)
+    interpolate = Column(Boolean)
+    geom = Column(Geometry)
 
     connection_node_id = Column(
         Integer,
         ForeignKey(ConnectionNode.__tablename__ + ".id"),
-        nullable=False,
         unique=True,
     )
     connection_node = relationship(
