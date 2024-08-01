@@ -1,6 +1,8 @@
 include LICENSE
 # Include docs in the root.
 include *.rst
+# Include migration data
+include threedi_schema/migrations/versions/data/*
 # Exclude byte-compiled code
 recursive-exclude .venv *
 recursive-exclude * __pycache__

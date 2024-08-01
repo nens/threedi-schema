@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 
 import pytest
+from geoalchemy2 import Geometry
 from sqlalchemy import inspect
 
 from threedi_schema import ModelSchema, ThreediDatabase
@@ -21,7 +22,7 @@ data_dir = Path(__file__).parent / "data"
 
 @pytest.fixture(scope="session")
 def sqlite_path():
-    return data_dir.joinpath("v2_bergermeer_221.gpkg")
+    return data_dir.joinpath("v2_bergermeer_221.sqlite")
 
 @pytest.fixture(scope="session")
 def schema_upgraded(tmp_path_factory, sqlite_path):
@@ -51,18 +52,64 @@ def get_cursor_for_schema(schema):
 def get_columns_from_schema(schema, table_name):
     inspector = inspect(schema.db.get_engine())
     columns = inspector.get_columns(table_name)
-    return {c['name']: (str(c['type']), c['nullable']) for c in columns}
+    return {column['name']: (str(column['type']).lower(), column['nullable']) for column in columns
+            if not 'geom' in column['name']}
 
 
 def get_columns_from_sqlite(cursor, table_name):
     cursor.execute(f"PRAGMA table_info({table_name})")
-    columns = cursor.fetchall()
-    return {c[1]: (c[2], not c[3]) for c in columns}
+    col_map = {}
+    for c in cursor.fetchall():
+        if 'geom' in c[1]:
+            continue
+        type_str = c[2].lower() if c[2] != 'bool' else 'boolean'
+        col_map[c[1]] = (type_str, not c[3])
+    return col_map
 
 
 def get_values_from_sqlite(cursor, table_name, column_name):
     cursor.execute(f"SELECT {column_name} FROM {table_name}")
     return cursor.fetchall()
+
+
+@pytest.mark.parametrize("sqlite_file",
+                         ["v2_bergermeer_221.sqlite",
+                          "staging-test-0d1d2d-simple-infiltration.sqlite",
+                          "staging-test-0d1d2d-simple-infiltration_surface.sqlite"])
+def test_upgrade_success(sqlite_file, tmp_path_factory):
+    tmp_sqlite = tmp_path_factory.mktemp("custom_dir").joinpath(sqlite_file)
+    shutil.copy(data_dir.joinpath(sqlite_file), tmp_sqlite)
+    schema = ModelSchema(ThreediDatabase(tmp_sqlite))
+    # Test if running upgrade doesn't run into any exceptions
+    try:
+        schema.upgrade(backup=False)
+    except Exception:
+        pytest.fail(f"Failed to upgrade {sqlite_file}")
+
+
+
+class TestMigration223:
+    pytestmark = pytest.mark.migration_223
+    removed_tables = set(['v2_surface', 'v2_surface_parameters', 'v2_surface_map',
+                          'v2_impervious_surface', 'v2_impervious_surface_map'])
+    added_tables = set(['surface', 'surface_map', 'surface_parameters', 'tags',
+                        'dry_weather_flow', 'dry_weather_flow_map','dry_weather_flow_distribution'])
+
+    def test_tables(self, schema_ref, schema_upgraded):
+        # Test whether the added tables are present
+        # and whether the removed tables are not present*
+        tables_new = set(get_sql_tables(get_cursor_for_schema(schema_upgraded)))
+        assert self.added_tables.issubset(tables_new)
+        assert self.removed_tables.isdisjoint(tables_new)
+
+    def test_columns_added_tables(self, schema_upgraded):
+        # Note that only the added tables are touched.
+        # So this check covers both added and removed columns.
+        cursor = get_cursor_for_schema(schema_upgraded)
+        for table in self.added_tables:
+            cols_sqlite = get_columns_from_sqlite(cursor, table)
+            cols_schema = get_columns_from_schema(schema_upgraded, table)
+            assert cols_sqlite == cols_schema
 
 
 class TestMigration222:
@@ -71,8 +118,8 @@ class TestMigration222:
     with open(data_dir.joinpath('migration_222.csv'), 'r') as file:
         # src_table, src_column, dst_table, dst_column
         migration_map = [[row[0], row[1], row[2], row[3]] for row in csv.reader(file)]
-    removed_tables = list(set([row[0] for row in migration_map]))
-    added_tables = list(set([row[2] for row in migration_map]))
+    removed_tables = set([row[0] for row in migration_map])
+    added_tables = set([row[2] for row in migration_map])
     bool_settings_id = [
         ("use_groundwater_storage", "groundwater_settings_id", "groundwater"),
         ("use_interflow", "interflow_settings_id", "interflow"),
@@ -92,12 +139,11 @@ class TestMigration222:
                          "interception"]
 
     def test_tables(self, schema_ref, schema_upgraded):
-        # Test whether renaming removed the correct columns,
-        # and whether adding/renaming added the correct columns.
-        tables_ref = set(get_sql_tables(get_cursor_for_schema(schema_ref)))
+        # Test whether the added tables are present
+        # and whether the removed tables are not present*
         tables_new = set(get_sql_tables(get_cursor_for_schema(schema_upgraded)))
-        assert sorted(self.removed_tables) == sorted(list(tables_ref - tables_new))
-        assert sorted(self.added_tables) == sorted(list(tables_new - tables_ref))
+        assert self.added_tables.issubset(tables_new)
+        assert self.removed_tables.isdisjoint(tables_new)
 
     def test_columns_added_tables(self, schema_upgraded):
         # Note that only the added tables are touched.

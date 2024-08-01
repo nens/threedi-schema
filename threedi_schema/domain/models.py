@@ -163,7 +163,7 @@ class SimpleInfiltration(Base):
 
 
 class SurfaceParameter(Base):
-    __tablename__ = "v2_surface_parameters"
+    __tablename__ = "surface_parameters"
     id = Column(Integer, primary_key=True)
     outflow_delay = Column(Float, nullable=False)
     surface_layer_thickness = Column(Float, nullable=False)
@@ -172,33 +172,63 @@ class SurfaceParameter(Base):
     min_infiltration_capacity = Column(Float, nullable=False)
     infiltration_decay_constant = Column(Float, nullable=False)
     infiltration_recovery_constant = Column(Float, nullable=False)
-
-    surface = relationship(
-        "Surface",
-        back_populates="surface_parameters",
-    )
+    tags = Column(Text)
+    description = Column(Text)
 
 
 class Surface(Base):
-    __tablename__ = "v2_surface"
+    __tablename__ = "surface"
     id = Column(Integer, primary_key=True)
-    display_name = Column(String(255))
     code = Column(String(100))
-    zoom_category = Column(IntegerEnum(constants.ZoomCategories))
-    nr_of_inhabitants = Column(Float)
-    dry_weather_flow = Column(Float)
-    function = Column(String(64))
+    display_name = Column(String(255))
     area = Column(Float)
     surface_parameters_id = Column(
         Integer, ForeignKey(SurfaceParameter.__tablename__ + ".id"), nullable=False
     )
-    the_geom = Column(
-        Geometry("GEOMETRY"),
+    geom = Column(
+        Geometry("POLYGON"),
         nullable=True,
     )
-    surface_parameters = relationship(
-        SurfaceParameter, foreign_keys=surface_parameters_id, back_populates="surface"
+    tags = Column(Text)
+
+
+class DryWeatherFlow(Base):
+    __tablename__ = "dry_weather_flow"
+    id = Column(Integer, primary_key=True)
+    multiplier = Column(Float)
+    dry_weather_flow_distribution_id = Column(Text)
+    daily_total = Column(Float)
+    interpolate = Column(Boolean)
+    display_name = Column(String(255))
+    code = Column(String(100))
+    geom = Column(
+        Geometry("POLYGON"),
+        nullable=False,
     )
+    tags = Column(Text)
+
+
+class DryWeatherFlowMap(Base):
+    __tablename__ = "dry_weather_flow_map"
+    id = Column(Integer, primary_key=True)
+    connection_node_id = Column(Integer)
+    dry_weather_flow_id = Column(Integer)
+    display_name = Column(String(255))
+    code = Column(String(100))
+    geom = Column(
+        Geometry("LINESTRING"),
+        nullable=False,
+    )
+    percentage = Column(Float)
+    tags = Column(Text)
+
+
+class DryWeatherFlowDistribution(Base):
+    __tablename__ = "dry_weather_flow_distribution"
+    id = Column(Integer, primary_key=True)
+    description = Column(Text)
+    tags = Column(Text)
+    distribution = Column(Text)
 
 
 class GroundWater(Base):
@@ -288,9 +318,6 @@ class ConnectionNode(Base):
     manholes = relationship("Manhole", back_populates="connection_node")
     boundary_conditions = relationship(
         "BoundaryCondition1D", back_populates="connection_node"
-    )
-    impervious_surface_maps = relationship(
-        "ImperviousSurfaceMap", back_populates="connection_node"
     )
     laterals1d = relationship("Lateral1d", back_populates="connection_node")
 
@@ -497,13 +524,17 @@ class BoundaryCondition1D(Base):
 
 
 class SurfaceMap(Base):
-    __tablename__ = "v2_surface_map"
+    __tablename__ = "surface_map"
     id = Column(Integer, primary_key=True)
     surface_id = Column(Integer, nullable=False)
     connection_node_id = Column(
         Integer, ForeignKey(ConnectionNode.__tablename__ + ".id"), nullable=False
     )
     percentage = Column(Float)
+    geom = Column(Geometry("LINESTRING"), nullable=False)
+    tags = Column(Text)
+    code = Column(String(100))
+    display_name = Column(String(255))
 
 
 class Channel(Base):
@@ -772,47 +803,6 @@ class Obstacle(Base):
     the_geom = Column(Geometry("LINESTRING"), nullable=False)
 
 
-class ImperviousSurface(Base):
-    __tablename__ = "v2_impervious_surface"
-    id = Column(Integer, primary_key=True)
-    code = Column(String(100))
-    display_name = Column(String(255))
-    surface_inclination = Column(
-        VarcharEnum(constants.SurfaceInclinationType), nullable=False
-    )
-    surface_class = Column(VarcharEnum(constants.SurfaceClass), nullable=False)
-    surface_sub_class = Column(String(128))
-    zoom_category = Column(IntegerEnum(constants.ZoomCategories))
-    nr_of_inhabitants = Column(Float)
-    area = Column(Float)
-    dry_weather_flow = Column(Float)
-    the_geom = Column(
-        Geometry("GEOMETRY"),
-        nullable=True,
-    )
-    impervious_surface_maps = relationship(
-        "ImperviousSurfaceMap", back_populates="impervious_surface"
-    )
-
-
-class ImperviousSurfaceMap(Base):
-    __tablename__ = "v2_impervious_surface_map"
-    id = Column(Integer, primary_key=True)
-    percentage = Column(Float, nullable=False)
-    impervious_surface_id = Column(
-        Integer, ForeignKey(ImperviousSurface.__tablename__ + ".id"), nullable=False
-    )
-    impervious_surface = relationship(
-        ImperviousSurface, back_populates="impervious_surface_maps"
-    )
-    connection_node_id = Column(
-        Integer, ForeignKey(ConnectionNode.__tablename__ + ".id"), nullable=False
-    )
-    connection_node = relationship(
-        ConnectionNode, back_populates="impervious_surface_maps"
-    )
-
-
 class PotentialBreach(Base):
     __tablename__ = "v2_potential_breach"
     id = Column(Integer, primary_key=True)
@@ -843,6 +833,12 @@ class ExchangeLine(Base):
     exchange_level = Column(Float)
 
 
+class Tags(Base):
+    __tablename__ = "tags"
+    id = Column(Integer, primary_key=True)
+    description = Column(Text)
+
+
 DECLARED_MODELS = [
     AggregationSettings,
     BoundaryCondition1D,
@@ -862,14 +858,15 @@ DECLARED_MODELS = [
     CrossSectionLocation,
     Culvert,
     DemAverageArea,
+    DryWeatherFlow,
+    DryWeatherFlowMap,
+    DryWeatherFlowDistribution,
     ExchangeLine,
     Floodfill,
     ModelSettings,
     GridRefinement,
     GridRefinementArea,
     GroundWater,
-    ImperviousSurface,
-    ImperviousSurfaceMap,
     Interflow,
     Lateral1d,
     Lateral2D,
