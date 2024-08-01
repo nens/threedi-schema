@@ -2,8 +2,8 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.222.3 (unreleased)
---------------------
+0.223 (2024-08-01)
+------------------
 
 - Implement changes for schema version 300 concerning inflow
 - Replace v2_surface and v2_impervious_surface (and maps) with surface and dry_weather_flow tables
