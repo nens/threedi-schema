@@ -433,7 +433,6 @@ class ModelSettings(Base):
     use_2d_rain = Column(Integer)
     use_interflow = Column(Boolean)
     use_interception = Column(Boolean)
-    use_structure_control = Column(Boolean)
     use_simple_infiltration = Column(Boolean)
     use_groundwater_flow = Column(Boolean)
     use_groundwater_storage = Column(Boolean)
@@ -491,6 +490,7 @@ class SimulationTemplateSettings(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(128))
     use_0d_inflow = Column(IntegerEnum(constants.InflowType))
+    use_structure_control = Column(Boolean)
 
 
 class TimeStepSettings(Base):
