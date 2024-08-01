@@ -803,47 +803,6 @@ class Obstacle(Base):
     the_geom = Column(Geometry("LINESTRING"), nullable=False)
 
 
-#
-# class ImperviousSurface(Base):
-#     __tablename__ = "v2_impervious_surface"
-#     id = Column(Integer, primary_key=True)
-#     code = Column(String(100))
-#     display_name = Column(String(255))
-#     surface_inclination = Column(
-#         VarcharEnum(constants.SurfaceInclinationType), nullable=False
-#     )
-#     surface_class = Column(VarcharEnum(constants.SurfaceClass), nullable=False)
-#     surface_sub_class = Column(String(128))
-#     zoom_category = Column(IntegerEnum(constants.ZoomCategories))
-#     nr_of_inhabitants = Column(Float)
-#     area = Column(Float)
-#     the_geom = Column(
-#         Geometry("GEOMETRY"),
-#         nullable=True,
-#     )
-#     impervious_surface_maps = relationship(
-#         "ImperviousSurfaceMap", back_populates="impervious_surface"
-#     )
-#
-#
-# class ImperviousSurfaceMap(Base):
-#     __tablename__ = "v2_impervious_surface_map"
-#     id = Column(Integer, primary_key=True)
-#     percentage = Column(Float, nullable=False)
-#     impervious_surface_id = Column(
-#         Integer, ForeignKey(ImperviousSurface.__tablename__ + ".id"), nullable=False
-#     )
-#     impervious_surface = relationship(
-#         ImperviousSurface, back_populates="impervious_surface_maps"
-#     )
-#     connection_node_id = Column(
-#         Integer, ForeignKey(ConnectionNode.__tablename__ + ".id"), nullable=False
-#     )
-#     connection_node = relationship(
-#         ConnectionNode, back_populates="impervious_surface_maps"
-#     )
-
-
 class PotentialBreach(Base):
     __tablename__ = "v2_potential_breach"
     id = Column(Integer, primary_key=True)
