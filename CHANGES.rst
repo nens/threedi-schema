@@ -9,7 +9,7 @@ Changelog of threedi-schema
 - Replace v2_surface and v2_impervious_surface (and maps) with surface and dry_weather_flow tables
 - Redistribute data from v2_surface or v2_impervious_surface, depending on simulation_template_settings.use_0d_inflow, over suface and dry_weather_flow tables
 - Populate surface_parameters and dry_weather_flow_distribution tables with default data
-- A full overview can be obtained from the migration
+- A full overview can be obtained from the migration code (`threedi_schema/migrations/versions/0223_upgrade_db_inflow.py`)
 
 
 0.222.2 (2024-06-13)
@@ -30,7 +30,7 @@ Changelog of threedi-schema
 
 - Implement changes for schema version 300 concerning simulation settings
 - Reduce all settings tables to a single row. Multiple settings per schematisation are no longer allowed.
-- A full overview can most easily be obtained from the migration; to summarize:
+- A full overview can most easily be obtained from the migration code (`threedi_schema/migrations/versions/0222_upgrade_db_settings.py`); to summarize:
     - Rename settings tables from "v2_foo" to "foo"
     - Rename several columns in settings tables
     - Move settings to context specific tables instead of a single generic table
