@@ -18,7 +18,7 @@ class Lateral2D(Base):
     interpolate = Column(Boolean)
     offset = Column(Integer)
     units = Column(Text)
-    tags = Column(Integer)
+    tags = Column(Text)
     geom = Column(Geometry("POINT"))
 
 
@@ -340,7 +340,7 @@ class Lateral1d(Base):
     interpolate = Column(Boolean)
     offset = Column(Integer)
     units = Column(Text)
-    tags = Column(Integer)
+    tags = Column(Text)
     geom = Column(Geometry("POINT"))
 
     connection_node_id = Column(
