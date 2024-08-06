@@ -3,7 +3,7 @@ Changelog of threedi-schema
 
 
 0.223.1 (unreleased)
-------------------
+----------------------
 
 - Nothing changed yet.
 
