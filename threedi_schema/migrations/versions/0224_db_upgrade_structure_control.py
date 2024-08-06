@@ -136,7 +136,7 @@ def populate_control_measure_map():
 
 
 def add_control_geometries(control_name):
-    targets = ['v2_culvert', 'v2_orifice', 'v2_weir', 'v2_pumpstation']
+    targets = ['v2_channel', 'v2_pipe', 'v2_orifice', 'v2_culvert', 'v2_weir', 'v2_pumpstation']
     for target_type in targets:
         if target_type == 'v2_culvert':
             geom_query = f"""
