@@ -299,7 +299,7 @@ def upgrade():
     # populate new tables
     populate_control_measure_map()
     populate_control_measure_location()
-    # # rename after populating control_measure_map
+    # rename after populating control_measure_map
     reformat_action_table()
     reformat_action_value()
     add_control_geometries('table_control')
