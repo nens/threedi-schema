@@ -290,7 +290,6 @@ def fix_geometry_columns():
 
 
 def upgrade():
-    # TODO: rename some text fields ?
     # create new tables and rename existing tables
     create_new_tables(ADD_TABLES)
     rename_tables(RENAME_TABLES)

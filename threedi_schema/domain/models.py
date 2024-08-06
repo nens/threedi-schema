@@ -41,7 +41,7 @@ class ControlMeasureLocation(Base):
 class ControlMeasureMap(Base):
     __tablename__ = "control_measure_map"
     id = Column(Integer, primary_key=True)
-    controle_measure_location_id = Column(Integer)
+    control_measure_location_id = Column(Integer)
     control_type = Column(Text)
     control_id = Column(Integer)
     weight = Column(Float)
