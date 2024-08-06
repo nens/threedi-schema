@@ -53,6 +53,7 @@ ADD_COLUMNS = [
     ("table_control", Column("geom", Geometry("POINT"), nullable=False))
 ]
 
+
 ADD_TABLES = {
     "control_measure_location": [
         Column("object_id", Integer),
@@ -173,57 +174,41 @@ def add_control_geometries(control_name):
             WHERE {control_name}.target_type = '{target_type}';                
         """
         connection.execute(sa.text(query))
-
-
-def add_control_geometries_bak(control_name):
-    # TODO:
-    # 'culvert': directly use geom
-    # others: follow view
-    connection = op.get_bind()
-    listen(connection.engine, "connect", load_spatialite)
-    targets = [('v2_culvert', 'cul_id'),
-               ('v2_orifice', 'orf_id'),
-               ('v2_weir', 'weir_id'),
-               ('v2_pumpstation', 'pump_id')]
-    for target_type, target_view_id in targets:
-        query = f"""
-        UPDATE 
-            {control_name} 
-        SET geom = (
-            SELECT ST_Centroid({target_type}_view.the_geom)
-            FROM {target_type}_view
-            WHERE {target_type}_view.{target_view_id} = {control_name}.target_id
-        )           
-        WHERE {control_name}.target_type = '{target_type}';                
-        """
-        connection.execute(sa.text(query))
+    print(control_name, connection.execute(sa.text(f'select GeometryType(geom), SRID(geom) from {control_name}')).fetchall())
 
 
 def set_geom_for_control_measure_map():
+    # TODO: fix this, somehow
+    # rows = connection.execute(sa.text(f'SELECT id, control_measure_location_id, control_id, control_type '
+    #                                   f'FROM control_measure_map')).fetchall()
     connection = op.get_bind()
     listen(connection.engine, "connect", load_spatialite)
-    rows = connection.execute(sa.text(f'SELECT id, control_measure_location_id, control_id, control_type '
-                                      f'FROM control_measure_map')).fetchall()
-    for id, loc_id, control_id, control_type in rows:
-        control_table = f'{control_type}_control'
-        connection.execute(sa.text(f"""
+    for control in ['memory', 'table']:
+        control_table = f'{control}_control'
+        query = f"""
         UPDATE 
-            control_measure_map 
-        SET geom = (        
-            SELECT 
-                MakeLine(tc.geom, cml.geom)
-            FROM 
-                {control_table} tc
-            JOIN 
-                control_measure_location cml ON tc.id = {control_id} AND cml.id = {loc_id}
-            )
-        WHERE id = {id}
-        """))
+            control_measure_map
+        SET 
+            geom = (
+                SELECT 
+                    MakeLine(tc.geom, cml.geom)
+                FROM 
+                    {control_table} AS tc,
+                    control_measure_location AS cml
+                WHERE 
+                    control_measure_map.control_id = tc.id 
+                    AND control_measure_map.control_measure_location_id = cml.id
+            );
+        """
+        op.execute(sa.text(query))
+
+    print('control_measure_map', connection.execute(sa.text('select GeometryType(geom), SRID(geom) from control_measure_map')).fetchall())
 
 
 def add_geometry_column(table: str, geocol: Column):
     # Adding geometry columns via alembic doesn't work
     # https://postgis.net/docs/AddGeometryColumn.html
+    print(f'add geom column {table}.{geocol.name}')
     geotype = geocol.type
     query = (
         f"SELECT AddGeometryColumn('{table}', '{geocol.name}', {geotype.srid}, '{geotype.geometry_type}', 'XY', 0);")
@@ -257,6 +242,9 @@ def populate_control_measure_location():
     );    
     """
     op.execute(sa.text(query))
+    connection = op.get_bind()
+    listen(connection.engine, "connect", load_spatialite)
+    print('control_measure_location', connection.execute(sa.text(f'select GeometryType(geom), SRID(geom) from control_measure_location')).fetchall())
 
 
 def reformat_action_table():
@@ -291,16 +279,43 @@ def remove_tables(tables: List[str]):
         op.drop_table(table)
 
 
+def make_geom_col_notnull(table_name):
+    # Make control_measure_map.geom not nullable by creating a new table with
+    # not nullable geometry column, copying the data from control_measure_map
+    # to the new table, dropping the original and renaming the new one to control_measure_map
+    # For some reason, changing this via batch_op.alter_column does not seem to work
+
+    # Retrieve column names and types from table
+    # Note that it is expected that the geometry column is the last column!
+    connection = op.get_bind()
+    listen(connection.engine, "connect", load_spatialite)
+    columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
+    col_names = [col[1] for col in columns]
+    col_types = [col[2] for col in columns]
+    cols = (['id INTEGER PRIMARY KEY'] +
+            [f'{cname} {ctype}' for cname, ctype in zip(col_names[:-1], col_types[:-1]) if cname != 'id'] +
+            [f'geom {columns[-1][2]} NOT NULL'])
+    # Create new table (temp), insert data, drop original and rename temp to table_name
+    op.execute(sa.text(f"CREATE TABLE temp ({','.join(cols)});"))
+    op.execute(sa.text(f"INSERT INTO temp ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
+    op.execute(sa.text(f"DROP TABLE {table_name};"))
+    op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
+
+
 def fix_geometry_columns():
     GEO_COL_INFO = [(row[0], row[1].name, row[1].type.geometry_type) for row in ADD_COLUMNS
                     if row[1].name == 'geom']
     for table, column, geotype in GEO_COL_INFO:
-        with op.batch_alter_table(table) as batch_op:
-            batch_op.alter_column(column_name=column, nullable=False)
+        make_geom_col_notnull(table)
         migration_query = f"SELECT RecoverGeometryColumn('{table}', '{column}', {4326}, '{geotype}', 'XY')"
         op.execute(sa.text(migration_query))
 
+
+
+
+
 def upgrade():
+    # TODO: rename some text fields ?
     connection = op.get_bind()
     listen(connection.engine, "connect", load_spatialite)
     # create new tables and rename existing tables
@@ -311,7 +326,7 @@ def upgrade():
     # populate new tables
     populate_control_measure_map()
     populate_control_measure_location()
-    # rename after populating control_measure_map
+    # # rename after populating control_measure_map
     reformat_action_table()
     reformat_action_value()
     add_control_geometries('table_control')
@@ -320,11 +335,10 @@ def upgrade():
     # make all columns in renamed tables, except id, nullable
     for _, table_name in RENAME_TABLES:
         make_all_columns_nullable(table_name)
-
-    # add empty columns to tables
     move_setting('model_settings', 'use_structure_control',
                  'simulation_template_settings', 'use_structure_control')
     remove_tables(DEL_TABLES)
+    # make_control_measure_map_geom_notnull()
     fix_geometry_columns()
 
 
