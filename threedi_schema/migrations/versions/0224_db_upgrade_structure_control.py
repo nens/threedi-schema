@@ -117,9 +117,8 @@ def move_setting(src_table: str, src_col: str, dst_table: str, dst_col: str):
 
 def populate_control_measure_map():
     query = """
-    INSERT INTO control_measure_map (id, control_measure_location_id, weight, control_id, control_type)
+    INSERT INTO control_measure_map (control_measure_location_id, weight, control_id, control_type)
     SELECT 
-        v2_control.id, 
         v2_control_measure_map.id, 
         v2_control_measure_map.weight, 
         v2_control.control_id, 
