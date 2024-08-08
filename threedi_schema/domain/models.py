@@ -29,9 +29,11 @@ class BoundaryConditions2D(Base):
 class ControlMeasureLocation(Base):
     __tablename__ = "control_measure_location"
     id = Column(Integer, primary_key=True)
-    object_type = Column(Text)
+    object_type = Column(
+        VarcharEnum(constants.MeasureLocationContentTypes), nullable=False
+    )
     object_id = Column(Integer)
-    measure_variable = Column(Text)
+    measure_variable = Column(VarcharEnum(constants.MeasureVariables))
     display_name = Column(Text)
     code = Column(Text)
     geom = Column(Geometry("POINT"), nullable=False)
@@ -42,7 +44,7 @@ class ControlMeasureMap(Base):
     __tablename__ = "control_measure_map"
     id = Column(Integer, primary_key=True)
     control_measure_location_id = Column(Integer)
-    control_type = Column(Text)
+    control_type = Column(VarcharEnum(constants.ControlType), nullable=False)
     control_id = Column(Integer)
     weight = Column(Float)
     display_name = Column(Text)
@@ -64,7 +66,6 @@ class ControlMemory(Base):
     target_id = Column(Integer)
     is_active = Column(Boolean)
     is_inverse = Column(Boolean)
-    measure_variable = Column(Text)
     display_name = Column(Text)
     code = Column(Text)
     geom = Column(Geometry("POINT"), nullable=False)
