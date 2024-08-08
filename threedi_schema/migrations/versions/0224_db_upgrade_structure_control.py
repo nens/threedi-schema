@@ -1,0 +1,318 @@
+"""Upgrade settings in schema
+
+Revision ID: 0223
+Revises:
+Create Date: 2024-06-30 14:50
+
+"""
+from typing import Dict, List, Tuple
+
+import sqlalchemy as sa
+from alembic import op
+from geoalchemy2 import load_spatialite
+from sqlalchemy import Boolean, Column, Float, Integer, String, Text
+from sqlalchemy.event import listen
+from sqlalchemy.orm import declarative_base
+
+from threedi_schema.domain.custom_types import Geometry
+
+# revision identifiers, used by Alembic.
+revision = "0224"
+down_revision = "0223"
+branch_labels = None
+depends_on = None
+
+Base = declarative_base()
+
+DEL_TABLES = ['v2_control',
+              'v2_control_delta',
+              'v2_control_group',
+              'v2_control_measure_group',
+              'v2_control_measure_map',
+              'v2_control_pid',
+              'v2_control_timed']
+
+RENAME_TABLES = [
+    ("v2_control_memory", "memory_control"),
+    ("v2_control_table", "table_control"),
+]
+
+ADD_COLUMNS = [
+    ("memory_control", Column("tags", Text)),
+    ("memory_control", Column("code", Text)),
+    ("memory_control", Column("display_name", Text)),
+    ("memory_control", Column("action_value_1", Float)),
+    ("memory_control", Column("action_value_2", Float)),
+    ("table_control", Column("tags", Text)),
+    ("table_control", Column("code", Text)),
+    ("table_control", Column("display_name", Text)),
+    ('simulation_template_settings', Column('use_structure_control', Boolean)),
+    ("control_measure_location", Column("geom", Geometry("POINT"), nullable=False)),
+    ("control_measure_map", Column("geom", Geometry("LINESTRING"), nullable=False)),
+    ("memory_control", Column("geom", Geometry("POINT"), nullable=False)),
+    ("table_control", Column("geom", Geometry("POINT"), nullable=False))
+]
+
+ADD_TABLES = {
+    "control_measure_location": [
+        Column("object_id", Integer),
+        Column("object_type", Text, server_default="connection_node"),
+        Column("measure_variable", Text, server_default="s1"),
+        Column("tags", Text),
+        Column("code", Text),
+        Column("display_name", Text),
+    ],
+    "control_measure_map": [
+        Column("weight", Float),
+        Column("control_measure_location_id", Integer),
+        Column("control_id", Integer),
+        Column("control_type", Text),
+        Column("measure_variable", Text),
+        Column("tags", Text),
+        Column("code", Text),
+        Column("display_name", Text),
+    ],
+}
+
+
+def create_new_tables(new_tables: Dict[str, sa.Column]):
+    # no checks for existence are done, this will fail if any table already exists
+    for table_name, columns in new_tables.items():
+        op.create_table(table_name, sa.Column("id", sa.Integer(), primary_key=True),
+                        *columns)
+
+
+def rename_tables(table_sets: List[Tuple[str, str]]):
+    # no checks for existence are done, this will fail if a source table doesn't exist
+    for src_name, dst_name in table_sets:
+        op.rename_table(src_name, dst_name)
+
+
+def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
+    # no checks for existence are done, this will fail if any column already exists
+    for dst_table, col in table_columns:
+        if isinstance(col.type, Geometry):
+            add_geometry_column(dst_table, col)
+        else:
+            with op.batch_alter_table(dst_table) as batch_op:
+                batch_op.add_column(col)
+
+
+def make_all_columns_nullable(table_name, id_name: str = 'id'):
+    # no checks for existence are done, this will fail if table doesn't exist
+    connection = op.get_bind()
+    table = sa.Table(table_name, sa.MetaData(), autoload_with=connection)
+    with op.batch_alter_table(table_name) as batch_op:
+        for column in table.columns:
+            if column.name == id_name:
+                continue
+            batch_op.alter_column(column_name=column.name, nullable=True)
+
+
+def move_setting(src_table: str, src_col: str, dst_table: str, dst_col: str):
+    # This only works for tables with one row, such as settings tables
+    op.execute(sa.text(f'UPDATE {dst_table} SET {dst_col} = (SELECT {src_col} FROM {src_table} ORDER BY id LIMIT 1)'))
+    remove_column_from_table(src_table, src_col)
+
+
+def populate_control_measure_map():
+    query = """
+    INSERT INTO control_measure_map (control_measure_location_id, weight, control_id, control_type)
+    SELECT 
+        v2_control_measure_map.id, 
+        v2_control_measure_map.weight, 
+        v2_control.control_id, 
+        v2_control.control_type
+    FROM 
+        v2_control_measure_map
+    JOIN 
+        v2_control
+    ON 
+        v2_control_measure_map.measure_group_id = v2_control.measure_group_id;
+    """
+    op.execute(sa.text(query))
+    remove_column_from_table('control_measure_map', 'measure_variable')
+
+
+def add_control_geometries(control_name):
+    targets = ['v2_channel', 'v2_pipe', 'v2_orifice', 'v2_culvert', 'v2_weir', 'v2_pumpstation']
+    for target_type in targets:
+        if target_type == 'v2_culvert':
+            geom_query = f"""
+                SELECT ST_Centroid(object.the_geom)
+                FROM v2_culvert AS object
+                JOIN v2_cross_section_definition AS def ON object.cross_section_definition_id = def.id
+            """
+        else:
+            geom_query = f"""
+                SELECT ST_Centroid(MakeLine(start_node.the_geom, end_node.the_geom))
+                FROM {target_type} AS object
+            """
+            if target_type in ['v2_orifice', 'v2_weir']:
+                geom_query += """
+                JOIN v2_cross_section_definition AS def ON object.cross_section_definition_id = def.id
+                """
+            geom_query += """
+            JOIN v2_connection_nodes AS start_node ON object.connection_node_start_id = start_node.id
+            JOIN v2_connection_nodes AS end_node ON object.connection_node_end_id = end_node.id         
+            """
+        query = f"""
+            UPDATE
+                {control_name}
+            SET geom = ({geom_query}
+            WHERE object.id = {control_name}.target_id
+            )
+            WHERE {control_name}.target_type = '{target_type}';                
+        """
+        op.execute(sa.text(query))
+
+
+def set_geom_for_control_measure_map():
+    for control in ['memory', 'table']:
+        control_table = f'{control}_control'
+        query = f"""
+        UPDATE 
+            control_measure_map
+        SET 
+            geom = (
+                SELECT 
+                    MakeLine(tc.geom, cml.geom)
+                FROM 
+                    {control_table} AS tc,
+                    control_measure_location AS cml
+                WHERE 
+                    control_measure_map.control_id = tc.id 
+                    AND control_measure_map.control_measure_location_id = cml.id
+            );
+        """
+        op.execute(sa.text(query))
+
+
+def add_geometry_column(table: str, geocol: Column):
+    # Adding geometry columns via alembic doesn't work
+    # https://postgis.net/docs/AddGeometryColumn.html
+    geotype = geocol.type
+    query = (
+        f"SELECT AddGeometryColumn('{table}', '{geocol.name}', {geotype.srid}, '{geotype.geometry_type}', 'XY', 0);")
+    op.execute(sa.text(query))
+
+
+def populate_control_measure_location():
+    # copy data from
+    query = """
+    INSERT INTO control_measure_location (id, object_id)
+    SELECT 
+        v2_control_measure_map.id, 
+        v2_control_measure_map.object_id
+    FROM 
+        v2_control_measure_map;
+    """
+    op.execute(sa.text(query))
+    query = """
+    UPDATE control_measure_location   
+    SET geom = (
+        SELECT v2_connection_nodes.the_geom
+        FROM v2_connection_nodes
+        JOIN control_measure_location
+        ON v2_connection_nodes.id = control_measure_location.object_id
+    )
+    WHERE EXISTS (
+        SELECT 1
+        FROM v2_connection_nodes
+        WHERE v2_connection_nodes.id = control_measure_location.object_id
+    );    
+    """
+    op.execute(sa.text(query))
+
+
+def reformat_action_table():
+    query = """
+    UPDATE table_control
+    SET action_table = REPLACE(
+                          REPLACE(
+                              REPLACE(action_table, ';', ','),
+                          '#', '\n'),
+                      '\t', ' ');
+    """
+    op.execute(sa.text(query))
+
+
+def reformat_action_value():
+    query = """
+    UPDATE memory_control
+    SET action_value_1 = CAST(SUBSTR(action_value, 1, INSTR(REPLACE(REPLACE(REPLACE(action_value, ';', ','), '\t', ' '), '  ', ' '), ',') - 1) AS REAL),
+    action_value_2 = CAST(SUBSTR(action_value, INSTR(REPLACE(REPLACE(REPLACE(action_value, ';', ','), '\t', ' '), '  ', ' '), ',') + 1) AS REAL);
+    """
+    op.execute(sa.text(query))
+    remove_column_from_table('memory_control', 'action_value')
+
+
+def remove_column_from_table(table_name: str, column: str):
+    with op.batch_alter_table(table_name) as batch_op:
+        batch_op.drop_column(column)
+
+
+def remove_tables(tables: List[str]):
+    for table in tables:
+        op.drop_table(table)
+
+
+def make_geom_col_notnull(table_name):
+    # Make control_measure_map.geom not nullable by creating a new table with
+    # not nullable geometry column, copying the data from control_measure_map
+    # to the new table, dropping the original and renaming the new one to control_measure_map
+    # For some reason, changing this via batch_op.alter_column does not seem to work
+
+    # Retrieve column names and types from table
+    # Note that it is expected that the geometry column is the last column!
+    connection = op.get_bind()
+    columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
+    col_names = [col[1] for col in columns]
+    col_types = [col[2] for col in columns]
+    cols = (['id INTEGER PRIMARY KEY'] +
+            [f'{cname} {ctype}' for cname, ctype in zip(col_names[:-1], col_types[:-1]) if cname != 'id'] +
+            [f'geom {columns[-1][2]} NOT NULL'])
+    # Create new table (temp), insert data, drop original and rename temp to table_name
+    op.execute(sa.text(f"CREATE TABLE temp ({','.join(cols)});"))
+    op.execute(sa.text(f"INSERT INTO temp ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
+    op.execute(sa.text(f"DROP TABLE {table_name};"))
+    op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
+
+
+def fix_geometry_columns():
+    GEO_COL_INFO = [(row[0], row[1].name, row[1].type.geometry_type) for row in ADD_COLUMNS
+                    if row[1].name == 'geom']
+    for table, column, geotype in GEO_COL_INFO:
+        make_geom_col_notnull(table)
+        migration_query = f"SELECT RecoverGeometryColumn('{table}', '{column}', {4326}, '{geotype}', 'XY')"
+        op.execute(sa.text(migration_query))
+
+
+def upgrade():
+    # create new tables and rename existing tables
+    create_new_tables(ADD_TABLES)
+    rename_tables(RENAME_TABLES)
+    # add new columns to existing tables
+    add_columns_to_tables(ADD_COLUMNS)
+    # populate new tables
+    populate_control_measure_map()
+    populate_control_measure_location()
+    # rename after populating control_measure_map
+    reformat_action_table()
+    reformat_action_value()
+    add_control_geometries('table_control')
+    add_control_geometries('memory_control')
+    set_geom_for_control_measure_map()
+    # make all columns in renamed tables, except id, nullable
+    for _, table_name in RENAME_TABLES:
+        make_all_columns_nullable(table_name)
+    move_setting('model_settings', 'use_structure_control',
+                 'simulation_template_settings', 'use_structure_control')
+    remove_tables(DEL_TABLES)
+    # make_control_measure_map_geom_notnull()
+    fix_geometry_columns()
+
+
+def downgrade():
+    # Not implemented on purpose
+    raise NotImplementedError("Downgrade back from 0.3xx is not supported")
