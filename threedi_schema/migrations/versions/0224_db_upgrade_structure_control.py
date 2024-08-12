@@ -226,6 +226,10 @@ def populate_control_measure_location():
 
 
 def reformat_action_table():
+    # Reformat table with action settings to proper csv table:
+    # * replace ';' column separators with ','
+    # * replace '#' line seperators with '\n'
+    # * replace whitespace tabs ('\t') with single whitespace (' ')
     query = """
     UPDATE table_control
     SET action_table = REPLACE(
@@ -238,6 +242,9 @@ def reformat_action_table():
 
 
 def reformat_action_value():
+    # Split action_value string (val_1, val_2) into two fields and remove action_value
+    # Before: memory_control.action_value = action_value_1, action_value_2
+    # After: memory_control.action_value_1 = action_value_1; memory_control.action_value_2 = action_value_2
     query = """
     UPDATE memory_control
     SET action_value_1 = CAST(SUBSTR(action_value, 1, INSTR(REPLACE(REPLACE(REPLACE(action_value, ';', ','), '\t', ' '), '  ', ' '), ',') - 1) AS REAL),
