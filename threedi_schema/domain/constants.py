@@ -222,7 +222,8 @@ class ControlTableActionTypes(Enum):
 
 
 class MeasureLocationContentTypes(Enum):
-    v2_connection_nodes = "v2_connection_nodes"  # in API: v2_connection_node (singular)
+    # TODO MP: rename enum
+    v2_connection_nodes = "connection_node"  # in API: v2_connection_node (singular)
     # pipe = "v2_pipe"  # --> line cnode a-b
     # orifice = "v2_orifice"  # --> line cnode a-b
     # culvert = "v2_culvert"  # --> line cnode a-b
