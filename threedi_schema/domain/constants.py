@@ -222,7 +222,7 @@ class ControlTableActionTypes(Enum):
 
 
 class MeasureVariables(Enum):
-    waterlevel = "waterlevel"  # in API: "s1"
+    waterlevel = "water_level"  # in API: "s1"
     volume = "volume"  # in API: "vol1"
     discharge = "discharge"  # in API: "q"
     velocity = "velocity"  # in API: "u1"

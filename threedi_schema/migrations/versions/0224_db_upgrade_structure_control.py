@@ -254,6 +254,16 @@ def reformat_action_value():
     remove_column_from_table('memory_control', 'action_value')
 
 
+def rename_measure_operator(table_name: str):
+    op.execute(sa.text(
+        f"""
+        UPDATE {table_name}
+        SET measure_variable = 'water_level'
+        WHERE measure_variable = 'waterlevel'
+        """
+    ))
+
+
 def remove_column_from_table(table_name: str, column: str):
     with op.batch_alter_table(table_name) as batch_op:
         batch_op.drop_column(column)
@@ -304,12 +314,14 @@ def upgrade():
     # populate new tables
     populate_control_measure_map()
     populate_control_measure_location()
-    # rename after populating control_measure_map
+    # modify table contents
     reformat_action_table()
     reformat_action_value()
     add_control_geometries('table_control')
     add_control_geometries('memory_control')
     set_geom_for_control_measure_map()
+    rename_measure_operator('table_control')
+    rename_measure_operator('memory_control')
     # make all columns in renamed tables, except id, nullable
     for _, table_name in RENAME_TABLES:
         make_all_columns_nullable(table_name)
