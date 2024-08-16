@@ -56,8 +56,7 @@ ADD_COLUMNS = [
 ADD_TABLES = {
     "control_measure_location": [
         Column("object_id", Integer),
-        Column("object_type", Text, server_default="connection_node"),
-        Column("measure_variable", Text, server_default="s1"),
+        Column("measure_variable", Text, server_default="water_level"),
         Column("tags", Text),
         Column("code", Text),
         Column("display_name", Text),
@@ -67,7 +66,6 @@ ADD_TABLES = {
         Column("control_measure_location_id", Integer),
         Column("control_id", Integer),
         Column("control_type", Text),
-        Column("measure_variable", Text),
         Column("tags", Text),
         Column("code", Text),
         Column("display_name", Text),
@@ -131,7 +129,6 @@ def populate_control_measure_map():
         v2_control_measure_map.measure_group_id = v2_control.measure_group_id;
     """
     op.execute(sa.text(query))
-    remove_column_from_table('control_measure_map', 'measure_variable')
 
 
 def add_control_geometries(control_name):

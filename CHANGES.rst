@@ -2,10 +2,13 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.223.1 (unreleased)
+0.224.0 (unreleased)
 ----------------------
 
-- Nothing changed yet.
+- Implement changes for schema version 300 concerning structure control.
+- Simplify schema to four tables (`control_measure_location`, `control_measure_map`, `memory_control` and `table_control`) and removing tables `v2_control`, `v2_control_delta`, `v2_control_measure_group`, `v2_control_measure_map` and `v2_control_pid`.
+- Removed time control and corresponding table (`v2_control_timed`).
+- Add geometries to all four tables (with optional display name and tags).
 
 
 0.223 (2024-08-01)
