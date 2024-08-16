@@ -221,17 +221,8 @@ class ControlTableActionTypes(Enum):
     set_gate_level = "set_gate_level"
 
 
-class MeasureLocationContentTypes(Enum):
-    v2_connection_nodes = "v2_connection_nodes"  # in API: v2_connection_node (singular)
-    # pipe = "v2_pipe"  # --> line cnode a-b
-    # orifice = "v2_orifice"  # --> line cnode a-b
-    # culvert = "v2_culvert"  # --> line cnode a-b
-    # channel = "v2_channel"  # --> line cnode a-b
-    # weir = "v2_weir"  # --> line cnode a-b
-
-
 class MeasureVariables(Enum):
-    waterlevel = "waterlevel"  # in API: "s1"
+    waterlevel = "water_level"  # in API: "s1"
     volume = "volume"  # in API: "vol1"
     discharge = "discharge"  # in API: "q"
     velocity = "velocity"  # in API: "u1"
