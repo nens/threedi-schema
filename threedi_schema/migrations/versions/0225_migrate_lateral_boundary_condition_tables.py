@@ -74,7 +74,7 @@ ADD_COLUMNS = [
     ("boundary_condition_1d", Column("interpolate", Boolean)),
 
     ("boundary_condition_2d", Column("code", Text)),
-    ("boundary_condition_2d", Column("display_name", Text)),
+    # display_name was already added in migration 200
     ("boundary_condition_2d", Column("tags", Text)),
     ("boundary_condition_2d", Column("time_units", Text)),
     ("boundary_condition_2d", Column("interpolate", Boolean)),
