@@ -153,7 +153,7 @@ def copy_drop_geom_columns(table_name: str, columns: List[Tuple[str, str]]):
     query = ""
     for src_name, dst_name in columns:
         query += f"""
-        UPDATE {table_name} SET {dst_name} = {src_name});
+        UPDATE {table_name} SET {dst_name} = {src_name};
         SELECT DiscardGeometryColumn('{table_name}', '{src_name}');
         ALTER TABLE {table_name} DROP COLUMN {src_name};
         """
