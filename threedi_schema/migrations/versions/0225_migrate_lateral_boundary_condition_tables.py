@@ -37,19 +37,6 @@ RENAME_TABLES = [
 ]
 
 
-# (old name, new name)
-RENAME_COLUMNS = {
-    "lateral_2d":
-        [
-            ("the_geom", "geom"),
-        ],
-    "boundary_condition_2d":
-        [
-            ("the_geom", "geom"),
-        ]
-}
-
-
 ADD_COLUMNS = [
     ("lateral_1d", Column("code", Text)),
     ("lateral_1d", Column("display_name", Text)),
@@ -84,7 +71,26 @@ ADD_COLUMNS = [
 NEW_GEOM_COLUMNS = {
     ("lateral_1d", Column("geom", Geometry("POINT"), nullable=False)),
     ("boundary_condition_1d", Column("geom", Geometry("POINT"), nullable=False)),
+    ("lateral_2d", Column("geom", Geometry("POINT"), nullable=False)),
+    ("boundary_condition_2d", Column("geom", Geometry("POINT"), nullable=False)),
 }
+
+# old name, new name
+# the columns will not actually be renamed
+# the new columns will be created in advance (they are listed in NEW_GEOM_COLUMNS)
+# then the data from the old geom columns will be copied to the new geom columns and the old columns will be dropped
+# this is because alembic has conniptions whenever you try to batch rename a geometry column
+RENAME_GEOM_COLUMNS = {
+    "lateral_2d":
+        [
+            ("the_geom", "geom"),
+        ],
+    "boundary_condition_2d":
+        [
+            ("the_geom", "geom"),
+        ]
+}
+
 
 DEFAULT_VALUES = {
     "lateral_1d": {
@@ -108,12 +114,6 @@ DEFAULT_VALUES = {
         "interpolate": "1",  # true
     },
 }
-
-def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
-    # no checks for existence are done, this will fail if table or any source column doesn't exist
-    with op.batch_alter_table(table_name) as batch_op:
-        for src_name, dst_name in columns:
-            batch_op.alter_column(src_name, new_column_name=dst_name)
 
 
 def rename_tables(table_sets: List[Tuple[str, str]]):
@@ -145,6 +145,18 @@ def add_geometry_column(table: str, geocol: Column):
     geotype = geocol.type
     query = (
         f"SELECT AddGeometryColumn('{table}', '{geocol.name}', {geotype.srid}, '{geotype.geometry_type}', 'XY', 0);")
+    op.execute(sa.text(query))
+
+
+def copy_drop_geom_columns(table_name: str, columns: List[Tuple[str, str]]):
+    # no checks for existence are done, this will fail if table or any source column doesn't exist
+    query = ""
+    for src_name, dst_name in columns:
+        query.append(f"""
+        UPDATE {table_name} SET {dst_name} = {src_name});
+        SELECT DiscardGeometryColumn('{table_name}', '{src_name}');
+        ALTER TABLE {table_name} DROP COLUMN {src_name};
+        """)
     op.execute(sa.text(query))
 
 
@@ -181,8 +193,8 @@ def upgrade():
     # add new columns to existing tables
     add_columns_to_tables(ADD_COLUMNS)
     # rename columns in renamed tables
-    for table_name, columns in RENAME_COLUMNS.items():
-        rename_columns(table_name, columns)
+    for table_name, columns in RENAME_GEOM_COLUMNS.items():
+        copy_drop_geom_columns(table_name, columns)
     add_columns_to_tables(NEW_GEOM_COLUMNS)
     # recover geometry columns
     for table, column in (
