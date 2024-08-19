@@ -34,104 +34,62 @@ class BoundaryConditions2D(Base):
     geom = Column(Geometry("LINESTRING"))
 
 
-class ControlDelta(Base):
-    __tablename__ = "v2_control_delta"
+class ControlMeasureLocation(Base):
+    __tablename__ = "control_measure_location"
     id = Column(Integer, primary_key=True)
-    measure_variable = Column(String(50))
-    measure_delta = Column(String(50))
-    measure_dt = Column(Float)
-    action_type = Column(String(50))
-    action_value = Column(String(50))
-    action_time = Column(Float)
-    target_type = Column(String(100))
-    target_id = Column(Integer)
-
-
-class ControlGroup(Base):
-    __tablename__ = "v2_control_group"
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100))
-    description = Column(Text)
-
-
-class ControlMeasureGroup(Base):
-    __tablename__ = "v2_control_measure_group"
-    id = Column(Integer, primary_key=True)
+    object_id = Column(Integer)
+    measure_variable = Column(VarcharEnum(constants.MeasureVariables))
+    display_name = Column(Text)
+    code = Column(Text)
+    geom = Column(Geometry("POINT"), nullable=False)
+    tags = Column(Text)
 
 
 class ControlMeasureMap(Base):
-    __tablename__ = "v2_control_measure_map"
+    __tablename__ = "control_measure_map"
     id = Column(Integer, primary_key=True)
-    measure_group_id = Column(
-        Integer, ForeignKey(ControlMeasureGroup.__tablename__ + ".id")
-    )
-    object_type = Column(
-        VarcharEnum(constants.MeasureLocationContentTypes), nullable=False
-    )
-    object_id = Column(Integer, nullable=False)
-    weight = Column(Float, nullable=False)
+    control_measure_location_id = Column(Integer)
+    control_type = Column(VarcharEnum(constants.ControlType), nullable=False)
+    control_id = Column(Integer)
+    weight = Column(Float)
+    display_name = Column(Text)
+    code = Column(Text)
+    geom = Column(Geometry("LINESTRING"), nullable=False)
+    tags = Column(Text)
 
 
 class ControlMemory(Base):
-    __tablename__ = "v2_control_memory"
+    __tablename__ = "memory_control"
     id = Column(Integer, primary_key=True)
-    measure_variable = Column(VarcharEnum(constants.MeasureVariables), nullable=False)
+    measure_variable = Column(VarcharEnum(constants.MeasureVariables))
     upper_threshold = Column(Float)
     lower_threshold = Column(Float)
-    action_type = Column(VarcharEnum(constants.ControlTableActionTypes), nullable=False)
-    action_value = Column(String(50), nullable=False)
-    target_type = Column(VarcharEnum(constants.StructureControlTypes), nullable=False)
-    target_id = Column(Integer, nullable=False)
+    action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
+    action_value_1 = Column(Float)
+    action_value_2 = Column(Float)
+    target_type = Column(VarcharEnum(constants.StructureControlTypes))
+    target_id = Column(Integer)
     is_active = Column(Boolean)
     is_inverse = Column(Boolean)
-
-
-class ControlPID(Base):
-    __tablename__ = "v2_control_pid"
-    id = Column(Integer, primary_key=True)
-    measure_variable = Column(String(50))
-    setpoint = Column(Float)
-    kp = Column(Float)
-    ki = Column(Float)
-    kd = Column(Float)
-    action_type = Column(String(50))
-    target_type = Column(String(100))
-    target_upper_limit = Column(String(50))
-    target_lower_limit = Column(String(50))
+    display_name = Column(Text)
+    code = Column(Text)
+    geom = Column(Geometry("POINT"), nullable=False)
+    tags = Column(Text)
 
 
 class ControlTable(Base):
-    __tablename__ = "v2_control_table"
+    __tablename__ = "table_control"
     id = Column(Integer, primary_key=True)
-    action_table = Column(Text, nullable=False)
-    action_type = Column(VarcharEnum(constants.ControlTableActionTypes), nullable=False)
-    measure_variable = Column(VarcharEnum(constants.MeasureVariables), nullable=False)
+    action_table = Column(Text)
+    action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
+    measure_variable = Column(VarcharEnum(constants.MeasureVariables))
     measure_operator = Column(VarcharEnum(constants.MeasureOperators))
-    target_type = Column(VarcharEnum(constants.StructureControlTypes), nullable=False)
+    target_type = Column(VarcharEnum(constants.StructureControlTypes))
     target_id = Column(Integer, nullable=False)
-
-
-class ControlTimed(Base):
-    __tablename__ = "v2_control_timed"
-    id = Column(Integer, primary_key=True)
-    action_type = Column(VarcharEnum(constants.ControlTableActionTypes), nullable=False)
-    action_table = Column(Text, nullable=False)
-    target_type = Column(VarcharEnum(constants.StructureControlTypes), nullable=False)
-    target_id = Column(Integer, nullable=False)
-
-
-class Control(Base):
-    __tablename__ = "v2_control"
-    id = Column(Integer, primary_key=True)
-    control_group_id = Column(Integer, ForeignKey(ControlGroup.__tablename__ + ".id"))
-    measure_group_id = Column(
-        Integer, ForeignKey(ControlMeasureGroup.__tablename__ + ".id")
-    )
-    control_type = Column(VarcharEnum(constants.ControlType), nullable=False)
-    control_id = Column(Integer)
-    start = Column(String(50))
-    end = Column(String(50))
-    measure_frequency = Column(Integer)
+    display_name = Column(Text)
+    code = Column(Text)
+    geom = Column(Geometry("POINT"), nullable=False)
+    tags = Column(Text)
 
 
 class Floodfill(Base):
@@ -450,7 +408,6 @@ class ModelSettings(Base):
     use_2d_rain = Column(Integer)
     use_interflow = Column(Boolean)
     use_interception = Column(Boolean)
-    use_structure_control = Column(Boolean)
     use_simple_infiltration = Column(Boolean)
     use_groundwater_flow = Column(Boolean)
     use_groundwater_storage = Column(Boolean)
@@ -508,6 +465,7 @@ class SimulationTemplateSettings(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(128))
     use_0d_inflow = Column(IntegerEnum(constants.InflowType))
+    use_structure_control = Column(Boolean)
 
 
 class TimeStepSettings(Base):
@@ -866,15 +824,10 @@ DECLARED_MODELS = [
     BoundaryConditions2D,
     Channel,
     ConnectionNode,
-    Control,
-    ControlDelta,
-    ControlGroup,
-    ControlMeasureGroup,
+    ControlMeasureLocation,
     ControlMeasureMap,
     ControlMemory,
-    ControlPID,
     ControlTable,
-    ControlTimed,
     CrossSectionDefinition,
     CrossSectionLocation,
     Culvert,
