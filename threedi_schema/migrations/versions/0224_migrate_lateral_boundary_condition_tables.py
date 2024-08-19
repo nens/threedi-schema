@@ -1,6 +1,6 @@
 """Migrate 1d and 2d lateral and boundary condition tables to new schema
 
-Revision ID: 0224
+Revision ID: 0225
 Revises:
 Create Date: 2024-08-05 11:22
 
@@ -18,8 +18,8 @@ from sqlalchemy.orm import declarative_base
 from threedi_schema.domain.custom_types import Geometry
 
 # revision identifiers, used by Alembic.
-revision = "0224"
-down_revision = "0223"
+revision = "0225"
+down_revision = "0224"
 branch_labels = None
 depends_on = None
 
