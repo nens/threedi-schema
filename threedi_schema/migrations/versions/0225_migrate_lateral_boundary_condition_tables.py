@@ -83,7 +83,7 @@ ADD_COLUMNS = [
 # Geom columns need to be added using geoalchemy, so therefore that's a separate task
 NEW_GEOM_COLUMNS = {
     ("lateral_1d", Column("geom", Geometry("POINT"), nullable=False)),
-    ("lateral_2d", Column("geom", Geometry("POINT"), nullable=False)),
+    ("boundary_condition_1d", Column("geom", Geometry("POINT"), nullable=False)),
 }
 
 DEFAULT_VALUES = {
