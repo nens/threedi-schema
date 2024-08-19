@@ -192,10 +192,10 @@ def upgrade():
     rename_tables(RENAME_TABLES)
     # add new columns to existing tables
     add_columns_to_tables(ADD_COLUMNS)
+    add_columns_to_tables(NEW_GEOM_COLUMNS)
     # rename columns in renamed tables
     for table_name, columns in RENAME_GEOM_COLUMNS.items():
         copy_drop_geom_columns(table_name, columns)
-    add_columns_to_tables(NEW_GEOM_COLUMNS)
     # recover geometry columns
     for table, column in (
         ("lateral_1d", "geom"),
