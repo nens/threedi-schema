@@ -167,7 +167,7 @@ def copy_v2_geometries_from_connection_nodes_by_id(dest_table: str, dest_column:
 def populate_table(table: str, values: dict):
     """Populate SQL columns with values"""
     # convert {a: b, c: d} to "a=b, c=d" for the query
-    sql_formatted_columns = {', '.join('{} = {}'.format(key, value) for key, value in values.items())}
+    sql_formatted_columns = ', '.join('{} = {}'.format(key, value) for key, value in values.items())
     # then insert it into the query
     query = f"""UPDATE {table} SET {sql_formatted_columns};"""
     op.execute(sa.text(query))
