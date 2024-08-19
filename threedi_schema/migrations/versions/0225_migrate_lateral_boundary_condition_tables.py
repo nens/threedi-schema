@@ -71,14 +71,10 @@ ADD_COLUMNS = [
 NEW_GEOM_COLUMNS = {
     ("lateral_1d", Column("geom", Geometry("POINT"), nullable=False)),
     ("boundary_condition_1d", Column("geom", Geometry("POINT"), nullable=False)),
-    ("lateral_2d", Column("geom", Geometry("POINT"), nullable=False)),
-    ("boundary_condition_2d", Column("geom", Geometry("POINT"), nullable=False)),
 }
 
 # old name, new name
-# the columns will not actually be renamed
-# the new columns will be created in advance (they are listed in NEW_GEOM_COLUMNS)
-# then the data from the old geom columns will be copied to the new geom columns and the old columns will be dropped
+# the columns will be individually renamed
 # this is because alembic has conniptions whenever you try to batch rename a geometry column
 RENAME_GEOM_COLUMNS = {
     "lateral_2d":
@@ -148,16 +144,10 @@ def add_geometry_column(table: str, geocol: Column):
     op.execute(sa.text(query))
 
 
-def copy_drop_geom_columns(table_name: str, columns: List[Tuple[str, str]]):
+def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
     # no checks for existence are done, this will fail if table or any source column doesn't exist
-    query = ""
     for src_name, dst_name in columns:
-        query += f"""
-        UPDATE {table_name} SET {dst_name} = {src_name};
-        SELECT DiscardGeometryColumn('{table_name}', '{src_name}');
-        ALTER TABLE {table_name} DROP COLUMN {src_name};
-        """
-    op.execute(sa.text(query))
+        op.execute(sa.text(f"ALTER TABLE {table_name} RENAME COLUMN {src_name} TO {dst_name};"))
 
 
 
@@ -195,7 +185,7 @@ def upgrade():
     add_columns_to_tables(NEW_GEOM_COLUMNS)
     # rename columns in renamed tables
     for table_name, columns in RENAME_GEOM_COLUMNS.items():
-        copy_drop_geom_columns(table_name, columns)
+        rename_columns(table_name, columns)
     # recover geometry columns
     for table, column in (
         ("lateral_1d", "geom"),
