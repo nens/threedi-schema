@@ -7,6 +7,7 @@ Create Date: 2024-08-05 11:22
 """
 from pathlib import Path
 from typing import Dict, List, Tuple
+from copy import deepcopy
 
 import sqlalchemy as sa
 from alembic import op
@@ -146,8 +147,35 @@ def add_geometry_column(table: str, geocol: Column):
 
 def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
     # no checks for existence are done, this will fail if table or any source column doesn't exist
-    for src_name, dst_name in columns:
-        op.execute(sa.text(f"ALTER TABLE {table_name} RENAME COLUMN {src_name} TO {dst_name};"))
+    connection = op.get_bind()
+    old_columns_result = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
+    old_columns = []
+    for value_list in old_columns_result:
+        name = value_list[1]
+        type = value_list[2]
+        old_columns.append({"name": name, "type": type})
+
+    columns_dict = dict(columns)
+
+    old_columns_list = [entry["name"] for entry in old_columns]
+
+    if not all(e in old_columns_list for e in columns_dict):
+        raise ValueError(f"Cannot rename columns {columns_dict.keys()} in table {table_name}; table does not contain all these columns")
+    new_columns = deepcopy(old_columns)
+    for i in range(len(new_columns)):
+        if new_columns[i]["name"] in columns_dict.keys():
+            new_columns[i]["name"] = columns_dict[new_columns[i]["name"]]
+
+    new_columns_list = [entry["name"] for entry in new_columns]
+
+    op.execute(sa.text(f"CREATE TABLE temp ({','.join(new_columns_list)});"))
+    op.execute(sa.text(f"INSERT INTO temp ({','.join(new_columns_list)}) SELECT {','.join(old_columns_list)} from {table_name};"))
+    op.execute(sa.text(f"DROP TABLE {table_name};"))
+    op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
+
+    for entry in new_columns:
+        if entry["name"] == "geom":
+            op.execute(sa.text(f"""SELECT RecoverGeometryColumn('{table_name}', '{entry["name"]}', 4326, '{entry["type"]}', 'XY')"""))
 
 
 
