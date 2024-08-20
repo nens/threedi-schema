@@ -214,7 +214,7 @@ def upgrade():
     # rename columns in renamed tables
     for table_name, columns in RENAME_GEOM_COLUMNS.items():
         rename_columns(table_name, columns)
-    # recover geometry columns
+    # recover geometry column data from connection nodes
     for table, column in (
         ("lateral_1d", "geom"),
         ("boundary_condition_1d", "geom")
