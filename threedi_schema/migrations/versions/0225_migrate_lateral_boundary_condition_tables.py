@@ -84,11 +84,9 @@ RENAME_COLUMNS = {
     ],
     "boundary_condition_2d": [
         ("boundary_type", "type"),
-    ],
-    "lateral_2d": [
         ("the_geom", "geom"),
     ],
-    "boundary_condition_2d": [
+    "lateral_2d": [
         ("the_geom", "geom"),
     ],
 }
