@@ -78,14 +78,23 @@ NEW_GEOM_COLUMNS = {
 # the columns will be individually renamed
 # this is because alembic has conniptions whenever you try to batch rename a geometry column
 RENAME_GEOM_COLUMNS = {
-    "lateral_2d":
-        [
-            ("the_geom", "geom"),
-        ],
-    "boundary_condition_2d":
-        [
-            ("the_geom", "geom"),
-        ]
+    "lateral_2d": [
+        ("the_geom", "geom"),
+    ],
+    "boundary_condition_2d": [
+        ("the_geom", "geom"),
+    ]
+}
+
+
+# these columns can be batch renamed via alembic
+RENAME_COLUMNS = {
+    "boundary_condition_1d": [
+        ("boundary_type", "type"),
+    ],
+    "boundary_condition_2d": [
+        ("boundary_type", "type"),
+    ],
 }
 
 
@@ -136,6 +145,14 @@ def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
                 batch_op.add_column(col)
 
 
+def rename_columns(table: str, columns: List[Tuple[str, str]]):
+    with op.batch_alter_table(table) as batch_op:
+        for column_set in columns:
+            batch_op.alter_column(
+                column_set[0], new_column_name=column_set[1]
+            )
+
+
 def add_geometry_column(table: str, geocol: Column):
     # Adding geometry columns via alembic doesn't work
     # https://postgis.net/docs/AddGeometryColumn.html
@@ -145,7 +162,7 @@ def add_geometry_column(table: str, geocol: Column):
     op.execute(sa.text(query))
 
 
-def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
+def rename_geom_columns(table_name: str, columns: List[Tuple[str, str]]):
     # no checks for existence are done, this will fail if table or any source column doesn't exist
     connection = op.get_bind()
     old_columns_result = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
@@ -206,20 +223,27 @@ def populate_table(table: str, values: dict):
 def upgrade():
     connection = op.get_bind()
     listen(connection.engine, "connect", load_spatialite)
+
     # rename existing tables
     rename_tables(RENAME_TABLES)
+
     # add new columns to existing tables
     add_columns_to_tables(ADD_COLUMNS)
     add_columns_to_tables(NEW_GEOM_COLUMNS)
+
     # rename columns in renamed tables
-    for table_name, columns in RENAME_GEOM_COLUMNS.items():
+    for table_name, columns in RENAME_COLUMNS.items():
         rename_columns(table_name, columns)
+    for table_name, columns in RENAME_GEOM_COLUMNS.items():
+        rename_geom_columns(table_name, columns)
+
     # recover geometry column data from connection nodes
     for table, column in (
         ("lateral_1d", "geom"),
         ("boundary_condition_1d", "geom")
     ):
         copy_v2_geometries_from_connection_nodes_by_id(dest_table=table, dest_column=column)
+
     # populate new columns in tables
     for key, value in DEFAULT_VALUES.items():
         populate_table(table=key, values=value)
