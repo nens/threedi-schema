@@ -5,9 +5,9 @@ Revises:
 Create Date: 2024-08-05 11:22
 
 """
+from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List, Tuple
-from copy import deepcopy
 
 import sqlalchemy as sa
 from alembic import op

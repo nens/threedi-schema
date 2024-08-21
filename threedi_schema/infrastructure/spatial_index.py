@@ -42,7 +42,9 @@ def ensure_spatial_indexes(db, models):
                 ]
                 if len(geom_columns) > 1:
                     # Pragmatic fix: spatialindex breaks on multiple geometry columns per table
-                    geom_columns = [x for x in geom_columns if x.name in ("the_geom", "geom")]
+                    geom_columns = [
+                        x for x in geom_columns if x.name in ("the_geom", "geom")
+                    ]
                 if geom_columns:
                     created &= _ensure_spatial_index(connection, geom_columns[0])
 
