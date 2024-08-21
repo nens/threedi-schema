@@ -1,4 +1,4 @@
-VIEWS_TO_DELETE = ["v2_crosssection_view", "v2_pipe_map_view", "v2_imp_surface_view"]
+VIEWS_TO_DELETE = ["v2_crosssection_view", "v2_pipe_map_view", "v2_imp_surface_view", "v2_1d_lateral_view", "v2_1d_boundary_conditions_view"]
 ALL_VIEWS = {
     "lateral_1d_view": {
         "definition": "SELECT a.rowid AS rowid, a.id AS id, a.connection_node_id AS connection_node_id, a.timeseries AS timeseries, a.geom AS geom FROM lateral_1d a",
