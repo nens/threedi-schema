@@ -6,20 +6,6 @@ VIEWS_TO_DELETE = [
     "v2_1d_boundary_conditions_view",
 ]
 ALL_VIEWS = {
-    "lateral_1d_view": {
-        "definition": "SELECT a.rowid AS rowid, a.id AS id, a.connection_node_id AS connection_node_id, a.timeseries AS timeseries, a.geom AS geom FROM lateral_1d a",
-        "view_geometry": "geom",
-        "view_rowid": "connection_node_id",
-        "f_table_name": "v2_connection_nodes",
-        "f_geometry_column": "geom",
-    },
-    "boundary_condition_1d_view": {
-        "definition": "SELECT a.rowid AS rowid, a.id AS id, a.connection_node_id AS connection_node_id, a.type AS type, a.timeseries AS timeseries, a.geom AS geom FROM boundary_condition_1d a",
-        "view_geometry": "geom",
-        "view_rowid": "connection_node_id",
-        "f_table_name": "v2_connection_nodes",
-        "f_geometry_column": "geom",
-    },
     "v2_cross_section_location_view": {
         "definition": "SELECT loc.rowid as rowid, loc.id as loc_id, loc.code as loc_code, loc.reference_level as loc_reference_level, loc.bank_level as loc_bank_level, loc.friction_type as loc_friction_type, loc.friction_value as loc_friction_value, loc.definition_id as loc_definition_id, loc.channel_id as loc_channel_id, loc.the_geom as the_geom, loc.vegetation_stem_density as loc_vegetation_stem_density, loc.vegetation_stem_diameter as loc_vegetation_stem_diameter, loc.vegetation_height as loc_vegetation_height, loc.vegetation_drag_coefficient as loc_vegetation_drag_coefficient, def.id as def_id, def.shape as def_shape, def.width as def_width, def.code as def_code, def.height as def_height, def.friction_values as def_friction_values, def.vegetation_stem_densities as def_vegetation_stem_densities, def.vegetation_stem_diameters as def_vegetation_stem_diameters, def.vegetation_heights as def_vegetation_heights, def.vegetation_drag_coefficients as def_vegetation_drag_coefficients FROM v2_cross_section_location loc, v2_cross_section_definition def WHERE loc.definition_id = def.id",
         "view_geometry": "the_geom",
