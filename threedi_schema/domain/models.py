@@ -19,7 +19,7 @@ class Lateral2D(Base):
     offset = Column(Integer)
     units = Column(Text)
     tags = Column(Text)
-    geom = Column(Geometry("POINT"))
+    geom = Column(Geometry("POINT"), nullable=False)
 
 
 class BoundaryConditions2D(Base):
@@ -31,7 +31,7 @@ class BoundaryConditions2D(Base):
     timeseries = Column(Text)
     time_units = Column(Text)
     interpolate = Column(Boolean)
-    geom = Column(Geometry("LINESTRING"))
+    geom = Column(Geometry("LINESTRING"), nullable=False)
 
 
 class ControlMeasureLocation(Base):
@@ -299,7 +299,7 @@ class Lateral1d(Base):
     offset = Column(Integer)
     units = Column(Text)
     tags = Column(Text)
-    geom = Column(Geometry("POINT"))
+    geom = Column(Geometry("POINT"), nullable=False)
 
     connection_node_id = Column(
         Integer, ForeignKey(ConnectionNode.__tablename__ + ".id")
@@ -488,7 +488,7 @@ class BoundaryCondition1D(Base):
     timeseries = Column(Text)
     time_units = Column(Text)
     interpolate = Column(Boolean)
-    geom = Column(Geometry("POINT"))
+    geom = Column(Geometry("POINT"), nullable=False)
 
     connection_node_id = Column(
         Integer,

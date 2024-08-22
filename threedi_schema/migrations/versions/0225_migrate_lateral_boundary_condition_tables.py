@@ -144,7 +144,7 @@ def add_geometry_column(table: str, geocol: Column):
     # https://postgis.net/docs/AddGeometryColumn.html
     geotype = geocol.type
     query = (
-        f"SELECT AddGeometryColumn('{table}', '{geocol.name}', {geotype.srid}, '{geotype.geometry_type}', 'XY', 0);")
+        f"SELECT AddGeometryColumn('{table}', '{geocol.name}', {geotype.srid}, '{geotype.geometry_type}', 'XY', {int(not geocol.nullable)});")
     op.execute(sa.text(query))
 
 
@@ -154,9 +154,7 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
     old_columns_result = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
     old_columns = []
     for value_list in old_columns_result:
-        name = value_list[1]
-        type = value_list[2]
-        old_columns.append({"name": name, "type": type})
+        old_columns.append({"name": value_list[1], "type": value_list[2], "not_null": value_list[3]})
 
     columns_dict = dict(columns)
 
@@ -171,7 +169,15 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
 
     new_columns_list = [entry["name"] for entry in new_columns]
 
-    op.execute(sa.text(f"CREATE TABLE temp ({','.join(new_columns_list)});"))
+    new_columns_list_sql_formatted = []
+    for entry in new_columns:
+        entry_string = f"{entry['name']} {entry['type']}"
+        if entry["not_null"]:
+            entry_string += f" NOT NULL"
+        new_columns_list_sql_formatted.append(entry_string)
+
+    create_table_query = f"""CREATE TABLE temp ({', '.join(new_columns_list_sql_formatted)});"""
+    op.execute(sa.text(create_table_query))
     op.execute(sa.text(f"INSERT INTO temp ({','.join(new_columns_list)}) SELECT {','.join(old_columns_list)} from {table_name};"))
     op.execute(sa.text(f"DROP TABLE {table_name};"))
     op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
@@ -215,11 +221,14 @@ def upgrade():
 
     # add new columns to existing tables
     add_columns_to_tables(ADD_COLUMNS)
-    add_columns_to_tables(NEW_GEOM_COLUMNS)
 
     # rename columns in renamed tables
     for table_name, columns in RENAME_COLUMNS.items():
         rename_columns(table_name, columns)
+
+    # add geometry columns after renaming columns
+    # to not needlessly trigger RecoverGeometryColumn
+    add_columns_to_tables(NEW_GEOM_COLUMNS)
 
     # recover geometry column data from connection nodes
     for table, column in (
