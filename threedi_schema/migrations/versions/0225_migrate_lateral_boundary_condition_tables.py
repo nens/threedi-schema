@@ -154,7 +154,7 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
     old_columns_result = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
     old_columns = []
     for value_list in old_columns_result:
-        old_columns.append({"name": value_list[1], "type": value_list[2], "not_null": value_list[3]})
+        old_columns.append({"name": value_list[1], "type": value_list[2]})
 
     columns_dict = dict(columns)
 
@@ -172,7 +172,8 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
     new_columns_list_sql_formatted = []
     for entry in new_columns:
         entry_string = f"{entry['name']} {entry['type']}"
-        if entry["not_null"]:
+        # in the new database schema only geometries and id will have NOT NULL constraints
+        if entry['name'] in ["geom", "id"]:
             entry_string += f" NOT NULL"
         new_columns_list_sql_formatted.append(entry_string)
 
