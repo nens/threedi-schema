@@ -214,9 +214,6 @@ def populate_table(table: str, values: dict):
 
 
 def upgrade():
-    connection = op.get_bind()
-    listen(connection.engine, "connect", load_spatialite)
-
     # rename existing tables
     rename_tables(RENAME_TABLES)
 
