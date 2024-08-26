@@ -315,7 +315,6 @@ def create_square_polygons(src_table: str, tmp_geom: str):
         )
         WHERE {tmp_geom} IS NULL;
         """
-    op.execute(sa.text(query_str))
 
 
 def fix_src_geometry(src_table: str, tmp_geom: str, create_polygons):
@@ -353,11 +352,16 @@ def populate_surface_and_dry_weather_flow():
     # DWF are not by definition the same
     fix_src_geometry(src_table, 'sur_geom', create_square_polygons)
     fix_src_geometry(src_table, 'dwf_geom', create_buffer_polygons)
+
     # Copy data to new tables
     copy_v2_data_to_surface(src_table)
     copy_v2_data_to_dry_weather_flow(src_table)
     copy_v2_data_to_surface_map(f"{src_table}_map")
     copy_v2_data_to_dry_weather_flow_map(f"{src_table}_map")
+    conn = op.get_bind()
+    print(f"{src_table=}; {tmp_geom=}; {surf_id=}")
+    print(conn.execute(sa.text(f"select * from surface where geom IS NULL")).fetchall())
+
     # Remove rows in maps that refer to non-existing objects
     remove_orphans_from_map(basename="surface")
     remove_orphans_from_map(basename="dry_weather_flow")
@@ -428,9 +432,9 @@ def upgrade():
     # migrate values from old tables to new tables
     populate_surface_and_dry_weather_flow()
     # recover geometry columns
-    fix_geometry_columns()
+    # fix_geometry_columns()
     # remove old tables
-    remove_tables(REMOVE_TABLES)
+    # remove_tables(REMOVE_TABLES)
 
 
 def downgrade():

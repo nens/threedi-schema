@@ -168,19 +168,29 @@ def set_geom_for_control_measure_map():
     for control in ['memory', 'table']:
         control_table = f'{control}_control'
         query = f"""
-        UPDATE 
+        UPDATE
             control_measure_map
-        SET 
+        SET
             geom = (
                 SELECT 
                     MakeLine(tc.geom, cml.geom)
                 FROM 
-                    {control_table} AS tc,
-                    control_measure_location AS cml
+                    {control_table} AS tc
+                JOIN 
+                    control_measure_map AS cmm ON cmm.control_id = tc.id
+                JOIN 
+                    control_measure_location AS cml ON cmm.control_measure_location_id = cml.id
                 WHERE 
-                    control_measure_map.control_id = tc.id 
-                    AND control_measure_map.control_measure_location_id = cml.id
-            );
+                    tc.id = control_measure_map.control_id
+                )    
+            WHERE
+                EXISTS (
+                    SELECT 1
+                    FROM 
+                        {control_table} AS tc
+                    WHERE 
+                        tc.id = control_measure_map.control_id
+                );                                     
         """
         op.execute(sa.text(query))
 
@@ -319,13 +329,10 @@ def upgrade():
     set_geom_for_control_measure_map()
     rename_measure_operator('table_control')
     rename_measure_operator('memory_control')
-    # make all columns in renamed tables, except id, nullable
-    for _, table_name in RENAME_TABLES:
-        make_all_columns_nullable(table_name)
     move_setting('model_settings', 'use_structure_control',
                  'simulation_template_settings', 'use_structure_control')
     remove_tables(DEL_TABLES)
-    # make_control_measure_map_geom_notnull()
+    # Fix geometry columns and also make all but geom column nullable
     fix_geometry_columns()
 
 
