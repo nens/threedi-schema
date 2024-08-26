@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.224.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Revert removing on customized load_spatialite function
 
 
 0.224.0 (2024-08-16)
