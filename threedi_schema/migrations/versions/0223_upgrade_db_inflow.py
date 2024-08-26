@@ -6,6 +6,7 @@ Create Date: 2024-05-27 10:35
 
 """
 import json
+import warnings
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -97,6 +98,10 @@ REMOVE_TABLES = [
 ]
 
 
+class NullGeomWarning(UserWarning):
+    pass
+
+
 def rename_tables(table_sets: List[Tuple[str, str]]):
     # no checks for existence are done, this will fail if a source table doesn't exist
     for src_name, dst_name in table_sets:
@@ -155,6 +160,17 @@ def copy_v2_data_to_dry_weather_flow(src_table: str):
     copy_values_to_new_table(src_table, src_columns, "dry_weather_flow", dst_columns)
     op.execute(sa.text("DELETE FROM dry_weather_flow "
                        "WHERE multiplier = 0 OR daily_total = 0 OR multiplier IS NULL OR daily_total IS NULL;"))
+
+
+def handle_null_geoms(src_table, tgt_table):
+    conn = op.get_bind()
+    missing = conn.execute(sa.text(f"select id from {tgt_table} where geom IS NULL")).fetchall()
+    if len(missing) > 0:
+        msg = (f"Could not create {tgt_table}.geom because {src_table}.id is not"
+               f"present in {src_table}_map. Id's {missing} will not be "
+               f"migrated to {tgt_table}")
+        warnings.warn(msg, NullGeomWarning)
+        op.execute(sa.text(f"DELETE FROM {tgt_table} WHERE geom IS NULL;"))
 
 
 def remove_orphans_from_map(basename: str):
@@ -358,9 +374,10 @@ def populate_surface_and_dry_weather_flow():
     copy_v2_data_to_dry_weather_flow(src_table)
     copy_v2_data_to_surface_map(f"{src_table}_map")
     copy_v2_data_to_dry_weather_flow_map(f"{src_table}_map")
-    conn = op.get_bind()
-    print(f"{src_table=}; {tmp_geom=}; {surf_id=}")
-    print(conn.execute(sa.text(f"select * from surface where geom IS NULL")).fetchall())
+
+    # Check if any NULL geoms are left and remove them
+    handle_null_geoms(src_table, 'surface')
+    handle_null_geoms(src_table, 'dry_weather_flow')
 
     # Remove rows in maps that refer to non-existing objects
     remove_orphans_from_map(basename="surface")
