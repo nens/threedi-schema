@@ -449,9 +449,9 @@ def upgrade():
     # migrate values from old tables to new tables
     populate_surface_and_dry_weather_flow()
     # recover geometry columns
-    # fix_geometry_columns()
+    fix_geometry_columns()
     # remove old tables
-    # remove_tables(REMOVE_TABLES)
+    remove_tables(REMOVE_TABLES)
 
 
 def downgrade():
