@@ -98,7 +98,7 @@ REMOVE_TABLES = [
 ]
 
 
-class NullGeomWarning(UserWarning):
+class NoMappingWarning(UserWarning):
     pass
 
 
@@ -166,11 +166,12 @@ def handle_null_geoms(src_table, tgt_table):
     conn = op.get_bind()
     missing = conn.execute(sa.text(f"select id from {tgt_table} where geom IS NULL")).fetchall()
     if len(missing) > 0:
-        msg = (f"Could not create {tgt_table}.geom because {src_table}.id is not"
-               f"present in {src_table}_map. Id's {missing} will not be "
-               f"migrated to {tgt_table}")
+        msg = (f"Could not create {tgt_table}.geom because {src_table}.id is not "
+               f"present in {src_table}_map. The following id's will not be "
+               f"migrated to {tgt_table}:  {missing}")
         warnings.warn(msg, NullGeomWarning)
         op.execute(sa.text(f"DELETE FROM {tgt_table} WHERE geom IS NULL;"))
+        rows_left = conn.execute(sa.text(f"select COUNT(*) from {tgt_table}")).fetchone()[0]
 
 
 def remove_orphans_from_map(basename: str):
@@ -331,7 +332,7 @@ def create_square_polygons(src_table: str, tmp_geom: str):
         )
         WHERE {tmp_geom} IS NULL;
         """
-
+    op.execute(query_str)
 
 def fix_src_geometry(src_table: str, tmp_geom: str, create_polygons):
     conn = op.get_bind()
@@ -350,6 +351,21 @@ def fix_src_geometry(src_table: str, tmp_geom: str, create_polygons):
     create_polygons(src_table, tmp_geom)
 
 
+def remove_invalid_rows(src_table:str):
+    # Remove rows with insufficient data
+    op.execute(sa.text(f"DELETE FROM {src_table} WHERE area = 0 "
+                       "AND (nr_of_inhabitants = 0 OR dry_weather_flow = 0);"))
+
+    # Remove rows without mapping
+    conn = op.get_bind()
+    where_clause = f"WHERE id NOT IN (SELECT {src_table.strip('v2_')}_id FROM {src_table}_map)"
+    no_map_id = conn.execute(sa.text(f"SELECT id FROM {src_table} {where_clause};")).fetchall()
+    if len(no_map_id) > 0:
+        op.execute(sa.text(f"DELETE FROM {src_table} {where_clause};"))
+        msg = (f"Could not migrate the following rows from {src_table} because "
+               f"they are not mapped to a connection node in {src_table}_map: {no_map_id}")
+        warnings.warn(msg, NoMappingWarning)
+
 def populate_surface_and_dry_weather_flow():
     conn = op.get_bind()
     use_0d_inflow = conn.execute(sa.text("SELECT use_0d_inflow FROM simulation_template_settings LIMIT 1")).fetchone()
@@ -358,9 +374,8 @@ def populate_surface_and_dry_weather_flow():
     use_0d_inflow = use_0d_inflow[0]
     # Use use_0d_inflow setting to determine wether to copy any data and if so from what table
     src_table = "v2_impervious_surface" if use_0d_inflow == 1 else "v2_surface"
-    # Remove rows with insufficient data
-    op.execute(sa.text(f"DELETE FROM {src_table} WHERE area = 0 "
-                       "AND (nr_of_inhabitants = 0 OR dry_weather_flow = 0);"))
+    remove_invalid_rows(src_table)
+
     # Create geometries for non-specified ones
     # Add geometries for surfaces and dwf by adding extra columns
     # This has to be done in advance because NULL geometries cannot be copied
@@ -368,7 +383,6 @@ def populate_surface_and_dry_weather_flow():
     # DWF are not by definition the same
     fix_src_geometry(src_table, 'sur_geom', create_square_polygons)
     fix_src_geometry(src_table, 'dwf_geom', create_buffer_polygons)
-
     # Copy data to new tables
     copy_v2_data_to_surface(src_table)
     copy_v2_data_to_dry_weather_flow(src_table)
@@ -376,8 +390,8 @@ def populate_surface_and_dry_weather_flow():
     copy_v2_data_to_dry_weather_flow_map(f"{src_table}_map")
 
     # Check if any NULL geoms are left and remove them
-    handle_null_geoms(src_table, 'surface')
-    handle_null_geoms(src_table, 'dry_weather_flow')
+    # handle_null_geoms(src_table, 'surface')
+    # handle_null_geoms(src_table, 'dry_weather_flow')
 
     # Remove rows in maps that refer to non-existing objects
     remove_orphans_from_map(basename="surface")
