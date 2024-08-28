@@ -12,11 +12,11 @@ from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
 from alembic import op
-from geoalchemy2 import load_spatialite
 from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 from sqlalchemy.event import listen
 from sqlalchemy.orm import declarative_base
 
+from threedi_schema.application.threedi_database import load_spatialite
 from threedi_schema.domain.custom_types import Geometry
 
 # revision identifiers, used by Alembic.

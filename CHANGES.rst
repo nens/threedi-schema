@@ -7,6 +7,7 @@ Changelog of threedi-schema
 
 - Fix creating control_measure_map.geom in 224 migration
 - Handle created Null geometries when migrating surface / impervious_surface
+- Revert removing on customized load_spatialite function
 
 
 0.224.0 (2024-08-16)
