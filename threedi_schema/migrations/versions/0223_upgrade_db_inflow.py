@@ -332,7 +332,7 @@ def create_square_polygons(src_table: str, tmp_geom: str):
         )
         WHERE {tmp_geom} IS NULL;
         """
-    op.execute(query_str)
+    op.execute(sa.text(query_str))
 
 def fix_src_geometry(src_table: str, tmp_geom: str, create_polygons):
     conn = op.get_bind()
