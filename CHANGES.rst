@@ -8,6 +8,9 @@ Changelog of threedi-schema
 - Fix creating control_measure_map.geom in 224 migration
 - Handle created Null geometries when migrating surface / impervious_surface
 - Revert removing on customized load_spatialite function
+- Remove unused columns from several settings tables
+- Rename groundwater.equilibrium_infiltration_rate_type to equilibrium_infiltration_rate_aggregation
+- Rename control_measure_location.object_id to connection_node_id
 
 
 0.224.0 (2024-08-16)
