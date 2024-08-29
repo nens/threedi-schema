@@ -47,6 +47,7 @@ RENAME_COLUMNS = {
             ("infiltration_decay_period_type", "infiltration_decay_period_aggregation"),
             ("initial_infiltration_rate_type", "initial_infiltration_rate_aggregation"),
             ("phreatic_storage_capacity_type", "phreatic_storage_capacity_aggregation"),
+            ("equilibrium_infiltration_rate_type", "equilibrium_infiltration_rate_aggregation"),
         ],
     "numerical_settings":
         [
