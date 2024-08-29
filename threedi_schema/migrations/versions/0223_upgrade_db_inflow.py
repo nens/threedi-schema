@@ -358,7 +358,8 @@ def remove_invalid_rows(src_table:str):
 
     # Remove rows without mapping
     conn = op.get_bind()
-    where_clause = f"WHERE id NOT IN (SELECT {src_table.strip('v2_')}_id FROM {src_table}_map)"
+    where_clause = (f"WHERE id NOT IN (SELECT {src_table.strip('v2_')}_id FROM {src_table}_map) "
+                    f"AND the_geom IS NULL")
     no_map_id = conn.execute(sa.text(f"SELECT id FROM {src_table} {where_clause};")).fetchall()
     if len(no_map_id) > 0:
         op.execute(sa.text(f"DELETE FROM {src_table} {where_clause};"))
