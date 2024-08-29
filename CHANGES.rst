@@ -6,6 +6,7 @@ Changelog of threedi-schema
 --------------------
 
 - Revert removing on customized load_spatialite function
+- Replace paths to raster files with the file name
 
 
 0.224.0 (2024-08-16)
