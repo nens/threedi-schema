@@ -205,7 +205,7 @@ class GroundWater(Base):
     )
     equilibrium_infiltration_rate = Column(Float)
     equilibrium_infiltration_rate_file = Column(String(255))
-    equilibrium_infiltration_rate_type = Column(
+    equilibrium_infiltration_rate_aggregation = Column(
         IntegerEnum(constants.InitializationType)
     )
     initial_infiltration_rate = Column(Float)
