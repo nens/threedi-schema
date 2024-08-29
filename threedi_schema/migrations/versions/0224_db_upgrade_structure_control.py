@@ -53,7 +53,7 @@ ADD_COLUMNS = [
 
 ADD_TABLES = {
     "control_measure_location": [
-        Column("object_id", Integer),
+        Column("connection_node_id", Integer),
         Column("measure_variable", Text, server_default="water_level"),
         Column("tags", Text),
         Column("code", Text),
@@ -205,7 +205,7 @@ def add_geometry_column(table: str, geocol: Column):
 def populate_control_measure_location():
     # copy data from
     query = """
-    INSERT INTO control_measure_location (id, object_id)
+    INSERT INTO control_measure_location (id, connection_node_id)
     SELECT 
         v2_control_measure_map.id, 
         v2_control_measure_map.object_id
@@ -219,12 +219,12 @@ def populate_control_measure_location():
         SELECT v2_connection_nodes.the_geom
         FROM v2_connection_nodes
         JOIN control_measure_location
-        ON v2_connection_nodes.id = control_measure_location.object_id
+        ON v2_connection_nodes.id = control_measure_location.connection_node_id
     )
     WHERE EXISTS (
         SELECT 1
         FROM v2_connection_nodes
-        WHERE v2_connection_nodes.id = control_measure_location.object_id
+        WHERE v2_connection_nodes.id = control_measure_location.connection_node_id
     );    
     """
     op.execute(sa.text(query))

@@ -29,7 +29,7 @@ class BoundaryConditions2D(Base):
 class ControlMeasureLocation(Base):
     __tablename__ = "control_measure_location"
     id = Column(Integer, primary_key=True)
-    object_id = Column(Integer)
+    connection_node_id = Column(Integer)
     measure_variable = Column(VarcharEnum(constants.MeasureVariables))
     display_name = Column(Text)
     code = Column(Text)
