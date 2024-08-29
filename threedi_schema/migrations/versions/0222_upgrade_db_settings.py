@@ -285,7 +285,7 @@ def correct_raster_paths():
     ]
     conn = op.get_bind()
     for table, col in raster_paths:
-        result = conn.execute(f"SELECT id, {col} FROM {table} WHERE {col} IS NOT NULL;").fetchall()
+        result = conn.execute(sa.text(f"SELECT id, {col} FROM {table} WHERE {col} IS NOT NULL;")).fetchall()
         # model_settings only has one row, so we can just grab that one
         if len(result) == 1:
             id, file_path = result[0]
@@ -293,7 +293,7 @@ def correct_raster_paths():
                 # replace backslash in windows paths because pathlib doesn't handle relative windows paths
                 file_path = file_path.replace('\\', '/')
                 file = Path(file_path).name
-                op.execute(f"UPDATE {table} SET {col} = '{file}' WHERE id = {id}")
+                op.execute(sa.text(f"UPDATE {table} SET {col} = '{file}' WHERE id = {id}"))
 
 
 def upgrade():
