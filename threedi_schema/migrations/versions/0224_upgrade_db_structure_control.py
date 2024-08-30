@@ -1,6 +1,6 @@
 """Upgrade settings in schema
 
-Revision ID: 0223
+Revision ID: 0224
 Revises:
 Create Date: 2024-06-30 14:50
 
