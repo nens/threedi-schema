@@ -232,23 +232,24 @@ class GroundWater(Base):
         return self.groundwater_hydraulic_conductivity_file
 
 
-class GridRefinement(Base):
-    __tablename__ = "v2_grid_refinement"
+class GridRefinementLine(Base):
+    __tablename__ = "grid_refinement_line"
     id = Column(Integer, primary_key=True)
-
     display_name = Column(String(255))
-    refinement_level = Column(Integer, nullable=False)
-    the_geom = Column(Geometry("LINESTRING"), nullable=False)
+    grid_level = Column(Integer, nullable=False)
+    geom = Column(Geometry("LINESTRING"), nullable=False)
     code = Column(String(100))
+    tags = Column(Text)
 
 
 class GridRefinementArea(Base):
-    __tablename__ = "v2_grid_refinement_area"
+    __tablename__ = "grid_refinement_area"
     id = Column(Integer, primary_key=True)
     display_name = Column(String(255))
-    refinement_level = Column(Integer, nullable=False)
+    grid_level = Column(Integer, nullable=False)
     code = Column(String(100))
-    the_geom = Column(Geometry("POLYGON"), nullable=False)
+    geom = Column(Geometry("POLYGON"), nullable=False)
+    tags = Column(Text)
 
 
 class CrossSectionDefinition(Base):
@@ -520,8 +521,6 @@ class Channel(Base):
     cross_section_locations = relationship(
         "CrossSectionLocation", back_populates="channel"
     )
-    potential_breaches = relationship("PotentialBreach", back_populates="channel")
-    exchange_lines = relationship("ExchangeLine", back_populates="channel")
     exchange_thickness = Column(Float)
     hydraulic_conductivity_in = Column(Float)
     hydraulic_conductivity_out = Column(Float)
@@ -650,9 +649,12 @@ class Culvert(Base):
 
 
 class DemAverageArea(Base):
-    __tablename__ = "v2_dem_average_area"
+    __tablename__ = "dem_average_area"
     id = Column(Integer, primary_key=True)
-    the_geom = Column(Geometry("POLYGON"), nullable=False)
+    geom = Column(Geometry("POLYGON"), nullable=False)
+    display_name = Column(Text)
+    code = Column(Text)
+    tags = Column(Text)
 
 
 class Weir(Base):
@@ -754,41 +756,37 @@ class Pumpstation(Base):
 
 
 class Obstacle(Base):
-    __tablename__ = "v2_obstacle"
+    __tablename__ = "obstacle"
     id = Column(Integer, primary_key=True)
     code = Column(String(100))
     crest_level = Column(Float, nullable=False)
-    the_geom = Column(Geometry("LINESTRING"), nullable=False)
+    geom = Column(Geometry("LINESTRING"), nullable=False)
+    tags = Column(Text)
+    display_name = Column(String(255))
 
 
 class PotentialBreach(Base):
-    __tablename__ = "v2_potential_breach"
+    __tablename__ = "potential_breach"
     id = Column(Integer, primary_key=True)
     code = Column(String(100))
     display_name = Column(String(255))
-    exchange_level = Column(Float)
-    maximum_breach_depth = Column(Float)
+    tags = Column(Text)
+    initial_exchange_level = Column(Float)
+    final_exchange_level = Column(Float)
     levee_material = Column(IntegerEnum(constants.Material))
-    the_geom = Column(Geometry("LINESTRING"), nullable=False)
-    channel_id = Column(
-        Integer, ForeignKey(Channel.__tablename__ + ".id"), nullable=False
-    )
-    channel = relationship(
-        Channel, foreign_keys=channel_id, back_populates="potential_breaches"
-    )
+    geom = Column(Geometry("LINESTRING"), nullable=False)
+    channel_id = Column(Integer)
 
 
 class ExchangeLine(Base):
-    __tablename__ = "v2_exchange_line"
+    __tablename__ = "exchange_line"
     id = Column(Integer, primary_key=True)
-    the_geom = Column(Geometry("LINESTRING"), nullable=False)
-    channel_id = Column(
-        Integer, ForeignKey(Channel.__tablename__ + ".id"), nullable=False
-    )
-    channel = relationship(
-        Channel, foreign_keys=channel_id, back_populates="exchange_lines"
-    )
+    geom = Column(Geometry("LINESTRING"), nullable=False)
+    channel_id = Column(Integer)
     exchange_level = Column(Float)
+    display_name = Column(Text)
+    code = Column(Text)
+    tags = Column(Text)
 
 
 class Tags(Base):
@@ -817,7 +815,7 @@ DECLARED_MODELS = [
     ExchangeLine,
     Floodfill,
     ModelSettings,
-    GridRefinement,
+    GridRefinementLine,
     GridRefinementArea,
     GroundWater,
     Interflow,
