@@ -298,7 +298,7 @@ def remove_columns_from_copied_tables(table_name: str, rem_columns: List[str]):
     all_columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
     col_names = [col[1] for col in all_columns if col[1] not in rem_columns]
     col_types = [col[2] for col in all_columns if col[1] not in rem_columns]
-    cols = (['id INTEGER PRIMARY KEY'] +
+    cols = (['id INTEGER PRIMARY KEY NOT NULL'] +
             [f'{cname} {ctype}' for cname, ctype in zip(col_names, col_types) if cname != 'id'])
     # Create new table (temp), insert data, drop original and rename temp to table_name
     op.execute(sa.text(f"CREATE TABLE temp ({','.join(cols)});"))
