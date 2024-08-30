@@ -41,15 +41,13 @@ NEW_COLUMNS = [
     ("obstacle", Column("tags", Text)),
     ("obstacle", Column("display_name", Text)),
     ("potential_breach", Column("tags", Text)),
+    ("potential_breach", Column("final_exchange_level", Float))
 ]
 
 RENAME_COLUMNS = {
     "grid_refinement_line": {"refinement_level": "grid_level"},
     "grid_refinement_area": {"refinement_level": "grid_level"},
-    "potential_breach": {
-        "exchange_level": "initial_exchange_level",
-        "maximum_breach_depth": "final_exchange_level",
-    }
+    "potential_breach": {"exchange_level": "initial_exchange_level"}
 }
 
 RETYPE_COLUMNS = {
@@ -59,7 +57,7 @@ RETYPE_COLUMNS = {
 
 REMOVE_COLUMNS = {
     "exchange_line": ["channel"],
-    "potential_breach": ["channel"]
+    "potential_breach": ["channel", "maximum_breach_depth"]
 }
 
 
@@ -150,12 +148,26 @@ def fix_geometry_columns():
         op.execute(sa.text(migration_query))
 
 
+def set_potential_breach_final_exchange_level():
+    op.execute(sa.text(
+    """
+    UPDATE potential_breach
+    SET final_exchange_level = (
+        SELECT vb.exchange_level - vb.maximum_breach_depth
+        FROM v2_potential_breach vb
+        WHERE vb.id = potential_breach.id
+    );
+    """
+    ))
+
+
 def upgrade():
     rem_tables = []
     for old_table_name, new_table_name in RENAME_TABLES:
         modify_table(old_table_name, new_table_name)
         rem_tables.append(old_table_name)
     add_columns_to_tables(NEW_COLUMNS)
+    set_potential_breach_final_exchange_level()
     fix_geometry_columns()
     remove_tables(rem_tables)
 
