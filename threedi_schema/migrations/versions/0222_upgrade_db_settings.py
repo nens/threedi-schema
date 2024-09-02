@@ -47,6 +47,7 @@ RENAME_COLUMNS = {
             ("infiltration_decay_period_type", "infiltration_decay_period_aggregation"),
             ("initial_infiltration_rate_type", "initial_infiltration_rate_aggregation"),
             ("phreatic_storage_capacity_type", "phreatic_storage_capacity_aggregation"),
+            ("equilibrium_infiltration_rate_type", "equilibrium_infiltration_rate_aggregation"),
         ],
     "numerical_settings":
         [
@@ -117,6 +118,21 @@ ADD_TABLES = {
          Column("time_step", Float),
          Column("use_time_step_stretch", Boolean)],
 }
+
+REMOVE_COLUMNS = [
+    ("aggregation_settings", ["global_settings_id", "var_name"]),
+    ("groundwater", ["display_name"]),
+    ("interflow", ["display_name"]),
+    ("model_settings", ["nr_timesteps",
+                        "start_time",
+                        "start_date",
+                        "guess_dams",
+                        "dem_obstacle_detection",
+                        "dem_obstacle_height",
+                        "wind_shielding_file"]),
+    ("simple_infiltration", ["display_name"]),
+    ("vegetation_drag_2d", ["display_name"]),
+]
 
 COPY_FROM_GLOBAL = {
     "simulation_template_settings": [
@@ -296,6 +312,23 @@ def correct_raster_paths():
                 op.execute(sa.text(f"UPDATE {table} SET {col} = '{file}' WHERE id = {id}"))
 
 
+def remove_columns_from_copied_tables(table_name: str, rem_columns: List[str]):
+    # sqlite 3.27 doesn't support `ALTER TABLE ... DROP COLUMN`
+    # So we create a temp table, copy the columns we want to keep and remove the old table
+    # Retrieve columns
+    connection = op.get_bind()
+    all_columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
+    col_names = [col[1] for col in all_columns if col[1] not in rem_columns]
+    col_types = [col[2] for col in all_columns if col[1] not in rem_columns]
+    cols = (['id INTEGER PRIMARY KEY NOT NULL'] +
+            [f'{cname} {ctype}' for cname, ctype in zip(col_names, col_types) if cname != 'id'])
+    # Create new table (temp), insert data, drop original and rename temp to table_name
+    op.execute(sa.text(f"CREATE TABLE temp ({','.join(cols)});"))
+    op.execute(sa.text(f"INSERT INTO temp ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
+    op.execute(sa.text(f"DROP TABLE {table_name};"))
+    op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
+
+
 def upgrade():
     op.get_bind()
     # Only use first row of global settings
@@ -326,6 +359,9 @@ def upgrade():
     drop_columns('model_settings', unused_cols)
     # remove relative path prefix from raster paths
     correct_raster_paths()
+    # remove columns from tables that are copied
+    for table, columns in REMOVE_COLUMNS:
+        remove_columns_from_copied_tables(table, columns)
 
 
 def downgrade():
