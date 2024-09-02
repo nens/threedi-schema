@@ -1,6 +1,6 @@
 """Upgrade settings in schema
 
-Revision ID: 0223
+Revision ID: 0224
 Revises:
 Create Date: 2024-06-30 14:50
 
@@ -53,7 +53,7 @@ ADD_COLUMNS = [
 
 ADD_TABLES = {
     "control_measure_location": [
-        Column("object_id", Integer),
+        Column("connection_node_id", Integer),
         Column("measure_variable", Text, server_default="water_level"),
         Column("tags", Text),
         Column("code", Text),
@@ -166,19 +166,29 @@ def set_geom_for_control_measure_map():
     for control in ['memory', 'table']:
         control_table = f'{control}_control'
         query = f"""
-        UPDATE 
+        UPDATE
             control_measure_map
-        SET 
+        SET
             geom = (
                 SELECT 
                     MakeLine(tc.geom, cml.geom)
                 FROM 
-                    {control_table} AS tc,
-                    control_measure_location AS cml
+                    {control_table} AS tc
+                JOIN 
+                    control_measure_map AS cmm ON cmm.control_id = tc.id
+                JOIN 
+                    control_measure_location AS cml ON cmm.control_measure_location_id = cml.id
                 WHERE 
-                    control_measure_map.control_id = tc.id 
-                    AND control_measure_map.control_measure_location_id = cml.id
-            );
+                    tc.id = control_measure_map.control_id
+                )    
+            WHERE
+                EXISTS (
+                    SELECT 1
+                    FROM 
+                        {control_table} AS tc
+                    WHERE 
+                        tc.id = control_measure_map.control_id
+                );                                     
         """
         op.execute(sa.text(query))
 
@@ -195,7 +205,7 @@ def add_geometry_column(table: str, geocol: Column):
 def populate_control_measure_location():
     # copy data from
     query = """
-    INSERT INTO control_measure_location (id, object_id)
+    INSERT INTO control_measure_location (id, connection_node_id)
     SELECT 
         v2_control_measure_map.id, 
         v2_control_measure_map.object_id
@@ -209,12 +219,12 @@ def populate_control_measure_location():
         SELECT v2_connection_nodes.the_geom
         FROM v2_connection_nodes
         JOIN control_measure_location
-        ON v2_connection_nodes.id = control_measure_location.object_id
+        ON v2_connection_nodes.id = control_measure_location.connection_node_id
     )
     WHERE EXISTS (
         SELECT 1
         FROM v2_connection_nodes
-        WHERE v2_connection_nodes.id = control_measure_location.object_id
+        WHERE v2_connection_nodes.id = control_measure_location.connection_node_id
     );    
     """
     op.execute(sa.text(query))
@@ -317,13 +327,10 @@ def upgrade():
     set_geom_for_control_measure_map()
     rename_measure_operator('table_control')
     rename_measure_operator('memory_control')
-    # make all columns in renamed tables, except id, nullable
-    for _, table_name in RENAME_TABLES:
-        make_all_columns_nullable(table_name)
     move_setting('model_settings', 'use_structure_control',
                  'simulation_template_settings', 'use_structure_control')
     remove_tables(DEL_TABLES)
-    # make_control_measure_map_geom_notnull()
+    # Fix geometry columns and also make all but geom column nullable
     fix_geometry_columns()
 
 
