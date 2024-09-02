@@ -18,11 +18,22 @@ def test_get_spatialite_version(empty_sqlite_v3):
 def test_copy_model(empty_sqlite_v3, empty_sqlite_v4):
     db_from = empty_sqlite_v3
     db_to = empty_sqlite_v4
-
-    # Add a record to 'db_from'
-    obj = models.ConnectionNode(
-        id=3, code="test", the_geom="SRID=4326;POINT(-71.064544 42.287870)"
+    # Create v2_grid_refinement_area on the fly to match database scheme in the used sqlitest
+    Base = declarative_base()
+    TestModel = type(
+        "TestModel",
+        (Base,),
+        {
+            "__tablename__": "v2_connection_nodes",
+            "id": Column(Integer, primary_key=True),
+            "code": Column(String(100)),
+            "the_geom": Column(
+                Geometry("POINT")
+            ),  # Use Text as a placeholder for Geometry
+        },
     )
+    # Add a record to 'db_from'
+    obj = TestModel(id=3, code="test", the_geom="SRID=4326;POINT(-71.064544 42.287870)")
     with db_from.session_scope() as session:
         session.add(obj)
         session.commit()
@@ -47,7 +58,7 @@ def test_copy_invalid_geometry(empty_sqlite_v3, empty_sqlite_v4):
     """Copying an invalid geometry (ST_IsValid evaluates to False) is possible"""
     db_from = empty_sqlite_v3
     db_to = empty_sqlite_v4
-    # Create GridRefinementArea on the fly to match database scheme in the used sqlitest
+    # Create v2_grid_refinement_area on the fly to match database scheme in the used sqlitest
     Base = declarative_base()
     TestModel = type(
         "TestModel",

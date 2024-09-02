@@ -120,6 +120,8 @@ class TestMigration225:
             cols_schema = get_columns_from_schema(schema_upgraded, table)
             assert cols_sqlite == cols_schema
 
+    def test_maximum_breach_depth(self, empty_sqlite_v4):
+        pass
 
 
 
