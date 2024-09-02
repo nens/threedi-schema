@@ -324,7 +324,7 @@ def upgrade():
     # drop unused id columns in model_settings
     unused_cols = [settings_id for _, settings_id, _ in GLOBAL_SETTINGS_ID_TO_BOOL] + ["numerical_settings_id"]
     drop_columns('model_settings', unused_cols)
-    # remove relative path prefix from dem path
+    # remove relative path prefix from raster paths
     correct_raster_paths()
 
 
