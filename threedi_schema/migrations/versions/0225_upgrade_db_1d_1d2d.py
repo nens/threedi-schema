@@ -156,7 +156,7 @@ def set_potential_breach_final_exchange_level():
     conn = op.get_bind()
     res = conn.execute(sa.text(
         """
-        SELECT id FROM v2_potential_bread
+        SELECT id FROM v2_potential_breach
         WHERE exchange_level IS NOT NULL AND maximum_breach_depth IS NULL;
         """
     )).fetchall()
@@ -170,7 +170,7 @@ def set_potential_breach_final_exchange_level():
         SELECT vb.exchange_level - vb.maximum_breach_depth
         FROM v2_potential_breach vb
         WHERE vb.id = potential_breach.id
-        WHERE exchange_level IS NOT NULL
+        AND exchange_level IS NOT NULL
     );
     """
     ))
