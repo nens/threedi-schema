@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.224.1 (unreleased)
+0.224.1 (2024-09-02)
 --------------------
 
 - Fix creating control_measure_map.geom in 224 migration
