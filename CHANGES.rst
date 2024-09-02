@@ -11,6 +11,7 @@ Changelog of threedi-schema
 - Remove unused columns from several settings tables
 - Rename groundwater.equilibrium_infiltration_rate_type to equilibrium_infiltration_rate_aggregation
 - Rename control_measure_location.object_id to connection_node_id
+- Replace paths to raster files with the file name
 
 
 0.224.0 (2024-08-16)
