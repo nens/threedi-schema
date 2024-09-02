@@ -162,18 +162,6 @@ def copy_v2_data_to_dry_weather_flow(src_table: str):
                        "WHERE multiplier = 0 OR daily_total = 0 OR multiplier IS NULL OR daily_total IS NULL;"))
 
 
-def handle_null_geoms(src_table, tgt_table):
-    conn = op.get_bind()
-    missing = conn.execute(sa.text(f"select id from {tgt_table} where geom IS NULL")).fetchall()
-    if len(missing) > 0:
-        msg = (f"Could not create {tgt_table}.geom because {src_table}.id is not "
-               f"present in {src_table}_map. The following id's will not be "
-               f"migrated to {tgt_table}:  {missing}")
-        warnings.warn(msg, NullGeomWarning)
-        op.execute(sa.text(f"DELETE FROM {tgt_table} WHERE geom IS NULL;"))
-        rows_left = conn.execute(sa.text(f"select COUNT(*) from {tgt_table}")).fetchone()[0]
-
-
 def remove_orphans_from_map(basename: str):
     query = f"DELETE FROM {basename}_map WHERE {basename}_id NOT IN (SELECT id FROM {basename});"
     op.execute(sa.text(query))
@@ -389,10 +377,6 @@ def populate_surface_and_dry_weather_flow():
     copy_v2_data_to_dry_weather_flow(src_table)
     copy_v2_data_to_surface_map(f"{src_table}_map")
     copy_v2_data_to_dry_weather_flow_map(f"{src_table}_map")
-
-    # Check if any NULL geoms are left and remove them
-    # handle_null_geoms(src_table, 'surface')
-    # handle_null_geoms(src_table, 'dry_weather_flow')
 
     # Remove rows in maps that refer to non-existing objects
     remove_orphans_from_map(basename="surface")
