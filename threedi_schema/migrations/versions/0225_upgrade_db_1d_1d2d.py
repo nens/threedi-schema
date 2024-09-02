@@ -61,6 +61,9 @@ REMOVE_COLUMNS = {
 }
 
 
+class Schema225UpgradeException(Exception):
+    pass
+
 def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
     # no checks for existence are done, this will fail if any column already exists
     for dst_table, col in table_columns:
@@ -149,6 +152,17 @@ def fix_geometry_columns():
 
 
 def set_potential_breach_final_exchange_level():
+    # TODO test
+    conn = op.get_bind()
+    res = conn.execute(sa.text(
+        """
+        SELECT id FROM v2_potential_bread
+        WHERE exchange_level IS NOT NULL AND maximum_breach_depth IS NULL;
+        """
+    )).fetchall()
+    if len(res) > 0:
+        raise Schema225UpgradeException(
+            f"Could not set final_exchange_level because maximum_breach_depth was not defined for rows: {res}")
     op.execute(sa.text(
     """
     UPDATE potential_breach
@@ -156,6 +170,7 @@ def set_potential_breach_final_exchange_level():
         SELECT vb.exchange_level - vb.maximum_breach_depth
         FROM v2_potential_breach vb
         WHERE vb.id = potential_breach.id
+        WHERE exchange_level IS NOT NULL
     );
     """
     ))
