@@ -93,6 +93,7 @@ ADD_COLUMNS = [
     ("model_settings", Column("use_interception", Boolean)),
 ]
 
+
 ADD_TABLES = {
     "initial_conditions":
         [Column("initial_groundwater_level", Float),
@@ -263,15 +264,36 @@ def delete_all_but_first_row(table):
                f"(SELECT id FROM {table} ORDER BY id LIMIT 1) AS subquery);")
 
 
-def correct_dem_paths():
-    # remove path - this will not work with nested paths!
+def correct_raster_paths():
+    # Replace paths to raster files with only the file name
+    raster_paths = [
+        ("model_settings", "dem_file"),
+        ("model_settings", "friction_coefficient_file"),
+        ("interception", "interception_file"),
+        ("interflow", "porosity_file"),
+        ("interflow", "hydraulic_conductivity_file"),
+        ("simple_infiltration", "infiltration_rate_file"),
+        ("simple_infiltration", "max_infiltration_volume_file"),
+        ("groundwater", "groundwater_impervious_layer_level_file"),
+        ("groundwater", "phreatic_storage_capacity_file"),
+        ("groundwater", "initial_infiltration_rate_file"),
+        ("groundwater", "equilibrium_infiltration_rate_file"),
+        ("groundwater", "infiltration_decay_period_file"),
+        ("groundwater", "groundwater_hydraulic_conductivity_file"),
+        ("initial_conditions", "initial_water_level_file"),
+        ("initial_conditions", "initial_groundwater_level_file")
+    ]
     conn = op.get_bind()
-    # model_settings only has one row, so we can just grab that one
-    result = conn.execute(sa.text(f"SELECT id, dem_file FROM model_settings")).fetchall()
-    if len(result) == 1:
-        settings_id, dem_path = result[0]
-        if isinstance(dem_path, str):
-            op.execute(f"UPDATE model_settings SET dem_file = '{str(Path(dem_path).name)}' WHERE id = {settings_id}")
+    for table, col in raster_paths:
+        result = conn.execute(sa.text(f"SELECT id, {col} FROM {table} WHERE {col} IS NOT NULL;")).fetchall()
+        # model_settings only has one row, so we can just grab that one
+        if len(result) == 1:
+            id, file_path = result[0]
+            if isinstance(file_path, str) and len(file_path) > 0:
+                # replace backslash in windows paths because pathlib doesn't handle relative windows paths
+                file_path = file_path.replace('\\', '/')
+                file = Path(file_path).name
+                op.execute(sa.text(f"UPDATE {table} SET {col} = '{file}' WHERE id = {id}"))
 
 
 def upgrade():
@@ -302,8 +324,8 @@ def upgrade():
     # drop unused id columns in model_settings
     unused_cols = [settings_id for _, settings_id, _ in GLOBAL_SETTINGS_ID_TO_BOOL] + ["numerical_settings_id"]
     drop_columns('model_settings', unused_cols)
-    # remove relative path prefix from dem path
-    correct_dem_paths()
+    # remove relative path prefix from raster paths
+    correct_raster_paths()
 
 
 def downgrade():
