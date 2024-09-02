@@ -1,5 +1,5 @@
 from sqlalchemy import Column, func, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 from threedi_schema.domain import models
 from threedi_schema.domain.custom_types import Geometry
