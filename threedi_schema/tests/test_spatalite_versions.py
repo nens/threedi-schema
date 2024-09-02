@@ -43,7 +43,6 @@ def test_copy_model(empty_sqlite_v3, empty_sqlite_v4):
         assert records == [(3, "test", "POINT(-71.064544 42.28787)")]
 
 
-# @pytest.mark.skip("Cannot pass due to changed model")
 def test_copy_invalid_geometry(empty_sqlite_v3, empty_sqlite_v4):
     """Copying an invalid geometry (ST_IsValid evaluates to False) is possible"""
     db_from = empty_sqlite_v3
