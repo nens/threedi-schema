@@ -37,7 +37,7 @@ class BoundaryConditions2D(Base):
 class ControlMeasureLocation(Base):
     __tablename__ = "control_measure_location"
     id = Column(Integer, primary_key=True)
-    object_id = Column(Integer)
+    connection_node_id = Column(Integer)
     measure_variable = Column(VarcharEnum(constants.MeasureVariables))
     display_name = Column(Text)
     code = Column(Text)
@@ -213,7 +213,7 @@ class GroundWater(Base):
     )
     equilibrium_infiltration_rate = Column(Float)
     equilibrium_infiltration_rate_file = Column(String(255))
-    equilibrium_infiltration_rate_type = Column(
+    equilibrium_infiltration_rate_aggregation = Column(
         IntegerEnum(constants.InitializationType)
     )
     initial_infiltration_rate = Column(Float)

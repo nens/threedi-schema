@@ -47,6 +47,7 @@ RENAME_COLUMNS = {
             ("infiltration_decay_period_type", "infiltration_decay_period_aggregation"),
             ("initial_infiltration_rate_type", "initial_infiltration_rate_aggregation"),
             ("phreatic_storage_capacity_type", "phreatic_storage_capacity_aggregation"),
+            ("equilibrium_infiltration_rate_type", "equilibrium_infiltration_rate_aggregation"),
         ],
     "numerical_settings":
         [
@@ -93,6 +94,7 @@ ADD_COLUMNS = [
     ("model_settings", Column("use_interception", Boolean)),
 ]
 
+
 ADD_TABLES = {
     "initial_conditions":
         [Column("initial_groundwater_level", Float),
@@ -116,6 +118,21 @@ ADD_TABLES = {
          Column("time_step", Float),
          Column("use_time_step_stretch", Boolean)],
 }
+
+REMOVE_COLUMNS = [
+    ("aggregation_settings", ["global_settings_id", "var_name"]),
+    ("groundwater", ["display_name"]),
+    ("interflow", ["display_name"]),
+    ("model_settings", ["nr_timesteps",
+                        "start_time",
+                        "start_date",
+                        "guess_dams",
+                        "dem_obstacle_detection",
+                        "dem_obstacle_height",
+                        "wind_shielding_file"]),
+    ("simple_infiltration", ["display_name"]),
+    ("vegetation_drag_2d", ["display_name"]),
+]
 
 COPY_FROM_GLOBAL = {
     "simulation_template_settings": [
@@ -263,15 +280,53 @@ def delete_all_but_first_row(table):
                f"(SELECT id FROM {table} ORDER BY id LIMIT 1) AS subquery);")
 
 
-def correct_dem_paths():
-    # remove path - this will not work with nested paths!
+def correct_raster_paths():
+    # Replace paths to raster files with only the file name
+    raster_paths = [
+        ("model_settings", "dem_file"),
+        ("model_settings", "friction_coefficient_file"),
+        ("interception", "interception_file"),
+        ("interflow", "porosity_file"),
+        ("interflow", "hydraulic_conductivity_file"),
+        ("simple_infiltration", "infiltration_rate_file"),
+        ("simple_infiltration", "max_infiltration_volume_file"),
+        ("groundwater", "groundwater_impervious_layer_level_file"),
+        ("groundwater", "phreatic_storage_capacity_file"),
+        ("groundwater", "initial_infiltration_rate_file"),
+        ("groundwater", "equilibrium_infiltration_rate_file"),
+        ("groundwater", "infiltration_decay_period_file"),
+        ("groundwater", "groundwater_hydraulic_conductivity_file"),
+        ("initial_conditions", "initial_water_level_file"),
+        ("initial_conditions", "initial_groundwater_level_file")
+    ]
     conn = op.get_bind()
-    # model_settings only has one row, so we can just grab that one
-    result = conn.execute(sa.text(f"SELECT id, dem_file FROM model_settings")).fetchall()
-    if len(result) == 1:
-        settings_id, dem_path = result[0]
-        if isinstance(dem_path, str):
-            op.execute(f"UPDATE model_settings SET dem_file = '{str(Path(dem_path).name)}' WHERE id = {settings_id}")
+    for table, col in raster_paths:
+        result = conn.execute(sa.text(f"SELECT id, {col} FROM {table} WHERE {col} IS NOT NULL;")).fetchall()
+        # model_settings only has one row, so we can just grab that one
+        if len(result) == 1:
+            id, file_path = result[0]
+            if isinstance(file_path, str) and len(file_path) > 0:
+                # replace backslash in windows paths because pathlib doesn't handle relative windows paths
+                file_path = file_path.replace('\\', '/')
+                file = Path(file_path).name
+                op.execute(sa.text(f"UPDATE {table} SET {col} = '{file}' WHERE id = {id}"))
+
+
+def remove_columns_from_copied_tables(table_name: str, rem_columns: List[str]):
+    # sqlite 3.27 doesn't support `ALTER TABLE ... DROP COLUMN`
+    # So we create a temp table, copy the columns we want to keep and remove the old table
+    # Retrieve columns
+    connection = op.get_bind()
+    all_columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
+    col_names = [col[1] for col in all_columns if col[1] not in rem_columns]
+    col_types = [col[2] for col in all_columns if col[1] not in rem_columns]
+    cols = (['id INTEGER PRIMARY KEY NOT NULL'] +
+            [f'{cname} {ctype}' for cname, ctype in zip(col_names, col_types) if cname != 'id'])
+    # Create new table (temp), insert data, drop original and rename temp to table_name
+    op.execute(sa.text(f"CREATE TABLE temp ({','.join(cols)});"))
+    op.execute(sa.text(f"INSERT INTO temp ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
+    op.execute(sa.text(f"DROP TABLE {table_name};"))
+    op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
 
 
 def upgrade():
@@ -302,8 +357,11 @@ def upgrade():
     # drop unused id columns in model_settings
     unused_cols = [settings_id for _, settings_id, _ in GLOBAL_SETTINGS_ID_TO_BOOL] + ["numerical_settings_id"]
     drop_columns('model_settings', unused_cols)
-    # remove relative path prefix from dem path
-    correct_dem_paths()
+    # remove relative path prefix from raster paths
+    correct_raster_paths()
+    # remove columns from tables that are copied
+    for table, columns in REMOVE_COLUMNS:
+        remove_columns_from_copied_tables(table, columns)
 
 
 def downgrade():

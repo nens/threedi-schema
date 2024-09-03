@@ -6,16 +6,17 @@ Create Date: 2024-05-27 10:35
 
 """
 import json
+import warnings
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
 from alembic import op
-from geoalchemy2 import load_spatialite
 from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 from sqlalchemy.event import listen
 from sqlalchemy.orm import declarative_base
 
+from threedi_schema.application.threedi_database import load_spatialite
 from threedi_schema.domain.custom_types import Geometry
 
 # revision identifiers, used by Alembic.
@@ -95,6 +96,10 @@ REMOVE_TABLES = [
     "v2_surface",
     "v2_surface_map"
 ]
+
+
+class NoMappingWarning(UserWarning):
+    pass
 
 
 def rename_tables(table_sets: List[Tuple[str, str]]):
@@ -317,7 +322,6 @@ def create_square_polygons(src_table: str, tmp_geom: str):
         """
     op.execute(sa.text(query_str))
 
-
 def fix_src_geometry(src_table: str, tmp_geom: str, create_polygons):
     conn = op.get_bind()
     # create columns to store the derived geometries to
@@ -335,6 +339,22 @@ def fix_src_geometry(src_table: str, tmp_geom: str, create_polygons):
     create_polygons(src_table, tmp_geom)
 
 
+def remove_invalid_rows(src_table:str):
+    # Remove rows with insufficient data
+    op.execute(sa.text(f"DELETE FROM {src_table} WHERE area = 0 "
+                       "AND (nr_of_inhabitants = 0 OR dry_weather_flow = 0);"))
+
+    # Remove rows without mapping
+    conn = op.get_bind()
+    where_clause = (f"WHERE id NOT IN (SELECT {src_table.strip('v2_')}_id FROM {src_table}_map) "
+                    f"AND the_geom IS NULL")
+    no_map_id = conn.execute(sa.text(f"SELECT id FROM {src_table} {where_clause};")).fetchall()
+    if len(no_map_id) > 0:
+        op.execute(sa.text(f"DELETE FROM {src_table} {where_clause};"))
+        msg = (f"Could not migrate the following rows from {src_table} because "
+               f"they are not mapped to a connection node in {src_table}_map: {no_map_id}")
+        warnings.warn(msg, NoMappingWarning)
+
 def populate_surface_and_dry_weather_flow():
     conn = op.get_bind()
     use_0d_inflow = conn.execute(sa.text("SELECT use_0d_inflow FROM simulation_template_settings LIMIT 1")).fetchone()
@@ -343,9 +363,8 @@ def populate_surface_and_dry_weather_flow():
     use_0d_inflow = use_0d_inflow[0]
     # Use use_0d_inflow setting to determine wether to copy any data and if so from what table
     src_table = "v2_impervious_surface" if use_0d_inflow == 1 else "v2_surface"
-    # Remove rows with insufficient data
-    op.execute(sa.text(f"DELETE FROM {src_table} WHERE area = 0 "
-                       "AND (nr_of_inhabitants = 0 OR dry_weather_flow = 0);"))
+    remove_invalid_rows(src_table)
+
     # Create geometries for non-specified ones
     # Add geometries for surfaces and dwf by adding extra columns
     # This has to be done in advance because NULL geometries cannot be copied
@@ -358,6 +377,7 @@ def populate_surface_and_dry_weather_flow():
     copy_v2_data_to_dry_weather_flow(src_table)
     copy_v2_data_to_surface_map(f"{src_table}_map")
     copy_v2_data_to_dry_weather_flow_map(f"{src_table}_map")
+
     # Remove rows in maps that refer to non-existing objects
     remove_orphans_from_map(basename="surface")
     remove_orphans_from_map(basename="dry_weather_flow")
