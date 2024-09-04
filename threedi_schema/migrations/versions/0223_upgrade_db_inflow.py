@@ -426,8 +426,11 @@ def set_surface_parameters_id():
     with open(data_dir.joinpath('0223_surface_parameters_map.json'), 'r') as f:
         parameter_map = json.load(f)
     conn = op.get_bind()
-    surface_class, surface_inclination = conn.execute(
+    res = conn.execute(
         sa.text("SELECT surface_class, surface_inclination FROM v2_impervious_surface")).fetchone()
+    if res is None:
+        return
+    surface_class, surface_inclination = res
     parameter_id = parameter_map[f'{surface_class} - {surface_inclination}']
     op.execute(f'UPDATE surface SET surface_parameters_id = {parameter_id}')
 
