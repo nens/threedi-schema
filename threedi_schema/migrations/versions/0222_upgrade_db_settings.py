@@ -338,8 +338,8 @@ def remove_columns_from_copied_tables(table_name: str, rem_columns: List[str]):
 
 
 def set_flow_variable_values():
-    with open(data_dir.joinpath('0222_flow_variable_map.csv')) as file:
-        flow_var_dict = {key: val for (key, val) in csv.reader(file)}
+    flow_var_dict = {'wet_cross-section': 'wet_cross_section',
+                     'waterlevel': 'water_level'}
     cases = '\n'.join([f"WHEN '{key}' THEN '{val}'" for key, val in flow_var_dict.items()])
     query = f"""
     UPDATE aggregation_settings SET flow_variable = CASE flow_variable
