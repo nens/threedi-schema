@@ -195,6 +195,9 @@ class TestMigration222:
             if src_col == 'dem_file':
                 path_ref = Path(values_ref[0][0])
                 assert str(path_ref.name) == values_new[0][0]
+            # flow_variable should be different
+            elif src_col == 'flow_variable':
+                continue
             else:
                 assert values_ref == values_new
 

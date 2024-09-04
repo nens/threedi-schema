@@ -1,0 +1,13 @@
+discharge,q
+flow_velocity,u1
+pump_discharge,q_pump
+rain,rain
+waterlevel,s1
+wet_cross-section,au
+wet_surface,su
+lateral_discharge,q_lat
+volume,vol
+simple_infiltration,infiltration_rate_simple
+leakage,leak
+interception,intercepted_volume
+surface_source_sink_discharge,q_sss

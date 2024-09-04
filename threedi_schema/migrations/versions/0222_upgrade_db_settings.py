@@ -5,6 +5,7 @@ Revises:
 Create Date: 2024-03-04 10:06
 
 """
+import csv
 from typing import Dict, List, Tuple
 from pathlib import Path
 
@@ -20,6 +21,9 @@ branch_labels = None
 depends_on = None
 
 Base = declarative_base()
+
+data_dir = Path(__file__).parent / "data"
+
 
 # (source table, destination table)
 RENAME_TABLES = [
@@ -329,6 +333,18 @@ def remove_columns_from_copied_tables(table_name: str, rem_columns: List[str]):
     op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
 
 
+def set_flow_variable_values():
+    with open(data_dir.joinpath('0222_flow_variable_map.csv')) as file:
+        flow_var_dict = {key: val for (key, val) in csv.reader(file)}
+    cases = '\n'.join([f"WHEN '{key}' THEN '{val}'" for key, val in flow_var_dict.items()])
+    query = f"""
+    UPDATE aggregation_settings SET flow_variable = CASE flow_variable
+    {cases} 
+    ELSE flow_variable
+    END"""
+    op.execute(sa.text(query))
+
+
 def upgrade():
     op.get_bind()
     # Only use first row of global settings
@@ -359,6 +375,8 @@ def upgrade():
     drop_columns('model_settings', unused_cols)
     # remove relative path prefix from raster paths
     correct_raster_paths()
+    #
+    set_flow_variable_values()
     # remove columns from tables that are copied
     for table, columns in REMOVE_COLUMNS:
         remove_columns_from_copied_tables(table, columns)

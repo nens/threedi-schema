@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.224.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Change names of aggregation_settings.flow_variable to match threedigrid
 
 
 0.224.1 (2024-09-02)
