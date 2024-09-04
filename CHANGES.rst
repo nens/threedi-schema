@@ -6,6 +6,7 @@ Changelog of threedi-schema
 --------------------
 
 - Change names of aggregation_settings.flow_variable to match threedigrid
+- Make renaming raster paths more resilient
 
 
 0.224.1 (2024-09-02)

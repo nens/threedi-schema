@@ -313,7 +313,11 @@ def correct_raster_paths():
                 # replace backslash in windows paths because pathlib doesn't handle relative windows paths
                 file_path = file_path.replace('\\', '/')
                 file = Path(file_path).name
-                op.execute(sa.text(f"UPDATE {table} SET {col} = '{file}' WHERE id = {id}"))
+                # op.execute(sa.text(f"UPDATE {table} SET {col} = '{file}' WHERE id = {id}"))
+                op.execute(
+                    sa.text(f"UPDATE {table} SET {col} = :new_value WHERE id = :row_id")
+                    .bindparams(new_value=file, row_id=id)
+                )
 
 
 def remove_columns_from_copied_tables(table_name: str, rem_columns: List[str]):
@@ -375,7 +379,7 @@ def upgrade():
     drop_columns('model_settings', unused_cols)
     # remove relative path prefix from raster paths
     correct_raster_paths()
-    #
+    # change flow_variable values to new naming scheme
     set_flow_variable_values()
     # remove columns from tables that are copied
     for table, columns in REMOVE_COLUMNS:
