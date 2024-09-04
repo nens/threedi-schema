@@ -201,14 +201,22 @@ def set_map_geometries(basename):
 def add_map_geometries(src_table: str):
     # Add geometries to a map table that connects the connection node and the surface / dry_weather_flow
     query = f"""
-    UPDATE {src_table}_map 
-    SET geom = (
-    SELECT MakeLine(c.the_geom, ClosestPoint(s.geom, c.the_geom))
-    FROM v2_connection_nodes c
-    JOIN {src_table}_map m ON c.id = m.connection_node_id
-    JOIN {src_table} s ON s.id = m.{src_table}_id);
+        UPDATE {src_table}_map
+        SET geom = (
+            SELECT MakeLine(c.the_geom, PointOnSurface(s.geom))
+            FROM v2_connection_nodes c, {src_table} s
+            WHERE c.id = {src_table}_map.connection_node_id 
+            AND s.id = {src_table}_map.{src_table}_id
+        )
+        WHERE EXISTS (
+            SELECT 1
+            FROM v2_connection_nodes c, {src_table} s
+            WHERE c.id = {src_table}_map.connection_node_id 
+            AND s.id = {src_table}_map.{src_table}_id
+        );
     """
     op.execute(sa.text(query))
+
 
 
 def get_global_srid():
@@ -401,13 +409,10 @@ def populate_surface_and_dry_weather_flow():
     remove_orphans_from_map(basename="surface")
     remove_orphans_from_map(basename="dry_weather_flow")
 
-    # Set geometries in maps
-    set_map_geometries(basename="surface")
-    set_map_geometries(basename="dry_weather_flow")
-
     # Create geometries in new maps
     add_map_geometries("surface")
     add_map_geometries("dry_weather_flow")
+
     # Set surface parameter id
     if use_0d_inflow == 1:
         set_surface_parameters_id()
