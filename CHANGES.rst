@@ -5,7 +5,13 @@ Changelog of threedi-schema
 0.224.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Rename v2_1d_boundary_conditions and v2_2d_boundary_conditions to boundary_condition_1d and boundary_condition_2d.
+
+- Rename v2_1d_laterals and v2_2d_laterals to lateral_1d and lateral_2d.
+
+- Rename the_geom to geom in boundary_condition_2d and lateral_2d, and add geom columns to boundary_condition_1d and lateral_1d.
+
+- Drop all constraints on boundary condition and lateral tables, except NOT NULL constrains on id and geom.
 
 
 0.224.1 (2024-09-02)
