@@ -158,6 +158,11 @@ def copy_v2_data_to_dry_weather_flow(src_table: str):
     src_columns = ["id", "code", "display_name", "dwf_geom", "nr_of_inhabitants", "dry_weather_flow"]
     dst_columns = ["id", "code", "display_name", "geom", "multiplier", "daily_total"]
     copy_values_to_new_table(src_table, src_columns, "dry_weather_flow", dst_columns)
+    op.execute(sa.text("""
+    UPDATE dry_weather_flow
+    SET dry_weather_flow_distribution_id = 1,
+        interpolate = 0;
+        """))
     op.execute(sa.text("DELETE FROM dry_weather_flow "
                        "WHERE multiplier = 0 OR daily_total = 0 OR multiplier IS NULL OR daily_total IS NULL;"))
 
@@ -177,6 +182,20 @@ def copy_v2_data_to_surface_map(src_table: str):
     src_columns = ["connection_node_id", "percentage", src_table.strip('v2_').replace('_map', '_id')]
     dst_columns = ["connection_node_id", "percentage", "surface_id"]
     copy_values_to_new_table(src_table, src_columns, "surface_map", dst_columns)
+
+
+def set_map_geometries(basename):
+    # Set geom as a line between point on surface/dry_weather_flow and connection node
+    query = f"""
+        UPDATE {basename}_map AS map
+        SET geom = (
+            SELECT MakeLine(PointOnSurface(obj.geom), vcn.the_geom)
+            FROM {basename} obj
+            JOIN v2_connection_nodes vcn ON map.connection_node_id = vcn.id
+            WHERE obj.id = map.{basename}_id
+        );        
+    """
+    op.execute(sa.text(query))
 
 
 def add_map_geometries(src_table: str):
@@ -381,6 +400,11 @@ def populate_surface_and_dry_weather_flow():
     # Remove rows in maps that refer to non-existing objects
     remove_orphans_from_map(basename="surface")
     remove_orphans_from_map(basename="dry_weather_flow")
+
+    # Set geometries in maps
+    set_map_geometries(basename="surface")
+    set_map_geometries(basename="dry_weather_flow")
+
     # Create geometries in new maps
     add_map_geometries("surface")
     add_map_geometries("dry_weather_flow")
