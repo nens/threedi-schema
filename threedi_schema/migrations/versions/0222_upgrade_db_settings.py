@@ -313,7 +313,6 @@ def correct_raster_paths():
                 # replace backslash in windows paths because pathlib doesn't handle relative windows paths
                 file_path = file_path.replace('\\', '/')
                 file = Path(file_path).name
-                # op.execute(sa.text(f"UPDATE {table} SET {col} = '{file}' WHERE id = {id}"))
                 op.execute(
                     sa.text(f"UPDATE {table} SET {col} = :new_value WHERE id = :row_id")
                     .bindparams(new_value=file, row_id=id)
