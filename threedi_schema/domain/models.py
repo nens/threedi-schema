@@ -282,10 +282,6 @@ class ConnectionNode(Base):
     code = Column(String(100))
 
     manholes = relationship("Manhole", back_populates="connection_node")
-    boundary_conditions = relationship(
-        "BoundaryCondition1D", back_populates="connection_node"
-    )
-    laterals1d = relationship("Lateral1d", back_populates="connection_node")
 
 
 class Lateral1d(Base):
@@ -301,10 +297,7 @@ class Lateral1d(Base):
     tags = Column(Text)
     geom = Column(Geometry("POINT"), nullable=False)
 
-    connection_node_id = Column(
-        Integer, ForeignKey(ConnectionNode.__tablename__ + ".id")
-    )
-    connection_node = relationship(ConnectionNode, back_populates="laterals1d")
+    connection_node_id = Column(Integer)
 
 
 class Manhole(Base):
@@ -490,16 +483,7 @@ class BoundaryCondition1D(Base):
     interpolate = Column(Boolean)
     geom = Column(Geometry("POINT"), nullable=False)
 
-    connection_node_id = Column(
-        Integer,
-        ForeignKey(ConnectionNode.__tablename__ + ".id"),
-        unique=True,
-    )
-    connection_node = relationship(
-        ConnectionNode,
-        foreign_keys=connection_node_id,
-        back_populates="boundary_conditions",
-    )
+    connection_node_id = Column(Integer)
 
 
 class SurfaceMap(Base):
