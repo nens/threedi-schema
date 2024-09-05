@@ -15,8 +15,8 @@ from sqlalchemy.orm import declarative_base
 from threedi_schema.domain.custom_types import Geometry
 
 # revision identifiers, used by Alembic.
-revision = "0225"
-down_revision = "0224"
+revision = "0226"
+down_revision = "0225"
 branch_labels = None
 depends_on = None
 
