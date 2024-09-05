@@ -31,6 +31,7 @@ class BoundaryConditions2D(Base):
     timeseries = Column(Text)
     time_units = Column(Text)
     interpolate = Column(Boolean)
+    tags = Column(Text)
     geom = Column(Geometry("LINESTRING"), nullable=False)
 
 
@@ -481,6 +482,7 @@ class BoundaryCondition1D(Base):
     timeseries = Column(Text)
     time_units = Column(Text)
     interpolate = Column(Boolean)
+    tags = Column(Text)
     geom = Column(Geometry("POINT"), nullable=False)
 
     connection_node_id = Column(Integer)
