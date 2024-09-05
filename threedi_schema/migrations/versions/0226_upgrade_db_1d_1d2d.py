@@ -152,7 +152,6 @@ def fix_geometry_columns():
 
 
 def set_potential_breach_final_exchange_level():
-    # TODO test
     conn = op.get_bind()
     res = conn.execute(sa.text(
         """
