@@ -7,6 +7,8 @@ Changelog of threedi-schema
 
 - Change names of aggregation_settings.flow_variable to match threedigrid
 - Make renaming raster paths more resilient
+- Fix setting default values in dry_weather_flow and surface
+- Actually set geom columns in dry_weather_flow_map and surface_map
 
 
 0.224.1 (2024-09-02)

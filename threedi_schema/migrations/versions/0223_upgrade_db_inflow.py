@@ -158,6 +158,11 @@ def copy_v2_data_to_dry_weather_flow(src_table: str):
     src_columns = ["id", "code", "display_name", "dwf_geom", "nr_of_inhabitants", "dry_weather_flow"]
     dst_columns = ["id", "code", "display_name", "geom", "multiplier", "daily_total"]
     copy_values_to_new_table(src_table, src_columns, "dry_weather_flow", dst_columns)
+    op.execute(sa.text("""
+    UPDATE dry_weather_flow
+    SET dry_weather_flow_distribution_id = 1,
+        interpolate = 0;
+        """))
     op.execute(sa.text("DELETE FROM dry_weather_flow "
                        "WHERE multiplier = 0 OR daily_total = 0 OR multiplier IS NULL OR daily_total IS NULL;"))
 
@@ -179,17 +184,39 @@ def copy_v2_data_to_surface_map(src_table: str):
     copy_values_to_new_table(src_table, src_columns, "surface_map", dst_columns)
 
 
+def set_map_geometries(basename):
+    # Set geom as a line between point on surface/dry_weather_flow and connection node
+    query = f"""
+        UPDATE {basename}_map AS map
+        SET geom = (
+            SELECT MakeLine(PointOnSurface(obj.geom), vcn.the_geom)
+            FROM {basename} obj
+            JOIN v2_connection_nodes vcn ON map.connection_node_id = vcn.id
+            WHERE obj.id = map.{basename}_id
+        );        
+    """
+    op.execute(sa.text(query))
+
+
 def add_map_geometries(src_table: str):
     # Add geometries to a map table that connects the connection node and the surface / dry_weather_flow
     query = f"""
-    UPDATE {src_table}_map 
-    SET geom = (
-    SELECT MakeLine(c.the_geom, ClosestPoint(s.geom, c.the_geom))
-    FROM v2_connection_nodes c
-    JOIN {src_table}_map m ON c.id = m.connection_node_id
-    JOIN {src_table} s ON s.id = m.{src_table}_id);
+        UPDATE {src_table}_map
+        SET geom = (
+            SELECT MakeLine(c.the_geom, PointOnSurface(s.geom))
+            FROM v2_connection_nodes c, {src_table} s
+            WHERE c.id = {src_table}_map.connection_node_id 
+            AND s.id = {src_table}_map.{src_table}_id
+        )
+        WHERE EXISTS (
+            SELECT 1
+            FROM v2_connection_nodes c, {src_table} s
+            WHERE c.id = {src_table}_map.connection_node_id 
+            AND s.id = {src_table}_map.{src_table}_id
+        );
     """
     op.execute(sa.text(query))
+
 
 
 def get_global_srid():
@@ -381,9 +408,11 @@ def populate_surface_and_dry_weather_flow():
     # Remove rows in maps that refer to non-existing objects
     remove_orphans_from_map(basename="surface")
     remove_orphans_from_map(basename="dry_weather_flow")
+
     # Create geometries in new maps
     add_map_geometries("surface")
     add_map_geometries("dry_weather_flow")
+
     # Set surface parameter id
     if use_0d_inflow == 1:
         set_surface_parameters_id()
@@ -397,8 +426,11 @@ def set_surface_parameters_id():
     with open(data_dir.joinpath('0223_surface_parameters_map.json'), 'r') as f:
         parameter_map = json.load(f)
     conn = op.get_bind()
-    surface_class, surface_inclination = conn.execute(
+    res = conn.execute(
         sa.text("SELECT surface_class, surface_inclination FROM v2_impervious_surface")).fetchone()
+    if res is None:
+        return
+    surface_class, surface_inclination = res
     parameter_id = parameter_map[f'{surface_class} - {surface_inclination}']
     op.execute(f'UPDATE surface SET surface_parameters_id = {parameter_id}')
 
