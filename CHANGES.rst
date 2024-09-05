@@ -5,7 +5,15 @@ Changelog of threedi-schema
 0.224.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Implement changes for schema version 300 concerning 2d and 1d2d
+- Renamed v2_dem_average_area to dem_average_area, v2_exchange_line to echange_line,
+  v2_grid_refinement to grid_refinement_line, v2_grid_refinement_area to grid_refinement_area,
+  v2_obstacle to obstacle and v2_potential_breach to potential_breach
+- Ensure that all these tables have a geom, code, display_name and tags column
+- Ensure that all columns except for geom are nullable
+- Rename refinement_level to grid_level in grid_refinement_line and grid_refinement_area
+- Rename potential_breach.exchange_level to initial_exchange_level
+- Remove potential_breach.maximum_breach_depth and set maximum_breach_depth.final_exchange_level to exchange_level - maximum_breach_depth
 
 
 0.224.1 (2024-09-02)
