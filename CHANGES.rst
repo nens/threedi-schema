@@ -5,7 +5,8 @@ Changelog of threedi-schema
 0.224.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix setting default values in dry_weather_flow and surface
+- Actually set geom columns in dry_weather_flow_map and surface_map
 
 
 0.224.1 (2024-09-02)
