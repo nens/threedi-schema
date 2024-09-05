@@ -172,6 +172,8 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
     new_columns_list_sql_formatted = []
     for entry in new_columns:
         entry_string = f"{entry['name']} {entry['type']}"
+        if entry['name'] == "id":
+            entry_string += f" PRIMARY KEY"
         # in the new database schema only geometries and id will have NOT NULL constraints
         if entry['name'] in ["geom", "id"]:
             entry_string += f" NOT NULL"
