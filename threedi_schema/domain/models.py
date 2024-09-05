@@ -439,7 +439,7 @@ class AggregationSettings(Base):
 class PhysicalSettings(Base):
     __tablename__ = "physical_settings"
     id = Column(Integer, primary_key=True)
-    use_advection_1d = Column(IntegerEnum(constants.OffOrStandard))
+    use_advection_1d = Column(IntegerEnum(constants.AdvectionTypes1D))
     use_advection_2d = Column(IntegerEnum(constants.OffOrStandard))
 
 

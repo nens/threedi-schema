@@ -233,3 +233,10 @@ class MeasureOperators(Enum):
     greater_than_equal = ">="
     less_than = "<"
     less_than_equal = "<="
+
+
+class AdvectionTypes1D(Enum):
+    OFF = 0
+    MOMENTUM_CONSERVATIVE = 1
+    ENERGY_CONSERVATIVE = 2
+    STANDARD = 3
