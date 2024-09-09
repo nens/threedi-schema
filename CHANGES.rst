@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.224.2 (unreleased)
+0.225.2 (unreleased)
 --------------------
 
 - Implement changes for schema version 300 concerning 2d and 1d2d
@@ -14,6 +14,33 @@ Changelog of threedi-schema
 - Rename refinement_level to grid_level in grid_refinement_line and grid_refinement_area
 - Rename potential_breach.exchange_level to initial_exchange_level
 - Remove potential_breach.maximum_breach_depth and set maximum_breach_depth.final_exchange_level to exchange_level - maximum_breach_depth
+
+
+0.225.1 (2024-09-09)
+--------------------
+
+- Create enum for 1d_advection_type and use use that for PhysicalSettings.use_advection_1d
+
+
+0.225.0 (2024-09-09)
+--------------------
+
+- Rename v2_1d_boundary_conditions and v2_2d_boundary_conditions to boundary_condition_1d and boundary_condition_2d.
+
+- Rename v2_1d_laterals and v2_2d_laterals to lateral_1d and lateral_2d.
+
+- Rename the_geom to geom in boundary_condition_2d and lateral_2d, and add geom columns to boundary_condition_1d and lateral_1d.
+
+- Drop all constraints on boundary condition and lateral tables, except NOT NULL constrains on id and geom.
+
+
+0.224.2 (2024-09-05)
+--------------------
+
+- Change names of aggregation_settings.flow_variable to match threedigrid
+- Make renaming raster paths more resilient
+- Fix setting default values in dry_weather_flow and surface
+- Actually set geom columns in dry_weather_flow_map and surface_map
 
 
 0.224.1 (2024-09-02)

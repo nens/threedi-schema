@@ -8,22 +8,31 @@ Base = declarative_base()  # automap_base()
 
 
 class Lateral2D(Base):
-    __tablename__ = "v2_2d_lateral"
+    __tablename__ = "lateral_2d"
     id = Column(Integer, primary_key=True)
-
-    type = Column(IntegerEnum(constants.Later2dType), nullable=False)
-    the_geom = Column(Geometry("POINT"), nullable=False)
-    timeseries = Column(Text, nullable=False)
+    code = Column(Text)
+    display_name = Column(Text)
+    type = Column(IntegerEnum(constants.Later2dType))
+    timeseries = Column(Text)
+    time_units = Column(Text)
+    interpolate = Column(Boolean)
+    offset = Column(Integer)
+    units = Column(Text)
+    tags = Column(Text)
+    geom = Column(Geometry("POINT"), nullable=False)
 
 
 class BoundaryConditions2D(Base):
-    __tablename__ = "v2_2d_boundary_conditions"
+    __tablename__ = "boundary_condition_2d"
     id = Column(Integer, primary_key=True)
-
-    display_name = Column(String(255))
-    timeseries = Column(Text, nullable=False)
-    boundary_type = Column(IntegerEnum(constants.BoundaryType), nullable=False)
-    the_geom = Column(Geometry("LINESTRING"), nullable=False)
+    code = Column(Text)
+    display_name = Column(Text)
+    type = Column(IntegerEnum(constants.BoundaryType))
+    timeseries = Column(Text)
+    time_units = Column(Text)
+    interpolate = Column(Boolean)
+    tags = Column(Text)
+    geom = Column(Geometry("LINESTRING"), nullable=False)
 
 
 class ControlMeasureLocation(Base):
@@ -275,20 +284,22 @@ class ConnectionNode(Base):
     code = Column(String(100))
 
     manholes = relationship("Manhole", back_populates="connection_node")
-    boundary_conditions = relationship(
-        "BoundaryCondition1D", back_populates="connection_node"
-    )
-    laterals1d = relationship("Lateral1d", back_populates="connection_node")
 
 
 class Lateral1d(Base):
-    __tablename__ = "v2_1d_lateral"
+    __tablename__ = "lateral_1d"
     id = Column(Integer, primary_key=True)
-    connection_node_id = Column(
-        Integer, ForeignKey(ConnectionNode.__tablename__ + ".id"), nullable=False
-    )
-    timeseries = Column(Text, nullable=False)
-    connection_node = relationship(ConnectionNode, back_populates="laterals1d")
+    code = Column(Text)
+    display_name = Column(Text)
+    timeseries = Column(Text)
+    time_units = Column(Text)
+    interpolate = Column(Boolean)
+    offset = Column(Integer)
+    units = Column(Text)
+    tags = Column(Text)
+    geom = Column(Geometry("POINT"), nullable=False)
+
+    connection_node_id = Column(Integer)
 
 
 class Manhole(Base):
@@ -440,7 +451,7 @@ class AggregationSettings(Base):
 class PhysicalSettings(Base):
     __tablename__ = "physical_settings"
     id = Column(Integer, primary_key=True)
-    use_advection_1d = Column(IntegerEnum(constants.OffOrStandard))
+    use_advection_1d = Column(IntegerEnum(constants.AdvectionTypes1D))
     use_advection_2d = Column(IntegerEnum(constants.OffOrStandard))
 
 
@@ -463,23 +474,19 @@ class TimeStepSettings(Base):
 
 
 class BoundaryCondition1D(Base):
-    __tablename__ = "v2_1d_boundary_conditions"
+    __tablename__ = "boundary_condition_1d"
 
     id = Column(Integer, primary_key=True)
-    boundary_type = Column(IntegerEnum(constants.BoundaryType), nullable=False)
-    timeseries = Column(Text, nullable=False)
+    code = Column(Text)
+    display_name = Column(Text)
+    type = Column(IntegerEnum(constants.BoundaryType))
+    timeseries = Column(Text)
+    time_units = Column(Text)
+    interpolate = Column(Boolean)
+    tags = Column(Text)
+    geom = Column(Geometry("POINT"), nullable=False)
 
-    connection_node_id = Column(
-        Integer,
-        ForeignKey(ConnectionNode.__tablename__ + ".id"),
-        nullable=False,
-        unique=True,
-    )
-    connection_node = relationship(
-        ConnectionNode,
-        foreign_keys=connection_node_id,
-        back_populates="boundary_conditions",
-    )
+    connection_node_id = Column(Integer)
 
 
 class SurfaceMap(Base):

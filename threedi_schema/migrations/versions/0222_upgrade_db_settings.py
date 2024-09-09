@@ -21,6 +21,9 @@ depends_on = None
 
 Base = declarative_base()
 
+data_dir = Path(__file__).parent / "data"
+
+
 # (source table, destination table)
 RENAME_TABLES = [
     ("v2_aggregation_settings", "aggregation_settings"),
@@ -309,7 +312,10 @@ def correct_raster_paths():
                 # replace backslash in windows paths because pathlib doesn't handle relative windows paths
                 file_path = file_path.replace('\\', '/')
                 file = Path(file_path).name
-                op.execute(sa.text(f"UPDATE {table} SET {col} = '{file}' WHERE id = {id}"))
+                op.execute(
+                    sa.text(f"UPDATE {table} SET {col} = :new_value WHERE id = :row_id")
+                    .bindparams(new_value=file, row_id=id)
+                )
 
 
 def remove_columns_from_copied_tables(table_name: str, rem_columns: List[str]):
@@ -327,6 +333,18 @@ def remove_columns_from_copied_tables(table_name: str, rem_columns: List[str]):
     op.execute(sa.text(f"INSERT INTO temp ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
     op.execute(sa.text(f"DROP TABLE {table_name};"))
     op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
+
+
+def set_flow_variable_values():
+    flow_var_dict = {'wet_cross-section': 'wet_cross_section',
+                     'waterlevel': 'water_level'}
+    cases = '\n'.join([f"WHEN '{key}' THEN '{val}'" for key, val in flow_var_dict.items()])
+    query = f"""
+    UPDATE aggregation_settings SET flow_variable = CASE flow_variable
+    {cases} 
+    ELSE flow_variable
+    END"""
+    op.execute(sa.text(query))
 
 
 def upgrade():
@@ -359,6 +377,8 @@ def upgrade():
     drop_columns('model_settings', unused_cols)
     # remove relative path prefix from raster paths
     correct_raster_paths()
+    # change flow_variable values to new naming scheme
+    set_flow_variable_values()
     # remove columns from tables that are copied
     for table, columns in REMOVE_COLUMNS:
         remove_columns_from_copied_tables(table, columns)

@@ -23,8 +23,8 @@ class FlowVariable(Enum):
     FLOW_VELOCITY = "flow_velocity"
     PUMP_DISCHARGE = "pump_discharge"
     RAIN = "rain"
-    WATERLEVEL = "waterlevel"
-    WET_CROSS_SECTION = "wet_cross-section"
+    WATERLEVEL = "water_level"
+    WET_CROSS_SECTION = "wet_cross_section"
     WET_SURFACE = "wet_surface"
     LATERAL_DISCHARGE = "lateral_discharge"
     VOLUM = "volume"
@@ -233,3 +233,10 @@ class MeasureOperators(Enum):
     greater_than_equal = ">="
     less_than = "<"
     less_than_equal = "<="
+
+
+class AdvectionTypes1D(Enum):
+    OFF = 0
+    MOMENTUM_CONSERVATIVE = 1
+    ENERGY_CONSERVATIVE = 2
+    COMBINED_MOMENTUM_AND_ENERGY_CONSERVATIVE = 3
