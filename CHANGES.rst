@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.224.3 (unreleased)
+0.225.0 (2024-09-09)
 --------------------
 
 - Rename v2_1d_boundary_conditions and v2_2d_boundary_conditions to boundary_condition_1d and boundary_condition_2d.
