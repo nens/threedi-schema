@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.225.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Create enum for 1d_advection_type and use use that for PhysicalSettings.use_advection_1d
 
 
 0.225.0 (2024-09-09)
