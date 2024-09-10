@@ -64,6 +64,7 @@ REMOVE_COLUMNS = {
 class Schema225UpgradeException(Exception):
     pass
 
+
 def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
     # no checks for existence are done, this will fail if any column already exists
     for dst_table, col in table_columns:
@@ -128,15 +129,6 @@ def modify_table(old_table_name, new_table_name):
                        f"SELECT {','.join(old_col_names)} FROM {old_table_name}"))
 
 
-RENAME_TABLES = [
-    ("v2_dem_average_area", "dem_average_area"),
-    ("v2_exchange_line", "exchange_line"),
-    ("v2_grid_refinement", "grid_refinement_line"),
-    ("v2_grid_refinement_area", "grid_refinement_area"),
-    ("v2_obstacle", "obstacle"),
-    ("v2_potential_breach", "potential_breach"),
-]
-
 def fix_geometry_columns():
     GEO_COL_INFO = [
         ('dem_average_area', 'geom', 'POLYGON'),
@@ -163,15 +155,15 @@ def set_potential_breach_final_exchange_level():
         raise Schema225UpgradeException(
             f"Could not set final_exchange_level because maximum_breach_depth was not defined for rows: {res}")
     op.execute(sa.text(
-    """
-    UPDATE potential_breach
-    SET final_exchange_level = (
-        SELECT vb.exchange_level - vb.maximum_breach_depth
-        FROM v2_potential_breach vb
-        WHERE vb.id = potential_breach.id
-        AND exchange_level IS NOT NULL
-    );
-    """
+        """
+        UPDATE potential_breach
+        SET final_exchange_level = (
+            SELECT vb.exchange_level - vb.maximum_breach_depth
+            FROM v2_potential_breach vb
+            WHERE vb.id = potential_breach.id
+            AND exchange_level IS NOT NULL
+        );
+        """
     ))
 
 
