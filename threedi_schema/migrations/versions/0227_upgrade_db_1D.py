@@ -1,93 +1,144 @@
-"""Migrate 1D related settings to schema 300
+"""Upgrade settings in schema
 
-Revision ID: 0227
+Revision ID: 0225
 Revises:
-Create Date: 2024-09-09 15:44
+Create Date: 2024-09-10 09:00
 
 """
-from copy import deepcopy
-from pathlib import Path
 from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
 from alembic import op
-from geoalchemy2 import load_spatialite
-from sqlalchemy import Boolean, Column, Integer, Text
-from sqlalchemy.event import listen
+from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 from sqlalchemy.orm import declarative_base
 
 from threedi_schema.domain.custom_types import Geometry
 
 # revision identifiers, used by Alembic.
-revision = "0226"
-down_revision = "0225"
+revision = "0227"
+down_revision = "0226"
 branch_labels = None
 depends_on = None
 
-Base = declarative_base()
-
-data_dir = Path(__file__).parent / "data"
-
-
-# (source table, destination table)
 RENAME_TABLES = [
-    ("v2_", "")
+    ("v2_channel", "channel"),
+    ("v2_windshielding", "windshielding"),
+    ("v2_pumpstation", "pump"),
+    ("v2_cross_section_location", "cross_section_location"),
+    ("v2_culvert", "culvert"),
+    ("v2_orifice", "orifice"),
+    ("v2_pipe", "pipe"),
+    ("v2_weir", "weir")
 ]
 
-
-ADD_COLUMNS = [
-    ("table", Column("col", Text)),
+NEW_COLUMNS = [
+    # ("dem_average_area", Column("tags", Text)),
 ]
 
-# Geom columns need to be added using geoalchemy, so therefore that's a separate task
-NEW_GEOM_COLUMNS = {
-    ("table", Column("geom", Geometry("POINT"), nullable=False)),
-}
-
-
-# old name, new name
-# the columns will be renamed using raw sql
-# this is because alembic has conniptions whenever you try to batch rename a geometry column
 RENAME_COLUMNS = {
-    "table": [
-        ("old_col", "new_col"),
-    ],
+    # "grid_refinement_line": {"refinement_level": "grid_level"},
+    # "grid_refinement_area": {"refinement_level": "grid_level"},
+    # "potential_breach": {"exchange_level": "initial_exchange_level"}
+}
+
+RETYPE_COLUMNS = {
+    # "potential_breach": [("channel_id", "INTEGER")],
+    # "exchange_line": [("channel_id", "INTEGER")],
+}
+
+REMOVE_COLUMNS = {
+    # "exchange_line": ["channel"],
+    # "potential_breach": ["channel", "maximum_breach_depth"]
 }
 
 
-DEFAULT_VALUES = {
-    "table": {
-        "col": "val",
-    },
-}
+def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
+    # no checks for existence are done, this will fail if any column already exists
+    for dst_table, col in table_columns:
+        with op.batch_alter_table(dst_table) as batch_op:
+            batch_op.add_column(col)
 
+
+def remove_tables(tables: List[str]):
+    for table in tables:
+        op.drop_table(table)
+
+
+def modify_table(old_table_name, new_table_name):
+    # Create a new table named `new_table_name` by copying the
+    # data from `old_table_name`.
+    # Use the columns from `old_table_name`, with the following exceptions:
+    # * columns in `REMOVE_COLUMNS[new_table_name]` are skipped
+    # * columns in `RENAME_COLUMNS[new_table_name]` are renamed
+    # * columns in `RETYPE_COLUMNS[new_table_name]` change type
+    # * `the_geom` is renamed to `geom` and NOT NULL is enforced
+    connection = op.get_bind()
+    columns = connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()
+    # get all column names and types
+    col_names = [col[1] for col in columns]
+    col_types = [col[2] for col in columns]
+    # get type of the geometry column
+    geom_type = None
+    for col in columns:
+        if col[1] == 'the_geom':
+            geom_type = col[2]
+            break
+    # create list of new columns and types for creating the new table
+    # create list of old columns to copy to new table
+    skip_cols = ['id', 'the_geom']
+    if new_table_name in REMOVE_COLUMNS:
+        skip_cols += REMOVE_COLUMNS[new_table_name]
+    old_col_names = []
+    new_col_names = []
+    new_col_types = []
+    for cname, ctype in zip(col_names, col_types):
+        if cname in skip_cols:
+            continue
+        old_col_names.append(cname)
+        if new_table_name in RENAME_COLUMNS and cname in RENAME_COLUMNS[new_table_name]:
+            new_col_names.append(RENAME_COLUMNS[new_table_name][cname])
+        else:
+            new_col_names.append(cname)
+        if new_table_name in RETYPE_COLUMNS and cname in RETYPE_COLUMNS[new_table_name]:
+            new_col_types.append(RETYPE_COLUMNS[new_table_name][cname])
+        else:
+            new_col_types.append(ctype)
+    # add to the end manually
+    old_col_names.append('the_geom')
+    new_col_names.append('geom')
+    new_col_types.append(f'{geom_type} NOT NULL')
+    # Create new table (temp), insert data, drop original and rename temp to table_name
+    new_col_str = ','.join(['id INTEGER PRIMARY KEY NOT NULL'] + [f'{cname} {ctype}' for cname, ctype in
+                                                                  zip(new_col_names, new_col_types)])
+    op.execute(sa.text(f"CREATE TABLE {new_table_name} ({new_col_str});"))
+    # Copy data
+    op.execute(sa.text(f"INSERT INTO {new_table_name} ({','.join(new_col_names)}) "
+                       f"SELECT {','.join(old_col_names)} FROM {old_table_name}"))
+
+
+def fix_geometry_columns():
+    GEO_COL_INFO = [
+        ('dem_average_area', 'geom', 'POLYGON'),
+        ('exchange_line', 'geom', 'LINESTRING'),
+        ('grid_refinement_line', 'geom', 'LINESTRING'),
+        ('grid_refinement_area', 'geom', 'POLYGON'),
+        ('obstacle', 'geom', 'LINESTRING'),
+        ('potential_breach', 'geom', 'LINESTRING'),
+    ]
+    for table, column, geotype in GEO_COL_INFO:
+        migration_query = f"SELECT RecoverGeometryColumn('{table}', '{column}', {4326}, '{geotype}', 'XY')"
+        op.execute(sa.text(migration_query))
 
 
 def upgrade():
-    # rename existing tables
-    rename_tables(RENAME_TABLES)
-
-    # add new columns to existing tables
-    add_columns_to_tables(ADD_COLUMNS)
-
-    # rename columns in renamed tables
-    for table_name, columns in RENAME_COLUMNS.items():
-        rename_columns(table_name, columns)
-
-    # add geometry columns after renaming columns
-    # to not needlessly trigger RecoverGeometryColumn
-    add_columns_to_tables(NEW_GEOM_COLUMNS)
-
-    # recover geometry column data from connection nodes
-    for table, column in (
-        ("lateral_1d", "geom"),
-        ("boundary_condition_1d", "geom")
-    ):
-        copy_v2_geometries_from_connection_nodes_by_id(dest_table=table, dest_column=column)
-
-    # populate new columns in tables
-    for key, value in DEFAULT_VALUES.items():
-        populate_table(table=key, values=value)
+    rem_tables = []
+    for old_table_name, new_table_name in RENAME_TABLES:
+        modify_table(old_table_name, new_table_name)
+        rem_tables.append(old_table_name)
+    add_columns_to_tables(NEW_COLUMNS)
+    # set_potential_breach_final_exchange_level()
+    # fix_geometry_columns()
+    remove_tables(rem_tables)
 
 
 def downgrade():
