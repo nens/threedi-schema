@@ -245,7 +245,7 @@ class GridRefinementLine(Base):
     __tablename__ = "grid_refinement_line"
     id = Column(Integer, primary_key=True)
     display_name = Column(String(255))
-    grid_level = Column(Integer, nullable=False)
+    grid_level = Column(Integer)
     geom = Column(Geometry("LINESTRING"), nullable=False)
     code = Column(String(100))
     tags = Column(Text)
@@ -255,7 +255,7 @@ class GridRefinementArea(Base):
     __tablename__ = "grid_refinement_area"
     id = Column(Integer, primary_key=True)
     display_name = Column(String(255))
-    grid_level = Column(Integer, nullable=False)
+    grid_level = Column(Integer)
     code = Column(String(100))
     geom = Column(Geometry("POLYGON"), nullable=False)
     tags = Column(Text)
@@ -766,7 +766,7 @@ class Obstacle(Base):
     __tablename__ = "obstacle"
     id = Column(Integer, primary_key=True)
     code = Column(String(100))
-    crest_level = Column(Float, nullable=False)
+    crest_level = Column(Float)
     geom = Column(Geometry("LINESTRING"), nullable=False)
     tags = Column(Text)
     display_name = Column(String(255))
