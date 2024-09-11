@@ -762,6 +762,24 @@ class Pumpstation(Base):
     )
 
 
+
+class Pump(Base):
+    __tablename__ = "pump"
+    id = Column(Integer, primary_key=True)
+    code = Column(String(100))
+    display_name = Column(String(255))
+    start_level = Column(Float)
+    lower_stop_level = Column(Float)
+    upper_stop_level = Column(Float)
+    capacity = Column(Float
+    type_ = Column(IntegerEnum(constants.PumpType),
+                   name="type", key="type_")  # type: ignore[call-overload]
+    sewerage = Column(Boolean)
+    connection_node_id = Column(Integer)
+    geom = Column(Geometry("POINT"), nullable=False)
+    tags = Column(Text)
+
+
 class Obstacle(Base):
     __tablename__ = "obstacle"
     id = Column(Integer, primary_key=True)
