@@ -2,6 +2,13 @@ Changelog of threedi-schema
 ===================================================
 
 
+0.224.3 (unreleased)
+----------------------
+
+- Set type of dry_weather_flow.dry_weather_flow_distribution_id to integer
+
+
+
 0.224.2 (2024-09-05)
 --------------------
 
