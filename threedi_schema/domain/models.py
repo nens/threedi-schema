@@ -163,7 +163,7 @@ class DryWeatherFlow(Base):
     __tablename__ = "dry_weather_flow"
     id = Column(Integer, primary_key=True)
     multiplier = Column(Float)
-    dry_weather_flow_distribution_id = Column(Text)
+    dry_weather_flow_distribution_id = Column(Integer)
     daily_total = Column(Float)
     interpolate = Column(Boolean)
     display_name = Column(String(255))
