@@ -2,17 +2,48 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.224.4 (unreleased)
+0.226.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Set type of dry_weather_flow.dry_weather_flow_distribution_id to integer
+
+
+0.226.0 (2024-09-10)
+--------------------
+
+- Implement changes for schema version 300 concerning 2d and 1d2d
+- Renamed v2_dem_average_area to dem_average_area, v2_exchange_line to echange_line,
+  v2_grid_refinement to grid_refinement_line, v2_grid_refinement_area to grid_refinement_area,
+  v2_obstacle to obstacle and v2_potential_breach to potential_breach
+- Ensure that all these tables have a geom, code, display_name and tags column
+- Ensure that all columns except for geom are nullable
+- Rename refinement_level to grid_level in grid_refinement_line and grid_refinement_area
+- Rename potential_breach.exchange_level to initial_exchange_level
+- Remove potential_breach.maximum_breach_depth and set maximum_breach_depth.final_exchange_level to exchange_level - maximum_breach_depth
+
+
+0.225.1 (2024-09-09)
+--------------------
+
+- Create enum for 1d_advection_type and use use that for PhysicalSettings.use_advection_1d
+
+
+0.225.0 (2024-09-09)
+--------------------
+
+- Rename v2_1d_boundary_conditions and v2_2d_boundary_conditions to boundary_condition_1d and boundary_condition_2d.
+
+- Rename v2_1d_laterals and v2_2d_laterals to lateral_1d and lateral_2d.
+
+- Rename the_geom to geom in boundary_condition_2d and lateral_2d, and add geom columns to boundary_condition_1d and lateral_1d.
+
+- Drop all constraints on boundary condition and lateral tables, except NOT NULL constrains on id and geom.
 
 
 0.224.3 (2024-09-12)
 --------------------
 
 - Set type of dry_weather_flow.dry_weather_flow_distribution_id to integer
-
 
 
 0.224.2 (2024-09-05)

@@ -89,6 +89,61 @@ def test_upgrade_success(sqlite_file, tmp_path_factory):
         pytest.fail(f"Failed to upgrade {sqlite_file}")
 
 
+class TestMigration226:
+    pytestmark = pytest.mark.migration_226
+    removed_tables = set(['v2_dem_average_area',
+                          'v2_exchange_line',
+                          'v2_grid_refinement',
+                          'v2_grid_refinement_area',
+                          'v2_obstacle',
+                          'v2_potential_breach'])
+    added_tables = set(['dem_average_area',
+                          'exchange_line',
+                          'grid_refinement_line',
+                          'grid_refinement_area',
+                          'obstacle',
+                          'potential_breach'])
+
+    def test_tables(self, schema_ref, schema_upgraded):
+        # Test whether the added tables are present
+        # and whether the removed tables are not present*
+        tables_new = set(get_sql_tables(get_cursor_for_schema(schema_upgraded)))
+        assert self.added_tables.issubset(tables_new)
+        assert self.removed_tables.isdisjoint(tables_new)
+
+
+    def test_columns_added_tables(self, schema_upgraded):
+        # Note that only the added tables are touched.
+        # So this check covers both added and removed columns.
+        cursor = get_cursor_for_schema(schema_upgraded)
+        for table in self.added_tables:
+            cols_sqlite = get_columns_from_sqlite(cursor, table)
+            cols_schema = get_columns_from_schema(schema_upgraded, table)
+            assert cols_sqlite == cols_schema
+
+class TestMigration225:
+    pytestmark = pytest.mark.migration_225
+    removed_tables = set(['v2_1d_lateral', 'v2_2d_lateral', 'v2_1d_boundary_conditions',
+                          'v2_2d_boundary_conditions'])
+    added_tables = set(['lateral_1d', 'lateral_2d', 'boundary_condition_1d', 'boundary_condition_2d'])
+
+    def test_tables(self, schema_ref, schema_upgraded):
+        # Test whether the added tables are present
+        # and whether the removed tables are not present*
+        tables_new = set(get_sql_tables(get_cursor_for_schema(schema_upgraded)))
+        assert self.added_tables.issubset(tables_new)
+        assert self.removed_tables.isdisjoint(tables_new)
+
+    def test_columns_added_tables(self, schema_upgraded):
+        # Note that only the added tables are touched.
+        # So this check covers both added and removed columns.
+        cursor = get_cursor_for_schema(schema_upgraded)
+        for table in self.added_tables:
+            cols_sqlite = get_columns_from_sqlite(cursor, table)
+            cols_schema = get_columns_from_schema(schema_upgraded, table)
+            assert cols_sqlite == cols_schema
+
+
 class TestMigration224:
     pytestmark = pytest.mark.migration_224
     removed_tables = set(['v2_control', 'v2_control_delta', 'v2_control_group',
