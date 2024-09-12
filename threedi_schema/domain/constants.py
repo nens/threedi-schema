@@ -159,17 +159,6 @@ class InfiltrationSurfaceOption(Enum):
     WET_SURFACE = 2
 
 
-class ZoomCategories(Enum):
-    # Visibility in live-site: 0 is lowest for smallest level (i.e. ditch)
-    # and 5 for highest (rivers).
-    LOWEST_VISIBILITY = 0
-    LOW_VISIBILITY = 1
-    MEDIUM_LOW_VISIBILITY = 2
-    MEDIUM_VISIBILITY = 3
-    HIGH_VISIBILITY = 4
-    HIGHEST_VISIBILITY = 5
-
-
 class InflowType(Enum):
     NO_INFLOW = 0
     IMPERVIOUS_SURFACE = 1
