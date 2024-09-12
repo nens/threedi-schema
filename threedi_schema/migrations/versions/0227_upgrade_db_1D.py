@@ -14,7 +14,7 @@ from alembic import op
 from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 from sqlalchemy.orm import declarative_base, Session
 
-from threedi_schema.domain import constants
+from threedi_schema.domain import constants, models
 from threedi_schema.domain.custom_types import Geometry, IntegerEnum
 
 Base = declarative_base()
@@ -39,24 +39,22 @@ RENAME_TABLES = [
     ("v2_pumpstation", "pump")
 ]
 
-DELETE_TABLES = ["v2_cross_section_definition"]
-
-NEW_COLUMNS = {
-    "channel": [("tags", "TEXT"),],
-    "windshielding_1d": [("tags", "TEXT"), ("code", "TEXT"), ("display_name", "TEXT")],
-    "cross_section_location": [("tags", "TEXT"), ],
-    "culvert": [("tags", "TEXT"),("material_id", "INT")],
-    "orifice": [("tags", "TEXT"), ("material_id", "INT")],
-    "weir": [("tags", "TEXT"), ("material_id", "INT")],
-    "pump": [("tags", "TEXT")]
-}
+DELETE_TABLES = ["v2_cross_section_definition",
+                 "v2_floodfill",
+                 "v2_connection_nodes"]
 
 RENAME_COLUMNS = {
     "culvert": {"calculation_type": "exchange_type",
                 "dist_calc_points": "calculation_point_distance"},
     "pipe": {"calculation_type": "exchange_type",
              "dist_calc_points": "calculation_point_distance",
-             "material_id": "material"},
+             "material": "material_id"},
+    "channel": {"calculation_type": "exchange_type",
+             "dist_calc_points": "calculation_point_distance"},
+    "weir": {"calculation_type": "exchange_type",
+                "dist_calc_points": "calculation_point_distance"},
+    "orifice": {"calculation_type": "exchange_type",
+                "dist_calc_points": "calculation_point_distance"},
     "pump": {"connection_node_start_id": "connection_node_id"}
 }
 
@@ -64,13 +62,18 @@ REMOVE_COLUMNS = {
     "channel": ["zoom_category",],
     "cross_section_location": ["definition_id", "vegetation_drag_coeficients"],
     "culvert": ["zoom_category", "cross_section_definition_id"],
-    "pipe": ["zoom_category", "original_length", "cross_section_definition_id"],
+    "pipe": ["zoom_category", "original_length", "cross_section_definition_id", "profile_num"],
     "orifice": ["zoom_category", "cross_section_definition_id"],
-    "wier": ["zoom_category", "cross_section_definition_id"],
+    "weir": ["zoom_category", "cross_section_definition_id"],
     "pump": ["connection_node_end_id", "zoom_category", "classification"]
 }
 
 RETYPE_COLUMNS = {}
+
+
+class Schema227UpgradeException(Exception):
+    pass
+
 
 def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
     # no checks for existence are done, this will fail if any column already exists
@@ -85,59 +88,32 @@ def remove_tables(tables: List[str]):
 
 
 def modify_table(old_table_name, new_table_name):
-    # Create a new table named `new_table_name` by copying the
-    # data from `old_table_name`.
+    # Create a new table named `new_table_name` using the declared models
     # Use the columns from `old_table_name`, with the following exceptions:
-    # * columns in `REMOVE_COLUMNS[new_table_name]` are skipped
     # * columns in `RENAME_COLUMNS[new_table_name]` are renamed
-    # * columns in `RETYPE_COLUMNS[new_table_name]` change type
     # * `the_geom` is renamed to `geom` and NOT NULL is enforced
+    # create new table
+    create_sqlite_table_from_model(find_model(new_table_name))
+    # copy data from old to new table
     connection = op.get_bind()
-    columns = connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()
     # get all column names and types
-    col_names = [col[1] for col in columns]
-    col_types = [col[2] for col in columns]
-    # get type of the geometry column
-    geom_type = None
-    for col in columns:
-        if col[1] == 'the_geom':
-            geom_type = col[2]
-            break
-    # create list of new columns and types for creating the new table
-    # create list of old columns to copy to new table
-    skip_cols = ['id', 'the_geom']
-    if new_table_name in REMOVE_COLUMNS:
-        skip_cols += REMOVE_COLUMNS[new_table_name]
-    old_col_names = []
-    new_col_names = []
-    new_col_types = []
-    for cname, ctype in zip(col_names, col_types):
-        if cname in skip_cols:
-            continue
-        old_col_names.append(cname)
-        if new_table_name in RENAME_COLUMNS and cname in RENAME_COLUMNS[new_table_name]:
-            new_col_names.append(RENAME_COLUMNS[new_table_name][cname])
-        else:
-            new_col_names.append(cname)
-        if new_table_name in RETYPE_COLUMNS and cname in RETYPE_COLUMNS[new_table_name]:
-            new_col_types.append(RETYPE_COLUMNS[new_table_name][cname])
-        else:
-            new_col_types.append(ctype)
-    # add to the end manually
-    if 'the_geom' in col_names:
-        old_col_names.append('the_geom')
-        new_col_names.append('geom')
-        new_col_types.append(f'{geom_type} NOT NULL')
-    # Create new table (temp), insert data, drop original and rename temp to table_name
-    new_col_str = ','.join(['id INTEGER PRIMARY KEY NOT NULL'] + [f'{cname} {ctype}' for cname, ctype in
-                                                                  zip(new_col_names, new_col_types)])
-    if new_table_name in NEW_COLUMNS:
-        new_col_str += ','+','.join([f'{cname} {ctype}' for cname, ctype in NEW_COLUMNS[new_table_name]])
-    op.execute(sa.text(f"CREATE TABLE {new_table_name} ({new_col_str});"))
+    col_names = [col[1] for col in connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()]
+    # create list of old and new columns
+    skip_cols = ['id', 'the_geom'] + REMOVE_COLUMNS.get(new_table_name, [])
+    rename_cols = {**RENAME_COLUMNS.get(new_table_name, {}), "the_geom": "geom"}
+    old_col_names = [cname for cname in col_names if cname not in skip_cols]
+    new_col_names = [rename_cols.get(cname, cname) for cname in col_names if cname not in skip_cols]
     # Copy data
     op.execute(sa.text(f"INSERT INTO {new_table_name} ({','.join(new_col_names)}) "
                        f"SELECT {','.join(old_col_names)} FROM {old_table_name}"))
 
+
+def find_model(table_name):
+    for model in models.DECLARED_MODELS:
+        if model.__tablename__ == table_name:
+            return model
+    # This can only go wrong if the migration or model is incorrect
+    raise
 
 def fix_geometry_columns():
     GEO_COL_INFO = [
@@ -177,6 +153,7 @@ def extend_cross_section_definition_table():
     conn = op.get_bind()
     session = Session(bind=op.get_bind())
     # create temporary table
+    # TODO use create_sqlite_table_from_model
     op.execute(sa.text(
         """CREATE TABLE temp 
             (id INTEGER PRIMARY KEY, 
@@ -301,18 +278,26 @@ def set_geom_for_v2_pumpstation():
     op.execute(sa.text(q))
 
 
+def create_sqlite_table_from_model(model):
+    from sqlalchemy.orm.attributes import InstrumentedAttribute
+    skip_cols = ["id", "geom"]
+    cols = [getattr(model, item) for item in model.__dict__
+            if item not in skip_cols
+            and isinstance(getattr(model, item), InstrumentedAttribute)]
+    op.execute(sa.text(f"""
+        CREATE TABLE {model.__tablename__} (
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+        {','.join(f"{col.name} {col.type}" for col in cols)}
+    );"""))
+    op.execute(sa.text(f"SELECT AddGeometryColumn('{model.__tablename__}', 'geom', "
+                       f"4326, '{model.geom.type.geometry_type}', 'XY', 0);"))
+
+
+
 def create_pump_map():
     # Create table
-    # TODO: use sql-alchemy to make this?
-    op.execute(sa.text("""
-    CREATE TABLE pump_map (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        pump_id INTEGER,
-        connection_node_end_id INTEGER,
-        code TEXT,
-        display_name TEXT,
-        tags TEXT
-    );"""))
+    create_sqlite_table_from_model(models.PumpMap)
+
     # Copy data from v2_pumpstation
     new_col_names = ["pump_id", "connection_node_end_id", "code", "display_name"]
     old_col_names = ["id", "connection_node_end_id", "code", "display_name"]
@@ -322,7 +307,6 @@ def create_pump_map():
     WHERE v2_pumpstation.connection_node_end_id IS NOT NULL
     AND v2_pumpstation.connection_node_start_id IS NOT NULL
     """))
-    q))
     # Create geometry
     op.execute(sa.text("""
     UPDATE pump_map
@@ -346,7 +330,36 @@ def create_pump_map():
 
 
 def create_connection_node():
-    pass
+    create_sqlite_table_from_model(models.ConnectionNode)
+    # copy from v2_connection_nodes
+    old_col_names = ["id", "initial_waterlevel", "storage_area", "the_geom", "code"]
+    rename_map = {"initial_waterlevel": "initial_water_level", "the_geom": "geom"}
+    new_col_names = [rename_map.get(old_name, old_name) for old_name in old_col_names]
+    op.execute(sa.text(f"""
+    INSERT INTO connection_node ({','.join(new_col_names)}) 
+    SELECT {','.join(old_col_names)} FROM v2_connection_nodes
+    """))
+    # conditional copy from v2_manhole
+    old_col_names = ["display_name", "code", "manhole_indicator",
+                     "surface_level", "bottom_level", "drain_level",
+                     "calculation_type", "exchange_thickness",
+                     "hydraulic_conductivity_in", "hydraulic_conductivity_out"]
+    rename_map = {"surface_level": "manhole_surface_level",
+                  "bottom_level": "manhole_bottom_level",
+                  "drain_level": "exchange_level",
+                  "calculation_type": "exchange_type",}
+    set_items = ',\n'.join(f"""{rename_map.get(col_name, col_name)} = (
+        SELECT v2_manhole.{col_name} FROM v2_manhole
+        WHERE v2_manhole.connection_node_id = connection_node.id)""" for col_name in old_col_names)
+    op.execute(sa.text(f"""
+    UPDATE connection_node
+    SET {set_items}
+    WHERE EXISTS (
+        SELECT 1
+        FROM v2_manhole
+        WHERE v2_manhole.connection_node_id = connection_node.id
+    );
+    """))
 
 
 def create_material():
@@ -362,6 +375,8 @@ def create_material():
         reader = csv.DictReader(file)
         session.bulk_save_objects([Material(**row) for row in reader])
         session.commit()
+
+
 
 def modify_obstacle():
     op.execute(sa.text(f'ALTER TABLE obstacle ADD COLUMN affects_2d BOOLEAN DEFAULT TRUE;'))
@@ -382,46 +397,20 @@ def modify_model_settings():
     op.execute(sa.text(f'ALTER TABLE model_settings ADD COLUMN node_open_water_detection INTEGER DEFAULT 1;'))
 
 
-def upgrade():
+def check_for_null_geoms():
+    tables = ["v2_connection_nodes", "v2_cross_section_location", "v2_culvert", "v2_channel", "v2_windshielding"]
+    conn = op.get_bind()
+    for table in tables:
+        nof_null = conn.execute(sa.text(f"SELECT COUNT(*) FROM {table} WHERE the_geom IS NULL;")).fetchone()[0]
+        if nof_null > 0:
+            raise Schema227UpgradeException("Cannot migrate because of empty geometries in table {table}")
 
-    # v2_cross_section_location -> cross_section_location
-    # - [x] add cross_section_table to cross_section_definition
-    # - [x] add cross_section_friction_table to cross_section_definition
-    # - [x] add cross_section_vegetation_table to cross_section_definition
-    # Add cross_section_definition to
-    # - [x] v2_cross_section_location
-    # - [x] v2_culvert
-    # - [x] v2_pipe
-    # - [x] v2_weir
-    # - [x] v2_orifice
-    # set geom
-    # - [x] v2_weir
-    # - [x] v2_orifice
-    # - [x] v2_pipe
-    # - [x] v2_pumpstation
-    # simple copy:
-    # - [x] v2_channel -> channel
-    # - [x] v2_windshielding -> windshielding
-    # - [x] v2_cross_section_location -> cross_section_location
-    # - [x] v2_cross_section_location
-    # - [x] v2_culvert -> culvert
-    # - [x] v2_pipe -> pipe
-    # - [x] v2_weir -> weir
-    # - [x] v2_orifice -> orifice
-    # - [x] v2_pumpstation -> pump
-    # Modify existing
-    # - [x] obstacle
-    # - [x] table_control
-    # - [x] memory_control
-    # - [x] model_settings
-    # Material
-    # - [x] Material table
-    # - [ ] Check / set material
-    # pump_map
-    # - [x] copy columns from v2_pumpstation
-    # - [x] set geometry
-    # connection_nodes:
-    # - [ ] : create manually
+
+
+def upgrade():
+    # Known issues (maybe solve)
+    # - empty or non-existing connection node id (start or end) in Orifice, Pipe, Pumpstation or Weir creates a NULL geometry
+    check_for_null_geoms()
     # Extent cross section definition table (actually stored in temp)
     extend_cross_section_definition_table()
     # Migrate data from cross_section_definition to cross_section_location
@@ -432,21 +421,18 @@ def upgrade():
         if table_name != 'v2_culvert':
             set_geom_for_object(table_name)
     set_geom_for_v2_pumpstation()
-    create_pump_map()
-    # rename tables
-    rem_tables = []
     for old_table_name, new_table_name in RENAME_TABLES:
         modify_table(old_table_name, new_table_name)
-        rem_tables.append(old_table_name)
+    # Create new tables
+    create_pump_map()
     create_material()
-    # for table in ['v2_culvert', 'v2_pipe', 'v2_orifice', 'v2_weir']:
-        # include_cross_section_definition(table)
-    # set_potential_breach_final_exchange_level()
-    # fix_geometry_columns()
-    # remove_tables(rem_tables+DELETE_TABLES)
+    create_connection_node()
+    # Modify exsiting tables
     modify_model_settings()
     modify_obstacle()
     modify_control_target_type()
+    fix_geometry_columns()
+    remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES)
 
 
 def downgrade():

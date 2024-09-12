@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.226.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Set type of dry_weather_flow.dry_weather_flow_distribution_id to integer
 
 
 0.226.0 (2024-09-10)
@@ -38,6 +38,12 @@ Changelog of threedi-schema
 - Rename the_geom to geom in boundary_condition_2d and lateral_2d, and add geom columns to boundary_condition_1d and lateral_1d.
 
 - Drop all constraints on boundary condition and lateral tables, except NOT NULL constrains on id and geom.
+
+
+0.224.3 (2024-09-12)
+--------------------
+
+- Set type of dry_weather_flow.dry_weather_flow_distribution_id to integer
 
 
 0.224.2 (2024-09-05)
