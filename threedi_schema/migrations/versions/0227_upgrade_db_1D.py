@@ -92,17 +92,16 @@ def modify_table(old_table_name, new_table_name):
     # Use the columns from `old_table_name`, with the following exceptions:
     # * columns in `RENAME_COLUMNS[new_table_name]` are renamed
     # * `the_geom` is renamed to `geom` and NOT NULL is enforced
+    model = find_model(new_table_name)
     # create new table
-    create_sqlite_table_from_model(find_model(new_table_name))
-    # copy data from old to new table
+    create_sqlite_table_from_model(model)
+    # get column names from model and match them to available data in sqlite
     connection = op.get_bind()
-    # get all column names and types
-    col_names = [col[1] for col in connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()]
-    # create list of old and new columns
-    skip_cols = ['id', 'the_geom'] + REMOVE_COLUMNS.get(new_table_name, [])
     rename_cols = {**RENAME_COLUMNS.get(new_table_name, {}), "the_geom": "geom"}
-    old_col_names = [cname for cname in col_names if cname not in skip_cols]
-    new_col_names = [rename_cols.get(cname, cname) for cname in col_names if cname not in skip_cols]
+    rename_cols_rev = {v: k for k, v in rename_cols.items()}
+    col_map = [(col.name, rename_cols_rev.get(col.name, col.name)) for col in get_cols_for_model(model, skip_cols=["id", "geom"])]
+    available_cols = [col[1] for col in connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()]
+    new_col_names, old_col_names = zip(*[(new_col, old_col) for new_col, old_col in col_map if old_col in available_cols])
     # Copy data
     op.execute(sa.text(f"INSERT INTO {new_table_name} ({','.join(new_col_names)}) "
                        f"SELECT {','.join(old_col_names)} FROM {old_table_name}"))
@@ -278,12 +277,17 @@ def set_geom_for_v2_pumpstation():
     op.execute(sa.text(q))
 
 
-def create_sqlite_table_from_model(model):
+def get_cols_for_model(model, skip_cols=None):
     from sqlalchemy.orm.attributes import InstrumentedAttribute
-    skip_cols = ["id", "geom"]
-    cols = [getattr(model, item) for item in model.__dict__
+    if skip_cols is None:
+        skip_cols = []
+    return [getattr(model, item) for item in model.__dict__
             if item not in skip_cols
             and isinstance(getattr(model, item), InstrumentedAttribute)]
+
+
+def create_sqlite_table_from_model(model):
+    cols = get_cols_for_model(model, skip_cols = ["id", "geom"])
     op.execute(sa.text(f"""
         CREATE TABLE {model.__tablename__} (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
