@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.226.1 (unreleased)
+0.226.1 (2024-09-12)
 --------------------
 
 - Set type of dry_weather_flow.dry_weather_flow_distribution_id to integer (https://github.com/nens/threedi-schema/pull/90)
