@@ -2,13 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.226.3 (unreleased)
---------------------
-
-- Nothing changed yet.
-
-
-0.226.2 (2024-09-23)
+0.226.2 (unreleased)
 --------------------
 
 - Release including fixes for 0.224.4 and 0.225.3
@@ -68,7 +62,6 @@ Changelog of threedi-schema
 --------------------
 
 - Use unique name for temp tables in migrations
->>>>>>> hotfix_225
 
 
 0.224.3 (2024-09-12)
@@ -76,10 +69,6 @@ Changelog of threedi-schema
 
 - Set type of dry_weather_flow.dry_weather_flow_distribution_id to integer
 
-<<<<<<< HEAD
-=======
-
->>>>>>> hotfix_225
 
 0.224.2 (2024-09-05)
 --------------------
