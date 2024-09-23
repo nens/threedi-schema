@@ -31,6 +31,9 @@ DEL_TABLES = ['v2_control',
               'v2_control_pid',
               'v2_control_timed']
 
+DEL_COLUMNS = [('v2_control_memory', 'measure_variable'),
+               ('v2_control_table', 'measure_variable')]
+
 RENAME_TABLES = [
     ("v2_control_memory", "memory_control"),
     ("v2_control_table", "table_control"),
@@ -260,16 +263,6 @@ def reformat_action_value():
     remove_column_from_table('memory_control', 'action_value')
 
 
-def rename_measure_operator(table_name: str):
-    op.execute(sa.text(
-        f"""
-        UPDATE {table_name}
-        SET measure_variable = 'water_level'
-        WHERE measure_variable = 'waterlevel'
-        """
-    ))
-
-
 def remove_column_from_table(table_name: str, column: str):
     with op.batch_alter_table(table_name) as batch_op:
         batch_op.drop_column(column)
@@ -313,6 +306,9 @@ def fix_geometry_columns():
 
 
 def upgrade():
+    # remove unused columns before renaming tables
+    for table_name, column in DEL_COLUMNS:
+        remove_column_from_table(table_name, column)
     # create new tables and rename existing tables
     create_new_tables(ADD_TABLES)
     rename_tables(RENAME_TABLES)
@@ -327,8 +323,6 @@ def upgrade():
     add_control_geometries('table_control')
     add_control_geometries('memory_control')
     set_geom_for_control_measure_map()
-    rename_measure_operator('table_control')
-    rename_measure_operator('memory_control')
     move_setting('model_settings', 'use_structure_control',
                  'simulation_template_settings', 'use_structure_control')
     remove_tables(DEL_TABLES)
