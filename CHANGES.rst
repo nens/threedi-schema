@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.224.4 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Use unique name for temp tables in migrations
 
 
 0.224.3 (2024-09-12)
