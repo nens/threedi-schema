@@ -5,6 +5,7 @@ Revises:
 Create Date: 2024-06-30 14:50
 
 """
+import uuid
 from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
@@ -294,11 +295,12 @@ def make_geom_col_notnull(table_name):
     cols = (['id INTEGER PRIMARY KEY'] +
             [f'{cname} {ctype}' for cname, ctype in zip(col_names[:-1], col_types[:-1]) if cname != 'id'] +
             [f'geom {columns[-1][2]} NOT NULL'])
-    # Create new table (temp), insert data, drop original and rename temp to table_name
-    op.execute(sa.text(f"CREATE TABLE temp ({','.join(cols)});"))
-    op.execute(sa.text(f"INSERT INTO temp ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
+    # Create new table, insert data, drop original and rename to table_name
+    temp_name = f'_temp_224_{uuid.uuid4().hex}'
+    op.execute(sa.text(f"CREATE TABLE {temp_name} ({','.join(cols)});"))
+    op.execute(sa.text(f"INSERT INTO {temp_name} ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
     op.execute(sa.text(f"DROP TABLE {table_name};"))
-    op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
+    op.execute(sa.text(f"ALTER TABLE {temp_name} RENAME TO {table_name};"))
 
 
 def fix_geometry_columns():

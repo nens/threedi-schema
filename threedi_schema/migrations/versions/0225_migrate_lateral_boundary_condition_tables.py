@@ -5,6 +5,7 @@ Revises:
 Create Date: 2024-08-05 11:22
 
 """
+import uuid
 from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -178,12 +179,12 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
         if entry['name'] in ["geom", "id"]:
             entry_string += f" NOT NULL"
         new_columns_list_sql_formatted.append(entry_string)
-
-    create_table_query = f"""CREATE TABLE temp ({', '.join(new_columns_list_sql_formatted)});"""
+    temp_name = f'_temp_225_{uuid.uuid4().hex}'
+    create_table_query = f"""CREATE TABLE {temp_name} ({', '.join(new_columns_list_sql_formatted)});"""
     op.execute(sa.text(create_table_query))
-    op.execute(sa.text(f"INSERT INTO temp ({','.join(new_columns_list)}) SELECT {','.join(old_columns_list)} from {table_name};"))
+    op.execute(sa.text(f"INSERT INTO {temp_name} ({','.join(new_columns_list)}) SELECT {','.join(old_columns_list)} from {table_name};"))
     op.execute(sa.text(f"DROP TABLE {table_name};"))
-    op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
+    op.execute(sa.text(f"ALTER TABLE {temp_name} RENAME TO {table_name};"))
 
     for entry in new_columns:
         if entry["name"] == "geom":
