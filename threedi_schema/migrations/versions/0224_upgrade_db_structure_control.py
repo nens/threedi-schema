@@ -171,7 +171,7 @@ def set_geom_for_control_measure_map():
         SET
             geom = (
                 SELECT 
-                    MakeLine(tc.geom, cml.geom)
+                    MakeLine(cml.geom, tc.geom)
                 FROM 
                     {control_table} AS tc
                 JOIN 
