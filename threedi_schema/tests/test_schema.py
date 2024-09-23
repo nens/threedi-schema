@@ -115,7 +115,7 @@ def test_full_upgrade_empty(in_memory_sqlite):
     schema = ModelSchema(in_memory_sqlite)
     schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=False)
     assert schema.get_version() == get_schema_version()
-    assert in_memory_sqlite.has_table("v2_connection_nodes")
+    assert in_memory_sqlite.has_table("connection_node")
 
 
 def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
@@ -123,7 +123,7 @@ def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
     schema = ModelSchema(south_latest_sqlite)
     schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=False)
     assert schema.get_version() == get_schema_version()
-    assert south_latest_sqlite.has_table("v2_connection_nodes")
+    assert south_latest_sqlite.has_table("connection_node")
     # https://github.com/nens/threedi-schema/issues/10:
     assert not south_latest_sqlite.has_table("v2_levee")
 
@@ -133,7 +133,7 @@ def test_full_upgrade_oldest(oldest_sqlite):
     schema = ModelSchema(oldest_sqlite)
     schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=False)
     assert schema.get_version() == get_schema_version()
-    assert oldest_sqlite.has_table("v2_connection_nodes")
+    assert oldest_sqlite.has_table("connection_node")
     # https://github.com/nens/threedi-schema/issues/10:
     assert not oldest_sqlite.has_table("v2_levee")
 
@@ -244,7 +244,7 @@ def test_upgrade_spatialite_3(oldest_sqlite):
     # the spatial indexes are there
     with oldest_sqlite.engine.connect() as connection:
         check_result = connection.execute(
-            text("SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')")
+            text("SELECT CheckSpatialIndex('connection_node', 'geom')")
         ).scalar()
     assert check_result == 1
 
@@ -258,7 +258,7 @@ def test_set_spatial_indexes(in_memory_sqlite):
     with engine.connect() as connection:
         with connection.begin():
             connection.execute(
-                text("SELECT DisableSpatialIndex('v2_connection_nodes', 'the_geom')")
+                text("SELECT DisableSpatialIndex('connection_node', 'geom')")
             ).scalar()
             connection.execute(text("DROP TABLE idx_v2_connection_nodes_the_geom"))
 
@@ -266,7 +266,7 @@ def test_set_spatial_indexes(in_memory_sqlite):
 
     with engine.connect() as connection:
         check_result = connection.execute(
-            text("SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')")
+            text("SELECT CheckSpatialIndex('connection_node', 'geom')")
         ).scalar()
 
     assert check_result == 1

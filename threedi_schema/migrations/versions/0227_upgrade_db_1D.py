@@ -102,7 +102,10 @@ def modify_table(old_table_name, new_table_name):
     col_map = [(col.name, rename_cols_rev.get(col.name, col.name)) for col in get_cols_for_model(model, skip_cols=["id", "geom"])]
     available_cols = [col[1] for col in connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()]
     new_col_names, old_col_names = zip(*[(new_col, old_col) for new_col, old_col in col_map if old_col in available_cols])
+    if new_table_name == "culvert":
+        breakpoint()
     # Copy data
+    # This may copy wrong type data because some types change!!
     op.execute(sa.text(f"INSERT INTO {new_table_name} ({','.join(new_col_names)}) "
                        f"SELECT {','.join(old_col_names)} FROM {old_table_name}"))
 
@@ -153,6 +156,7 @@ def extend_cross_section_definition_table():
     session = Session(bind=op.get_bind())
     # create temporary table
     # TODO use create_sqlite_table_from_model
+    # TODO ensure temp name is unique, e.g. temp_name = f'_temp_224_{uuid.uuid4().hex}'
     op.execute(sa.text(
         """CREATE TABLE temp 
             (id INTEGER PRIMARY KEY, 
@@ -164,7 +168,6 @@ def extend_cross_section_definition_table():
              cross_section_vegetation_table TEXT)
         """))
     # copy id's from v2_cross_section_definition
-    # TODO copy more ?
     op.execute(sa.text(
         """INSERT INTO temp (id, cross_section_shape, cross_section_width, cross_section_height) 
            SELECT id, shape, width, height 
@@ -217,7 +220,8 @@ def migrate_cross_section_definition_from_temp(target_table: str,
                                                def_id_col: str):
     for cname, ctype in cols:
         op.execute(sa.text(f'ALTER TABLE {target_table} ADD COLUMN {cname} {ctype}'))
-
+    # ensure that types work properly
+    # e.g. heights cannot be text!!
     set_query = ','.join(
         f'{cname} = (SELECT {cname} FROM temp WHERE temp.id = {target_table}.{def_id_col})' for cname, _ in
         cols)
