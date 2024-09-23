@@ -296,7 +296,7 @@ def make_geom_col_notnull(table_name):
             [f'{cname} {ctype}' for cname, ctype in zip(col_names[:-1], col_types[:-1]) if cname != 'id'] +
             [f'geom {columns[-1][2]} NOT NULL'])
     # Create new table, insert data, drop original and rename to table_name
-    temp_name = f'_temp_222_{uuid.uuid4().hex}'
+    temp_name = f'_temp_224_{uuid.uuid4().hex}'
     op.execute(sa.text(f"CREATE TABLE {temp_name} ({','.join(cols)});"))
     op.execute(sa.text(f"INSERT INTO {temp_name} ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
     op.execute(sa.text(f"DROP TABLE {table_name};"))
