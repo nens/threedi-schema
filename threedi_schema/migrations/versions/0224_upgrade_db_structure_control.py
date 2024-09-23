@@ -112,6 +112,20 @@ def move_setting(src_table: str, src_col: str, dst_table: str, dst_col: str):
     remove_column_from_table(src_table, src_col)
 
 
+def remove_invalid_rows_from_v2_control_measure_map():
+    op.execute(sa.text("""
+    DELETE FROM v2_control_measure_map
+    WHERE object_id NOT IN (
+        SELECT id FROM v2_connection_nodes
+    );    
+    """))
+
+
+def remove_orphan_control(table_name):
+    query = f"DELETE FROM {table_name} WHERE id NOT IN (SELECT control_id FROM control_measure_map);"
+    op.execute(sa.text(query))
+
+
 def populate_control_measure_map():
     query = """
     INSERT INTO control_measure_map (control_measure_location_id, weight, control_id, control_type)
@@ -319,8 +333,11 @@ def upgrade():
     # add new columns to existing tables
     add_columns_to_tables(ADD_COLUMNS)
     # populate new tables
+    remove_invalid_rows_from_v2_control_measure_map()
     populate_control_measure_map()
     populate_control_measure_location()
+    remove_orphan_control('table_control')
+    remove_orphan_control('memory_control')
     # modify table contents
     reformat_action_table()
     reformat_action_value()

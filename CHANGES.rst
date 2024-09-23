@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.224.5 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Do not migrate controls that refer to non-existing nodes
 
 
 0.224.4 (2024-09-23)
