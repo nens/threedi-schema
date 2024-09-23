@@ -32,6 +32,12 @@ Changelog of threedi-schema
 - Drop all constraints on boundary condition and lateral tables, except NOT NULL constrains on id and geom.
 
 
+0.224.4 (2024-09-23)
+--------------------
+
+- Use unique name for temp tables in migrations
+
+
 0.224.3 (2024-09-12)
 --------------------
 
