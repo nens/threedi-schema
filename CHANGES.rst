@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.225.4 (unreleased)
+0.225.4 (2024-09-24)
 --------------------
 
 - Propagate fixes from 224.5
