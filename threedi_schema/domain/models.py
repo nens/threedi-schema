@@ -62,7 +62,6 @@ class ControlMeasureMap(Base):
 class ControlMemory(Base):
     __tablename__ = "memory_control"
     id = Column(Integer, primary_key=True)
-    measure_variable = Column(VarcharEnum(constants.MeasureVariables))
     upper_threshold = Column(Float)
     lower_threshold = Column(Float)
     action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
@@ -83,7 +82,6 @@ class ControlTable(Base):
     id = Column(Integer, primary_key=True)
     action_table = Column(Text)
     action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
-    measure_variable = Column(VarcharEnum(constants.MeasureVariables))
     measure_operator = Column(VarcharEnum(constants.MeasureOperators))
     target_type = Column(VarcharEnum(constants.StructureControlTypes))
     target_id = Column(Integer, nullable=False)
