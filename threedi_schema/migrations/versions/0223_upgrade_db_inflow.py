@@ -209,10 +209,9 @@ def add_map_geometries(src_table: str):
                     MakeLine(
                         c.the_geom,
                         ST_Transform(
-                            ST_Project(
-                                ST_Transform(PointOnSurface(s.geom), 4326),
-                                1,
-                                radians(0)
+                            ST_PointN(
+                                ST_Buffer(ST_Transform(ST_PointOnSurface(s.geom), 4326), 0.000009), -- Approx 1 meter buffer in EPSG:4326
+                                1
                             ),
                             ST_SRID(s.geom)
                         )
