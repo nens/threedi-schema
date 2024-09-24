@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.224.5 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Ensure dry_weather_flow_map.geom and surface_map.geom are valid lines
 
 
 0.224.4 (2024-09-23)
