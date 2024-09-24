@@ -6,6 +6,7 @@ Create Date: 2024-06-30 14:50
 
 """
 import uuid
+import warnings
 from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
@@ -72,6 +73,10 @@ ADD_TABLES = {
 }
 
 
+class InvalidConnectionNode(UserWarning):
+    pass
+
+
 def create_new_tables(new_tables: Dict[str, sa.Column]):
     # no checks for existence are done, this will fail if any table already exists
     for table_name, columns in new_tables.items():
@@ -110,6 +115,28 @@ def move_setting(src_table: str, src_col: str, dst_table: str, dst_col: str):
     # This only works for tables with one row, such as settings tables
     op.execute(sa.text(f'UPDATE {dst_table} SET {dst_col} = (SELECT {src_col} FROM {src_table} ORDER BY id LIMIT 1)'))
     remove_column_from_table(src_table, src_col)
+
+
+def remove_invalid_rows_from_v2_control_measure_map():
+    conn = op.get_bind()
+    where_clause = """
+    WHERE object_id NOT IN (
+        SELECT id FROM v2_connection_nodes WHERE the_geom IS NOT NULL
+    )
+    """
+    invalid_rows = conn.execute(sa.text(f"SELECT id FROM v2_control_measure_map {where_clause};")).fetchall()
+    if len(invalid_rows) > 0:
+        op.execute(sa.text(f"DELETE FROM v2_control_measure_map {where_clause};"))
+        msg = (f"Could not migrate the following rows from v2_control_measure_map because "
+               f"they are linked to connection nodes that do not exist"
+               f"or have no geometry: {invalid_rows}")
+        warnings.warn(msg, InvalidConnectionNode)
+
+
+
+def remove_orphan_control(table_name):
+    query = f"DELETE FROM {table_name} WHERE id NOT IN (SELECT control_id FROM control_measure_map);"
+    op.execute(sa.text(query))
 
 
 def populate_control_measure_map():
@@ -319,8 +346,11 @@ def upgrade():
     # add new columns to existing tables
     add_columns_to_tables(ADD_COLUMNS)
     # populate new tables
+    remove_invalid_rows_from_v2_control_measure_map()
     populate_control_measure_map()
     populate_control_measure_location()
+    remove_orphan_control('table_control')
+    remove_orphan_control('memory_control')
     # modify table contents
     reformat_action_table()
     reformat_action_value()

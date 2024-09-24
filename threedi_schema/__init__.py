@@ -3,5 +3,4 @@ from .domain import constants, custom_types, models  # NOQA
 
 # fmt: off
 __version__ = '0.225.4.dev0'
-
 # fmt: on
