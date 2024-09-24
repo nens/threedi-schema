@@ -203,7 +203,23 @@ def add_map_geometries(src_table: str):
     query = f"""
         UPDATE {src_table}_map
         SET geom = (
-            SELECT MakeLine(c.the_geom, PointOnSurface(s.geom))
+            SELECT CASE
+                WHEN ST_Equals(c.the_geom, PointOnSurface(s.geom)) THEN
+                    -- Transform to EPSG:4326 for the projection, then back to the original SRID
+                    MakeLine(
+                        c.the_geom,
+                        ST_Transform(
+                            ST_Project(
+                                ST_Transform(PointOnSurface(s.geom), 4326),
+                                1,
+                                radians(0)
+                            ),
+                            ST_SRID(s.geom)
+                        )
+                    )
+                ELSE
+                    MakeLine(c.the_geom, PointOnSurface(s.geom))
+                END                
             FROM v2_connection_nodes c, {src_table} s
             WHERE c.id = {src_table}_map.connection_node_id 
             AND s.id = {src_table}_map.{src_table}_id
