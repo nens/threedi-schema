@@ -2,10 +2,22 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.226.1 (unreleased)
+0.226.3 (unreleased)
 --------------------
 
-- Set type of dry_weather_flow.dry_weather_flow_distribution_id to integer
+- Nothing changed yet.
+
+
+0.226.2 (2024-09-23)
+--------------------
+
+- Release including fixes for 0.224.4 and 0.225.3
+
+
+0.226.1 (2024-09-12)
+--------------------
+
+- Set type of dry_weather_flow.dry_weather_flow_distribution_id to integer (https://github.com/nens/threedi-schema/pull/90)
 
 
 0.226.0 (2024-09-10)
@@ -20,6 +32,18 @@ Changelog of threedi-schema
 - Rename refinement_level to grid_level in grid_refinement_line and grid_refinement_area
 - Rename potential_breach.exchange_level to initial_exchange_level
 - Remove potential_breach.maximum_breach_depth and set maximum_breach_depth.final_exchange_level to exchange_level - maximum_breach_depth
+
+
+0.225.3 (2024-09-23)
+--------------------
+
+- Use unique name for temp tables in migrations
+
+
+0.225.2 (2024-09-12)
+--------------------
+
+- Set type of dry_weather_flow.dry_weather_flow_distribution_id to integer (https://github.com/nens/threedi-schema/pull/90)
 
 
 0.225.1 (2024-09-09)
@@ -38,6 +62,12 @@ Changelog of threedi-schema
 - Rename the_geom to geom in boundary_condition_2d and lateral_2d, and add geom columns to boundary_condition_1d and lateral_1d.
 
 - Drop all constraints on boundary condition and lateral tables, except NOT NULL constrains on id and geom.
+
+
+0.224.4 (2024-09-23)
+--------------------
+
+- Use unique name for temp tables in migrations
 
 
 0.224.3 (2024-09-12)

@@ -5,6 +5,8 @@ Revises:
 Create Date: 2024-03-04 10:06
 
 """
+import uuid
+
 from typing import Dict, List, Tuple
 from pathlib import Path
 
@@ -328,11 +330,12 @@ def remove_columns_from_copied_tables(table_name: str, rem_columns: List[str]):
     col_types = [col[2] for col in all_columns if col[1] not in rem_columns]
     cols = (['id INTEGER PRIMARY KEY NOT NULL'] +
             [f'{cname} {ctype}' for cname, ctype in zip(col_names, col_types) if cname != 'id'])
-    # Create new table (temp), insert data, drop original and rename temp to table_name
-    op.execute(sa.text(f"CREATE TABLE temp ({','.join(cols)});"))
-    op.execute(sa.text(f"INSERT INTO temp ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
+    # Create new table, insert data, drop original and rename to table_name
+    temp_name = f'_temp_222_{uuid.uuid4().hex}'
+    op.execute(sa.text(f"CREATE TABLE {temp_name} ({','.join(cols)});"))
+    op.execute(sa.text(f"INSERT INTO {temp_name} ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
     op.execute(sa.text(f"DROP TABLE {table_name};"))
-    op.execute(sa.text(f"ALTER TABLE temp RENAME TO {table_name};"))
+    op.execute(sa.text(f"ALTER TABLE {temp_name} RENAME TO {table_name};"))
 
 
 def set_flow_variable_values():
