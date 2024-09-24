@@ -5,6 +5,7 @@ Changelog of threedi-schema
 0.224.5 (unreleased)
 --------------------
 
+- Do not migrate controls that refer to non-existing nodes
 - Ensure dry_weather_flow_map.geom and surface_map.geom are valid lines
 
 
