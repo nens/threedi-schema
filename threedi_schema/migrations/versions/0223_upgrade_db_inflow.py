@@ -200,6 +200,7 @@ def set_map_geometries(basename):
 
 def add_map_geometries(src_table: str):
     # Add geometries to a map table that connects the connection node and the surface / dry_weather_flow
+    srid = get_global_srid()
     query = f"""
         UPDATE {src_table}_map
         SET geom = (
@@ -208,13 +209,13 @@ def add_map_geometries(src_table: str):
                     -- Transform to EPSG:4326 for the projection, then back to the original SRID
                     MakeLine(
                         c.the_geom,
-                        ST_Transform(
-                            ST_PointN(
-                                ST_Buffer(ST_Transform(ST_PointOnSurface(s.geom), 4326), 0.000009), -- Approx 1 meter buffer in EPSG:4326
-                                1
+                        PointOnSurface(ST_Transform(
+                            ST_Translate(
+                                ST_Transform(s.geom, {srid}),
+                                0, 1, 0
                             ),
-                            ST_SRID(s.geom)
-                        )
+                            4326
+                        ))                       
                     )
                 ELSE
                     MakeLine(c.the_geom, PointOnSurface(s.geom))
