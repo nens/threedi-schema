@@ -150,7 +150,7 @@ class TestMigration224:
                           'v2_control_measure_group', 'v2_control_measure_map',
                           'v2_control_pid', 'v2_control_timed',
                           'v2_control_memory', 'v2_control_table'])
-    added_tables = set(['memory_control', 'table_control', 'control_measure_location', 'control_measure_map'])
+    added_tables = set(['memory_control', 'table_control', 'measure_map', 'measure_location'])
 
     def test_tables(self, schema_ref, schema_upgraded):
         # Test whether the added tables are present
