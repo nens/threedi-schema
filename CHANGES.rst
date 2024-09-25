@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.225.5 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Propagate fixes from 224.6
 
 
 0.225.4 (2024-09-24)
@@ -44,11 +44,16 @@ Changelog of threedi-schema
 - Drop all constraints on boundary condition and lateral tables, except NOT NULL constrains on id and geom.
 
 
+0.224.6 (2024-09-25)
+--------------------
+
+- Ensure dry_weather_flow_map.geom and surface_map.geom are valid lines
+
+
 0.224.5 (2024-09-24)
 --------------------
 
 - Do not migrate controls that refer to non-existing nodes
-- Ensure dry_weather_flow_map.geom and surface_map.geom are valid lines
 
 
 0.224.4 (2024-09-23)
