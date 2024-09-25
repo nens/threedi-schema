@@ -166,6 +166,12 @@ def add_control_geometries(control_name):
                 FROM v2_culvert AS object
                 JOIN v2_cross_section_definition AS def ON object.cross_section_definition_id = def.id
             """
+        elif target_type == 'v2_pumpstation':
+            geom_query = f"""
+                SELECT start_node.the_geom
+                FROM {target_type} AS object   
+                JOIN v2_connection_nodes AS start_node ON object.connection_node_start_id = start_node.id
+            """
         else:
             geom_query = f"""
                 SELECT ST_Centroid(MakeLine(start_node.the_geom, end_node.the_geom))
