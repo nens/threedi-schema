@@ -5,7 +5,8 @@ Changelog of threedi-schema
 0.224.7 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Swap start and end of control_measure_map geometries
+- Modify geometry of controls associated with pumpstation to the pumpstation start node
 
 
 0.224.6 (2024-09-25)
