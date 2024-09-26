@@ -198,7 +198,6 @@ def copy_v2_geometries_from_connection_nodes_by_id(dest_table: str, dest_column:
         SET {dest_column} = (
             SELECT the_geom
             FROM {dest_table}
-            LEFT JOIN v2_connection_nodes
             WHERE {dest_table}.connection_node_id = v2_connection_nodes.id
         );
         """
