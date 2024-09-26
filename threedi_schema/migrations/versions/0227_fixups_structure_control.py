@@ -20,9 +20,15 @@ RENAME_TABLES = [('control_measure_location', 'measure_location'),
                  ('control_measure_map', 'measure_map'), ]
 
 
-def fix_geometries(tables):
-    for table_name in tables:
-        op.execute(sa.text(f"SELECT RecoverGeometryColumn('{table_name}', 'geom', 4326, 'POINT', 'XY')"))
+def fix_geometries(downgrade: bool=False):
+    op.execute(sa.text("SELECT RecoverGeometryColumn('memory_control', 'geom', 4326, 'POINT', 'XY')"))
+    op.execute(sa.text("SELECT RecoverGeometryColumn('table_control', 'geom', 4326, 'POINT', 'XY')"))
+    if downgrade:
+        op.execute(sa.text("SELECT RecoverGeometryColumn('control_measure_location', 'geom', 4326, 'POINT', 'XY')"))
+        op.execute(sa.text("SELECT RecoverGeometryColumn('control_measure_map', 'geom', 4326, 'LINESTRING', 'XY')"))
+    else:
+        op.execute(sa.text("SELECT RecoverGeometryColumn('measure_location', 'geom', 4326, 'POINT', 'XY')"))
+        op.execute(sa.text("SELECT RecoverGeometryColumn('measure_map', 'geom', 4326, 'LINESTRING', 'XY')"))
 
 
 def upgrade():
@@ -36,8 +42,7 @@ def upgrade():
     # rename tables
     for old_table_name, new_table_name in RENAME_TABLES:
         op.rename_table(old_table_name, new_table_name)
-    all_tables = set(list(TABLES) + [new_table_name for _, new_table_name in RENAME_TABLES])
-    fix_geometries(all_tables)
+    fix_geometries()
 
 
 def downgrade():
@@ -51,5 +56,4 @@ def downgrade():
     # rename tables
     for old_table_name, new_table_name in RENAME_TABLES:
         op.rename_table(new_table_name, old_table_name)
-    all_tables = set(list(TABLES) + [new_table_name for old_table_name, _ in RENAME_TABLES])
-    fix_geometries(all_tables)
+    fix_geometries(downgrade=True)
