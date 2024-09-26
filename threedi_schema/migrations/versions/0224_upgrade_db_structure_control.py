@@ -220,13 +220,13 @@ def set_geom_for_control_measure_map():
                         -- Transform to EPSG:4326 for the projection, then back to the original SRID
                         MakeLine(
                             cml.geom,
-                            PointOnSurface(ST_Transform(
+                            ST_Transform(
                                 ST_Translate(
                                     ST_Transform(tc.geom, {srid}),
                                     0, 1, 0
                                 ),
                                 4326
-                            ))                       
+                            )                   
                         )
                     ELSE
                         MakeLine(cml.geom, tc.geom)
