@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.226.5 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Prevent migration 226 from failing when any of the new table names already exists
 
 
 0.226.4 (2024-09-25)
