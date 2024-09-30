@@ -6,6 +6,9 @@ Changelog of threedi-schema
 --------------------
 
 - Prevent migration 222 to 224 from failing when any of the new table names already exists
+- Swap start and end of control_measure_map geometries
+- Modify geometry of controls associated with pumpstation to the pumpstation start node
+- Ensure control_measure_map.geom is a valid line
 
 
 0.224.6 (2024-09-25)
