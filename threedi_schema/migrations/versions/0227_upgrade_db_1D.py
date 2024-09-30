@@ -11,7 +11,7 @@ from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy import Boolean, Column, Float, Integer, String, Text
+from sqlalchemy import Boolean, Column, Float, func, Integer, select, String, Text
 from sqlalchemy.orm import declarative_base, Session
 
 from threedi_schema.domain import constants, models
@@ -99,11 +99,9 @@ def modify_table(old_table_name, new_table_name):
     connection = op.get_bind()
     rename_cols = {**RENAME_COLUMNS.get(new_table_name, {}), "the_geom": "geom"}
     rename_cols_rev = {v: k for k, v in rename_cols.items()}
-    col_map = [(col.name, rename_cols_rev.get(col.name, col.name)) for col in get_cols_for_model(model, skip_cols=["id", "geom"])]
+    col_map = [(col.name, rename_cols_rev.get(col.name, col.name)) for col in get_cols_for_model(model, skip_cols=["id"])]
     available_cols = [col[1] for col in connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()]
     new_col_names, old_col_names = zip(*[(new_col, old_col) for new_col, old_col in col_map if old_col in available_cols])
-    if new_table_name == "culvert":
-        breakpoint()
     # Copy data
     # This may copy wrong type data because some types change!!
     op.execute(sa.text(f"INSERT INTO {new_table_name} ({','.join(new_col_names)}) "
@@ -118,17 +116,13 @@ def find_model(table_name):
     raise
 
 def fix_geometry_columns():
-    GEO_COL_INFO = [
-        ('dem_average_area', 'geom', 'POLYGON'),
-        ('exchange_line', 'geom', 'LINESTRING'),
-        ('grid_refinement_line', 'geom', 'LINESTRING'),
-        ('grid_refinement_area', 'geom', 'POLYGON'),
-        ('obstacle', 'geom', 'LINESTRING'),
-        ('potential_breach', 'geom', 'LINESTRING'),
-    ]
-    for table, column, geotype in GEO_COL_INFO:
-        migration_query = f"SELECT RecoverGeometryColumn('{table}', '{column}', {4326}, '{geotype}', 'XY')"
-        op.execute(sa.text(migration_query))
+    update_models = [models.Channel, models.ConnectionNode, models.CrossSectionLocation,
+                     models.Culvert, models.Orifice, models.Pipe, models.Pump,
+                     models.PumpMap, models.Weir, models.Windshielding]
+    for model in update_models:
+        op.execute(sa.text(f"SELECT RecoverGeometryColumn('{model.__tablename__}', "
+                           f"'geom', {4326}, '{model.geom.type.geometry_type}', 'XY')"))
+        op.execute(sa.text(f"SELECT CreateSpatialIndex('{model.__tablename__}', 'geom')"))
 
 
 class Temp(Base):
@@ -230,6 +224,10 @@ def migrate_cross_section_definition_from_temp(target_table: str,
         SET {set_query}
         WHERE EXISTS (SELECT 1 FROM temp WHERE temp.id = {target_table}.{def_id_col});
     """))
+    op.execute(sa.text(f"UPDATE {target_table} SET cross_section_width = NULL WHERE cross_section_shape IN (5,6,7)"))
+    op.execute(sa.text(f"UPDATE {target_table} SET cross_section_height = NULL WHERE cross_section_shape IN (5,6,7)"))
+
+
 
 def migrate_cross_section_definition_to_location():
     cols = [('cross_section_table', 'TEXT'),
@@ -295,10 +293,11 @@ def create_sqlite_table_from_model(model):
     op.execute(sa.text(f"""
         CREATE TABLE {model.__tablename__} (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
-        {','.join(f"{col.name} {col.type}" for col in cols)}
+        {','.join(f"{col.name} {col.type}" for col in cols)},
+        geom {model.geom.type.geometry_type} NOT NULL
     );"""))
-    op.execute(sa.text(f"SELECT AddGeometryColumn('{model.__tablename__}', 'geom', "
-                       f"4326, '{model.geom.type.geometry_type}', 'XY', 0);"))
+    # op.execute(sa.text(f"SELECT AddGeometryColumn('{model.__tablename__}', 'geom', "
+    #                    f"4326, '{model.geom.type.geometry_type}', 'XY', 0);"))
 
 
 
@@ -306,33 +305,34 @@ def create_pump_map():
     # Create table
     create_sqlite_table_from_model(models.PumpMap)
 
+    # Create geometry
+    op.execute(sa.text(f"SELECT AddGeometryColumn('v2_pumpstation', 'map_geom', 4326, 'LINESTRING', 'XY', 0);"))
+    op.execute(sa.text("""
+        UPDATE v2_pumpstation
+        SET map_geom = (
+            SELECT MakeLine(start_geom.the_geom, end_geom.the_geom)
+            FROM v2_connection_nodes AS start_geom, v2_connection_nodes AS end_geom
+            WHERE v2_pumpstation.connection_node_start_id = start_geom.id
+            AND v2_pumpstation.connection_node_end_id = end_geom.id
+        )
+        WHERE EXISTS (
+            SELECT 1
+            FROM v2_connection_nodes AS start_geom, v2_connection_nodes AS end_geom
+            WHERE v2_pumpstation.connection_node_start_id = start_geom.id
+            AND v2_pumpstation.connection_node_end_id = end_geom.id
+        );
+    """))
+
     # Copy data from v2_pumpstation
-    new_col_names = ["pump_id", "connection_node_end_id", "code", "display_name"]
-    old_col_names = ["id", "connection_node_end_id", "code", "display_name"]
+    new_col_names = ["pump_id", "connection_node_end_id", "code", "display_name", "geom"]
+    old_col_names = ["id", "connection_node_end_id", "code", "display_name", "map_geom"]
     op.execute(sa.text(f"""
     INSERT INTO pump_map ({','.join(new_col_names)}) 
     SELECT {','.join(old_col_names)} FROM v2_pumpstation
     WHERE v2_pumpstation.connection_node_end_id IS NOT NULL
     AND v2_pumpstation.connection_node_start_id IS NOT NULL
     """))
-    # Create geometry
-    op.execute(sa.text("""
-    UPDATE pump_map
-    SET geom = (
-        SELECT MakeLine(start_node.the_geom, end_node.the_geom)
-        FROM v2_pumpstation AS object
-        JOIN v2_connection_nodes AS start_node ON object.connection_node_start_id = start_node.id
-        JOIN v2_connection_nodes AS end_node ON object.connection_node_end_id = end_node.id
-        WHERE pump_map.pump_id = object.id
-    )
-    WHERE EXISTS (
-        SELECT 1
-        FROM v2_pumpstation AS object
-        JOIN v2_connection_nodes AS start_node ON object.connection_node_start_id = start_node.id
-        JOIN v2_connection_nodes AS end_node ON object.connection_node_end_id = end_node.id
-        WHERE pump_map.pump_id = object.id
-    );
-    """))
+
 
 
 
@@ -379,10 +379,14 @@ def create_material():
     friction_coefficient REAL);
     """))
     session = Session(bind=op.get_bind())
-    with open(data_dir.joinpath('0227_materials.csv')) as file:
-        reader = csv.DictReader(file)
-        session.bulk_save_objects([Material(**row) for row in reader])
-        session.commit()
+    # TODO: skip on empty db = no settings
+    # TODO check if any rows are in model_settings
+    nof_settings = session.execute(select(func.count()).select_from(models.ModelSettings)).scalar()
+    if nof_settings > 0:
+        with open(data_dir.joinpath('0227_materials.csv')) as file:
+            reader = csv.DictReader(file)
+            session.bulk_save_objects([Material(**row) for row in reader])
+            session.commit()
 
 
 
@@ -440,7 +444,7 @@ def upgrade():
     modify_obstacle()
     modify_control_target_type()
     fix_geometry_columns()
-    remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES)
+    # remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES)
 
 
 def downgrade():

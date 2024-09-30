@@ -191,6 +191,7 @@ def test_upgrade_without_backup(south_latest_sqlite):
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_set_views(oldest_sqlite, set_views, upgrade_spatialite_version):
     """Make sure that the views are regenerated"""
+    print(oldest_sqlite.path)
     schema = ModelSchema(oldest_sqlite)
     schema.upgrade(
         backup=False,
