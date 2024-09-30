@@ -200,10 +200,26 @@ def set_map_geometries(basename):
 
 def add_map_geometries(src_table: str):
     # Add geometries to a map table that connects the connection node and the surface / dry_weather_flow
+    srid = get_global_srid()
     query = f"""
         UPDATE {src_table}_map
         SET geom = (
-            SELECT MakeLine(c.the_geom, PointOnSurface(s.geom))
+            SELECT CASE
+                WHEN ST_Equals(c.the_geom, PointOnSurface(s.geom)) THEN
+                    -- Transform to EPSG:4326 for the projection, then back to the original SRID
+                    MakeLine(
+                        c.the_geom,
+                        PointOnSurface(ST_Transform(
+                            ST_Translate(
+                                ST_Transform(s.geom, {srid}),
+                                0, 1, 0
+                            ),
+                            4326
+                        ))                       
+                    )
+                ELSE
+                    MakeLine(c.the_geom, PointOnSurface(s.geom))
+                END                
             FROM v2_connection_nodes c, {src_table} s
             WHERE c.id = {src_table}_map.connection_node_id 
             AND s.id = {src_table}_map.{src_table}_id
