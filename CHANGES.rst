@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.225.6 (unreleased)
+0.225.6 (2024-09-30)
 --------------------
 
 - Fix incorrect left join in migration 0.225.0
