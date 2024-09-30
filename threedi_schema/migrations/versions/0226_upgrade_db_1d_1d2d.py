@@ -167,7 +167,15 @@ def set_potential_breach_final_exchange_level():
     ))
 
 
+def drop_conflicting():
+    new_tables = [new_name for _, new_name in RENAME_TABLES]
+    for table_name in new_tables:
+        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+
+
 def upgrade():
+    # Drop tables that conflict with new table names
+    drop_conflicting()
     rem_tables = []
     for old_table_name, new_table_name in RENAME_TABLES:
         modify_table(old_table_name, new_table_name)
