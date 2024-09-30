@@ -8,6 +8,7 @@ Changelog of threedi-schema
 - Nothing changed yet.
 
 
+
 0.225.6 (2024-09-30)
 --------------------
 
@@ -54,6 +55,15 @@ Changelog of threedi-schema
 - Rename the_geom to geom in boundary_condition_2d and lateral_2d, and add geom columns to boundary_condition_1d and lateral_1d.
 
 - Drop all constraints on boundary condition and lateral tables, except NOT NULL constrains on id and geom.
+
+
+0.224.7 (2024-09-30)
+--------------------
+
+- Prevent migration 222 to 224 from failing when any of the new table names already exists
+- Swap start and end of control_measure_map geometries
+- Modify geometry of controls associated with pumpstation to the pumpstation start node
+- Ensure control_measure_map.geom is a valid line
 
 
 0.224.6 (2024-09-25)

@@ -166,6 +166,12 @@ def add_control_geometries(control_name):
                 FROM v2_culvert AS object
                 JOIN v2_cross_section_definition AS def ON object.cross_section_definition_id = def.id
             """
+        elif target_type == 'v2_pumpstation':
+            geom_query = f"""
+                SELECT start_node.the_geom
+                FROM {target_type} AS object   
+                JOIN v2_connection_nodes AS start_node ON object.connection_node_start_id = start_node.id
+            """
         else:
             geom_query = f"""
                 SELECT ST_Centroid(MakeLine(start_node.the_geom, end_node.the_geom))
@@ -190,7 +196,18 @@ def add_control_geometries(control_name):
         op.execute(sa.text(query))
 
 
+def get_global_srid():
+    conn = op.get_bind()
+    use_0d_inflow = conn.execute(sa.text("SELECT use_0d_inflow FROM simulation_template_settings LIMIT 1")).fetchone()
+    if use_0d_inflow is not None:
+        srid = conn.execute(sa.text("SELECT epsg_code FROM model_settings LIMIT 1")).fetchone()
+        if (srid is not None) and (srid[0] is not None):
+            return srid[0]
+    return 28992
+
+
 def set_geom_for_control_measure_map():
+    srid = get_global_srid()
     for control in ['memory', 'table']:
         control_table = f'{control}_control'
         query = f"""
@@ -198,8 +215,22 @@ def set_geom_for_control_measure_map():
             control_measure_map
         SET
             geom = (
-                SELECT 
-                    MakeLine(tc.geom, cml.geom)
+                SELECT CASE
+                    WHEN ST_Equals(cml.geom, tc.geom) THEN
+                        -- Transform to EPSG:4326 for the projection, then back to the original SRID
+                        MakeLine(
+                            cml.geom,
+                            ST_Transform(
+                                ST_Translate(
+                                    ST_Transform(tc.geom, {srid}),
+                                    0, 1, 0
+                                ),
+                                4326
+                            )                   
+                        )
+                    ELSE
+                        MakeLine(cml.geom, tc.geom)
+                    END                                           
                 FROM 
                     {control_table} AS tc
                 JOIN 
@@ -339,7 +370,15 @@ def fix_geometry_columns():
         op.execute(sa.text(migration_query))
 
 
+def drop_conflicting():
+    new_tables = list(ADD_TABLES.keys()) + [new_name for _, new_name in RENAME_TABLES]
+    for table_name in new_tables:
+        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+
+
 def upgrade():
+    # Remove existing tables (outside of the specs) that conflict with new table names
+    drop_conflicting()
     # create new tables and rename existing tables
     create_new_tables(ADD_TABLES)
     rename_tables(RENAME_TABLES)

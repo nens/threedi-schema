@@ -350,10 +350,18 @@ def set_flow_variable_values():
     op.execute(sa.text(query))
 
 
+def drop_conflicting():
+    new_tables = list(ADD_TABLES.keys()) + [new_name for _, new_name in RENAME_TABLES]
+    for table_name in new_tables:
+        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+
+
 def upgrade():
     op.get_bind()
     # Only use first row of global settings
     delete_all_but_first_row("v2_global_settings")
+    # Remove existing tables (outside of the specs) that conflict with new table names
+    drop_conflicting()
     rename_tables(RENAME_TABLES)
     # rename columns in renamed tables
     for table_name, columns in RENAME_COLUMNS.items():
