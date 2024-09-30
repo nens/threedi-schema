@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.226.5 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Propagate changes from 0.225.6.
 
 
 0.226.4 (2024-09-25)
@@ -44,6 +44,12 @@ Changelog of threedi-schema
 - Rename refinement_level to grid_level in grid_refinement_line and grid_refinement_area
 - Rename potential_breach.exchange_level to initial_exchange_level
 - Remove potential_breach.maximum_breach_depth and set maximum_breach_depth.final_exchange_level to exchange_level - maximum_breach_depth
+
+
+0.225.6 (2024-09-30)
+--------------------
+
+- Fix incorrect left join in migration 0.225.0
 
 
 0.225.5 (2024-09-25)
