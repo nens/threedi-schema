@@ -484,9 +484,17 @@ def fix_geometry_columns():
         op.execute(sa.text(migration_query))
 
 
+def drop_conflicting():
+    new_tables = list(ADD_TABLES.keys()) + [new_name for _, new_name in RENAME_TABLES]
+    for table_name in new_tables:
+        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+
+
 def upgrade():
     connection = op.get_bind()
     listen(connection.engine, "connect", load_spatialite)
+    # Remove existing tables (outside of the specs) that conflict with new table names
+    drop_conflicting()
     # create new tables and rename existing tables
     create_new_tables(ADD_TABLES)
     rename_tables(RENAME_TABLES)
