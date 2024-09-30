@@ -215,7 +215,16 @@ def populate_table(table: str, values: dict):
     op.execute(sa.text(query))
 
 
+def drop_conflicting():
+    new_tables = [new_name for _, new_name in RENAME_TABLES]
+    for table_name in new_tables:
+        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+
+
 def upgrade():
+    # Drop tables that conflict with new table names
+    drop_conflicting()
+
     # rename existing tables
     rename_tables(RENAME_TABLES)
 
