@@ -375,7 +375,7 @@ def create_material():
     CREATE TABLE material (
     id INTEGER PRIMARY KEY NOT NULL,
     description TEXT,
-    friction_type INT,
+    friction_type INTEGER,
     friction_coefficient REAL);
     """))
     session = Session(bind=op.get_bind())
@@ -442,7 +442,7 @@ def upgrade():
     modify_obstacle()
     modify_control_target_type()
     fix_geometry_columns()
-    # remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES)
+    remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES)
 
 
 def downgrade():
