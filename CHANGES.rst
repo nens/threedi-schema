@@ -2,10 +2,17 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.226.5 (unreleased)
+0.226.6 (unreleased)
 --------------------
 
 - Nothing changed yet.
+
+
+0.226.5 (2024-09-30)
+--------------------
+
+- Prevent migrations 225 and 226 from failing when any of the new table names already exists
+- Propagate changes from 0.225.6.
 
 
 0.226.4 (2024-09-25)
@@ -44,6 +51,12 @@ Changelog of threedi-schema
 - Rename refinement_level to grid_level in grid_refinement_line and grid_refinement_area
 - Rename potential_breach.exchange_level to initial_exchange_level
 - Remove potential_breach.maximum_breach_depth and set maximum_breach_depth.final_exchange_level to exchange_level - maximum_breach_depth
+
+
+0.225.6 (2024-09-30)
+--------------------
+
+- Fix incorrect left join in migration 0.225.0
 
 
 0.225.5 (2024-09-25)
@@ -86,6 +99,15 @@ Changelog of threedi-schema
 - Rename the_geom to geom in boundary_condition_2d and lateral_2d, and add geom columns to boundary_condition_1d and lateral_1d.
 
 - Drop all constraints on boundary condition and lateral tables, except NOT NULL constrains on id and geom.
+
+
+0.224.7 (2024-09-30)
+--------------------
+
+- Prevent migration 222 to 224 from failing when any of the new table names already exists
+- Swap start and end of control_measure_map geometries
+- Modify geometry of controls associated with pumpstation to the pumpstation start node
+- Ensure control_measure_map.geom is a valid line
 
 
 0.224.6 (2024-09-25)
