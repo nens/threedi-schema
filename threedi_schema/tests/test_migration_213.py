@@ -24,7 +24,7 @@ Channel = migration_213.Channel
 def sqlite_v212():
     """An in-memory database with schema version 212"""
     db = ThreediDatabase("")
-    ModelSchema(db).upgrade("0212", backup=False, set_views=False)
+    ModelSchema(db).upgrade("0212", backup=False)
     return db
 
 
