@@ -5,7 +5,8 @@ Changelog of threedi-schema
 0.226.6 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Remove measure_variable column from tables memory_control and table_control
+- Rename control_measure_map to measure_map and control_measure_location to measure_location
 
 
 0.226.5 (2024-09-30)
