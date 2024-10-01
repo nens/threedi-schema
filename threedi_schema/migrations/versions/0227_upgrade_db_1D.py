@@ -6,6 +6,7 @@ Create Date: 2024-09-10 09:00
 
 """
 import csv
+import uuid
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -126,7 +127,7 @@ def fix_geometry_columns():
 
 
 class Temp(Base):
-    __tablename__ = 'temp'
+    __tablename__ = f'_temp_227_{uuid.uuid4().hex}'
 
     id = Column(Integer, primary_key=True)
     cross_section_table = Column(String)
@@ -150,9 +151,8 @@ def extend_cross_section_definition_table():
     session = Session(bind=op.get_bind())
     # create temporary table
     # TODO use create_sqlite_table_from_model
-    # TODO ensure temp name is unique, e.g. temp_name = f'_temp_224_{uuid.uuid4().hex}'
     op.execute(sa.text(
-        """CREATE TABLE temp 
+        f"""CREATE TABLE {Temp.__tablename__} 
             (id INTEGER PRIMARY KEY, 
              cross_section_table TEXT,
              cross_section_shape INT,
@@ -163,7 +163,7 @@ def extend_cross_section_definition_table():
         """))
     # copy id's from v2_cross_section_definition
     op.execute(sa.text(
-        """INSERT INTO temp (id, cross_section_shape, cross_section_width, cross_section_height) 
+        f"""INSERT INTO {Temp.__tablename__} (id, cross_section_shape, cross_section_width, cross_section_height) 
            SELECT id, shape, width, height 
            FROM v2_cross_section_definition"""
     ))
@@ -217,12 +217,12 @@ def migrate_cross_section_definition_from_temp(target_table: str,
     # ensure that types work properly
     # e.g. heights cannot be text!!
     set_query = ','.join(
-        f'{cname} = (SELECT {cname} FROM temp WHERE temp.id = {target_table}.{def_id_col})' for cname, _ in
+        f'{cname} = (SELECT {cname} FROM {Temp.__tablename__} WHERE id = {target_table}.{def_id_col})' for cname, _ in
         cols)
     op.execute(sa.text(f"""
         UPDATE {target_table}
         SET {set_query}
-        WHERE EXISTS (SELECT 1 FROM temp WHERE temp.id = {target_table}.{def_id_col});
+        WHERE EXISTS (SELECT 1 FROM {Temp.__tablename__} WHERE id = {target_table}.{def_id_col});
     """))
     op.execute(sa.text(f"UPDATE {target_table} SET cross_section_width = NULL WHERE cross_section_shape IN (5,6,7)"))
     op.execute(sa.text(f"UPDATE {target_table} SET cross_section_height = NULL WHERE cross_section_shape IN (5,6,7)"))
@@ -379,8 +379,6 @@ def create_material():
     friction_coefficient REAL);
     """))
     session = Session(bind=op.get_bind())
-    # TODO: skip on empty db = no settings
-    # TODO check if any rows are in model_settings
     nof_settings = session.execute(select(func.count()).select_from(models.ModelSettings)).scalar()
     if nof_settings > 0:
         with open(data_dir.joinpath('0227_materials.csv')) as file:
