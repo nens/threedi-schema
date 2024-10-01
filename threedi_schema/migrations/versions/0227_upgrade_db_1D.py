@@ -12,11 +12,11 @@ from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy import Boolean, Column, Float, func, Integer, select, String, Text
+from sqlalchemy import Column, Float, func, Integer, select, String
 from sqlalchemy.orm import declarative_base, Session
 
 from threedi_schema.domain import constants, models
-from threedi_schema.domain.custom_types import Geometry, IntegerEnum
+from threedi_schema.domain.custom_types import IntegerEnum
 
 Base = declarative_base()
 
@@ -134,16 +134,6 @@ class Temp(Base):
     cross_section_friction_values = Column(String)
     cross_section_vegetation_table = Column(String)
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
-
-
-class Material(Base):
-    # todo: move to models
-    __tablename__ = 'material'
-
-    id = Column(Integer, primary_key=True)
-    description = Column(String)
-    friction_type = Column(Integer)
-    friction_coefficient = Column(Float)
 
 
 def extend_cross_section_definition_table():
@@ -383,7 +373,7 @@ def create_material():
     if nof_settings > 0:
         with open(data_dir.joinpath('0227_materials.csv')) as file:
             reader = csv.DictReader(file)
-            session.bulk_save_objects([Material(**row) for row in reader])
+            session.bulk_save_objects([models.Material(**row) for row in reader])
             session.commit()
 
 
