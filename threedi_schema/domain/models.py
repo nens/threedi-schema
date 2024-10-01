@@ -604,7 +604,7 @@ class Orifice(Base):
     code = Column(String(100))
     display_name = Column(String(255))
     tags = Column(Text)
-    geom = Column(Geometry("LINESTRING"))
+    geom = Column(Geometry("LINESTRING"), nullable=False)
     crest_type = Column(IntegerEnum(constants.CrestType))
     crest_level = Column(Float, nullable=False)
     material_id = Column(Integer)

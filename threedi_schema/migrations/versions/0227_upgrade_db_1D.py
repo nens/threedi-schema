@@ -140,7 +140,6 @@ def extend_cross_section_definition_table():
     conn = op.get_bind()
     session = Session(bind=op.get_bind())
     # create temporary table
-    # TODO use create_sqlite_table_from_model
     op.execute(sa.text(
         f"""CREATE TABLE {Temp.__tablename__} 
             (id INTEGER PRIMARY KEY, 
@@ -286,9 +285,6 @@ def create_sqlite_table_from_model(model):
         {','.join(f"{col.name} {col.type}" for col in cols)},
         geom {model.geom.type.geometry_type} NOT NULL
     );"""))
-    # op.execute(sa.text(f"SELECT AddGeometryColumn('{model.__tablename__}', 'geom', "
-    #                    f"4326, '{model.geom.type.geometry_type}', 'XY', 0);"))
-
 
 
 def create_pump_map():
