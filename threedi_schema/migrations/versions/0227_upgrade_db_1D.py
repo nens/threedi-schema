@@ -355,7 +355,8 @@ def create_connection_node():
     rename_map = {"surface_level": "manhole_surface_level",
                   "bottom_level": "manhole_bottom_level",
                   "drain_level": "exchange_level",
-                  "calculation_type": "exchange_type",}
+                  "calculation_type": "exchange_type",
+                  "manhole_indicator": "visualisation"}
     set_items = ',\n'.join(f"""{rename_map.get(col_name, col_name)} = (
         SELECT v2_manhole.{col_name} FROM v2_manhole
         WHERE v2_manhole.connection_node_id = connection_node.id)""" for col_name in old_col_names)

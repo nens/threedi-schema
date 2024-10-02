@@ -263,7 +263,7 @@ class ConnectionNode(Base):
     display_name = Column(Text)
     storage_area = Column(Float)
     initial_water_level = Column(Float)
-    manhole_indicator = Column(Integer)
+    visualisation = Column(Integer)
     manhole_surface_level = Column(Float)
     manhole_bottom_level = Column(Float)
     exchange_level = Column(Float)
