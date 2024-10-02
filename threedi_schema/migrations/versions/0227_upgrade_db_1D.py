@@ -100,7 +100,7 @@ def modify_table(old_table_name, new_table_name):
     connection = op.get_bind()
     rename_cols = {**RENAME_COLUMNS.get(new_table_name, {}), "the_geom": "geom"}
     rename_cols_rev = {v: k for k, v in rename_cols.items()}
-    col_map = [(col.name, rename_cols_rev.get(col.name, col.name)) for col in get_cols_for_model(model, skip_cols=["id"])]
+    col_map = [(col.name, rename_cols_rev.get(col.name, col.name)) for col in get_cols_for_model(model)]
     available_cols = [col[1] for col in connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()]
     new_col_names, old_col_names = zip(*[(new_col, old_col) for new_col, old_col in col_map if old_col in available_cols])
     # Copy data
