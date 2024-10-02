@@ -125,8 +125,8 @@ def modify_table(old_table_name, new_table_name):
                                                                   zip(new_col_names, new_col_types)])
     op.execute(sa.text(f"CREATE TABLE {new_table_name} ({new_col_str});"))
     # Copy data
-    op.execute(sa.text(f"INSERT INTO {new_table_name} ({','.join(new_col_names)}) "
-                       f"SELECT {','.join(old_col_names)} FROM {old_table_name}"))
+    op.execute(sa.text(f"INSERT INTO {new_table_name} (id, {','.join(new_col_names)}) "
+                       f"SELECT id, {','.join(old_col_names)} FROM {old_table_name}"))
 
 
 def fix_geometry_columns():

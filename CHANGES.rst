@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.226.6 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Copy id column when renaming tables.
 
 
 0.226.5 (2024-09-30)
