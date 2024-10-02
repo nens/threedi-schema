@@ -98,7 +98,7 @@ def modify_table(old_table_name, new_table_name):
             break
     # create list of new columns and types for creating the new table
     # create list of old columns to copy to new table
-    skip_cols = ['the_geom']
+    skip_cols = ['id', 'the_geom']
     if new_table_name in REMOVE_COLUMNS:
         skip_cols += REMOVE_COLUMNS[new_table_name]
     old_col_names = []
@@ -121,11 +121,12 @@ def modify_table(old_table_name, new_table_name):
     new_col_names.append('geom')
     new_col_types.append(f'{geom_type} NOT NULL')
     # Create new table (temp), insert data, drop original and rename temp to table_name
-    new_col_str = ','.join([f'{cname} {ctype}' for cname, ctype in zip(new_col_names, new_col_types)])
+    new_col_str = ','.join(['id INTEGER PRIMARY KEY NOT NULL'] + [f'{cname} {ctype}' for cname, ctype in
+                                                                  zip(new_col_names, new_col_types)])
     op.execute(sa.text(f"CREATE TABLE {new_table_name} ({new_col_str});"))
     # Copy data
-    op.execute(sa.text(f"INSERT INTO {new_table_name} ({','.join(new_col_names)}) "
-                       f"SELECT {','.join(old_col_names)} FROM {old_table_name}"))
+    op.execute(sa.text(f"INSERT INTO {new_table_name} (id, {','.join(new_col_names)}) "
+                       f"SELECT id, {','.join(old_col_names)} FROM {old_table_name}"))
 
 
 def fix_geometry_columns():
