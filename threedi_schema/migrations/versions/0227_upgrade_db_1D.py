@@ -46,16 +46,30 @@ DELETE_TABLES = ["v2_cross_section_definition",
 
 RENAME_COLUMNS = {
     "culvert": {"calculation_type": "exchange_type",
-                "dist_calc_points": "calculation_point_distance"},
+                "dist_calc_points": "calculation_point_distance",
+                "invert_level_start_point": "invert_level_start",
+                "invert_level_end_point": "invert_level_end",
+                "connection_node_start_id": "connection_node_id_start",
+                "connection_node_end_id": "connection_node_id_end"},
     "pipe": {"calculation_type": "exchange_type",
              "dist_calc_points": "calculation_point_distance",
-             "material": "material_id"},
+             "material": "material_id",
+                "invert_level_start_point": "invert_level_start",
+                "invert_level_end_point": "invert_level_end",
+                "connection_node_start_id": "connection_node_id_start",
+                "connection_node_end_id": "connection_node_id_end"},
     "channel": {"calculation_type": "exchange_type",
-             "dist_calc_points": "calculation_point_distance"},
+                "dist_calc_points": "calculation_point_distance",
+                "connection_node_start_id": "connection_node_id_start",
+                "connection_node_end_id": "connection_node_id_end"},
     "weir": {"calculation_type": "exchange_type",
-                "dist_calc_points": "calculation_point_distance"},
+                "dist_calc_points": "calculation_point_distance",
+                "connection_node_start_id": "connection_node_id_start",
+                "connection_node_end_id": "connection_node_id_end"},
     "orifice": {"calculation_type": "exchange_type",
-                "dist_calc_points": "calculation_point_distance"},
+                "dist_calc_points": "calculation_point_distance",
+                "connection_node_start_id": "connection_node_id_start",
+                "connection_node_end_id": "connection_node_id_end"},
     "pump": {"connection_node_start_id": "connection_node_id"}
 }
 
@@ -310,7 +324,7 @@ def create_pump_map():
     """))
 
     # Copy data from v2_pumpstation
-    new_col_names = ["pump_id", "connection_node_end_id", "code", "display_name", "geom"]
+    new_col_names = ["pump_id", "connection_node_id_end", "code", "display_name", "geom"]
     old_col_names = ["id", "connection_node_end_id", "code", "display_name", "map_geom"]
     op.execute(sa.text(f"""
     INSERT INTO pump_map ({','.join(new_col_names)}) 
