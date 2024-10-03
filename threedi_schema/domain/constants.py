@@ -62,6 +62,7 @@ class CalculationTypeCulvert(Enum):
     DOUBLE_CONNECTED = 105
 
 
+# TODO: rename enum (?)
 class CalculationTypeNode(Enum):
     EMBEDDED = 0
     ISOLATED = 1
