@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.226.7 (unreleased)
+0.227.0 (2024-10-14)
 --------------------
 
 - Remove measure_variable column from tables memory_control and table_control
