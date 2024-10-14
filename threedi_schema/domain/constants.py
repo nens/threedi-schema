@@ -69,6 +69,12 @@ class CalculationTypeNode(Enum):
     CONNECTED = 2
 
 
+class AmbiguousClosedError(Exception):
+    def __init__(self, shape):
+        self.shape = shape
+        super().__init__(f"Closed state is ambiguous for shape: {self.shape}")
+
+
 class CrossSectionShape(Enum):
     CLOSED_RECTANGLE = 0
     RECTANGLE = 1
@@ -78,6 +84,22 @@ class CrossSectionShape(Enum):
     TABULATED_TRAPEZIUM = 6
     TABULATED_YZ = 7
     INVERTED_EGG = 8
+
+    @property
+    def is_tabulated(self):
+        return self in {
+            CrossSectionShape.TABULATED_RECTANGLE,
+            CrossSectionShape.TABULATED_TRAPEZIUM,
+            CrossSectionShape.TABULATED_YZ,
+        }
+
+    @property
+    def is_closed(self):
+        if self.is_tabulated:
+            raise AmbiguousClosedError(self)
+        if self == CrossSectionShape.RECTANGLE:
+            return False
+        return True
 
 
 class FrictionType(Enum):
