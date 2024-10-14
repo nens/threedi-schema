@@ -36,7 +36,7 @@ class BoundaryConditions2D(Base):
 
 
 class ControlMeasureLocation(Base):
-    __tablename__ = "control_measure_location"
+    __tablename__ = "measure_location"
     id = Column(Integer, primary_key=True)
     connection_node_id = Column(Integer)
     measure_variable = Column(VarcharEnum(constants.MeasureVariables))
@@ -47,9 +47,9 @@ class ControlMeasureLocation(Base):
 
 
 class ControlMeasureMap(Base):
-    __tablename__ = "control_measure_map"
+    __tablename__ = "measure_map"
     id = Column(Integer, primary_key=True)
-    control_measure_location_id = Column(Integer)
+    measure_location_id = Column(Integer)
     control_type = Column(VarcharEnum(constants.ControlType), nullable=False)
     control_id = Column(Integer)
     weight = Column(Float)
@@ -62,7 +62,6 @@ class ControlMeasureMap(Base):
 class ControlMemory(Base):
     __tablename__ = "memory_control"
     id = Column(Integer, primary_key=True)
-    measure_variable = Column(VarcharEnum(constants.MeasureVariables))
     upper_threshold = Column(Float)
     lower_threshold = Column(Float)
     action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
@@ -83,7 +82,6 @@ class ControlTable(Base):
     id = Column(Integer, primary_key=True)
     action_table = Column(Text)
     action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
-    measure_variable = Column(VarcharEnum(constants.MeasureVariables))
     measure_operator = Column(VarcharEnum(constants.MeasureOperators))
     target_type = Column(VarcharEnum(constants.StructureControlTypes))
     target_id = Column(Integer, nullable=False)
