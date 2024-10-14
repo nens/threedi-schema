@@ -24,8 +24,8 @@ data_dir = Path(__file__).parent / "data"
 
 
 # revision identifiers, used by Alembic.
-revision = "0227"
-down_revision = "0226"
+revision = "0228"
+down_revision = "0227"
 branch_labels = None
 depends_on = None
 
