@@ -125,8 +125,8 @@ def modify_table(old_table_name, new_table_name):
                                                                   zip(new_col_names, new_col_types)])
     op.execute(sa.text(f"CREATE TABLE {new_table_name} ({new_col_str});"))
     # Copy data
-    op.execute(sa.text(f"INSERT INTO {new_table_name} ({','.join(new_col_names)}) "
-                       f"SELECT {','.join(old_col_names)} FROM {old_table_name}"))
+    op.execute(sa.text(f"INSERT INTO {new_table_name} (id, {','.join(new_col_names)}) "
+                       f"SELECT id, {','.join(old_col_names)} FROM {old_table_name}"))
 
 
 def fix_geometry_columns():
@@ -167,7 +167,15 @@ def set_potential_breach_final_exchange_level():
     ))
 
 
+def drop_conflicting():
+    new_tables = [new_name for _, new_name in RENAME_TABLES]
+    for table_name in new_tables:
+        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+
+
 def upgrade():
+    # Drop tables that conflict with new table names
+    drop_conflicting()
     rem_tables = []
     for old_table_name, new_table_name in RENAME_TABLES:
         modify_table(old_table_name, new_table_name)

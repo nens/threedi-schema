@@ -198,8 +198,7 @@ def copy_v2_geometries_from_connection_nodes_by_id(dest_table: str, dest_column:
         UPDATE {dest_table}
         SET {dest_column} = (
             SELECT the_geom
-            FROM {dest_table}
-            LEFT JOIN v2_connection_nodes
+            FROM v2_connection_nodes
             WHERE {dest_table}.connection_node_id = v2_connection_nodes.id
         );
         """
@@ -216,7 +215,16 @@ def populate_table(table: str, values: dict):
     op.execute(sa.text(query))
 
 
+def drop_conflicting():
+    new_tables = [new_name for _, new_name in RENAME_TABLES]
+    for table_name in new_tables:
+        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+
+
 def upgrade():
+    # Drop tables that conflict with new table names
+    drop_conflicting()
+
     # rename existing tables
     rename_tables(RENAME_TABLES)
 
