@@ -2,10 +2,11 @@ Changelog of threedi-schema
 ===================================================
 
 
+
 0.227.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Propagate changes from 0.226.7
 
 
 0.227.0 (2024-10-14)
@@ -13,6 +14,12 @@ Changelog of threedi-schema
 
 - Remove measure_variable column from tables memory_control and table_control
 - Rename control_measure_map to measure_map and control_measure_location to measure_location
+
+
+0.226.7 (2024-10-21)
+--------------------
+
+- Add several models that where missing in DECLARED_MODELS
 
 
 0.226.6 (2024-10-03)
