@@ -3,7 +3,7 @@ Changelog of threedi-schema
 
 
 
-0.227.1 (unreleased)
+0.227.1 (2024-10-21)
 --------------------
 
 - Propagate changes from 0.226.7
