@@ -1,6 +1,11 @@
 Changelog of threedi-schema
 ===================================================
 
+0.226.7 (unreleased)
+--------------------
+
+- Add several models that where missing in DECLARED_MODELS
+
 
 0.226.6 (2024-10-03)
 --------------------
