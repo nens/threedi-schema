@@ -178,13 +178,18 @@ def extend_cross_section_definition_table():
         return '\n'.join([','.join(row) for row in zip(*split_args)])
     # Create cross_section_table for tabulated
     res = conn.execute(sa.text(f"""
-        SELECT id, height, width FROM v2_cross_section_definition 
+        SELECT id, height, width, shape FROM v2_cross_section_definition 
         WHERE v2_cross_section_definition.shape IN (5,6,7)   
         AND height IS NOT NULL AND width IS NOT NULL
     """)).fetchall()
-    for id, h, w in res:
+    for id, h, w, s in res:
         temp_row = session.query(Temp).filter_by(id=id).first()
-        temp_row.cross_section_table = make_table(h,w)
+        # tabulated_YZ: width -> Y; height -> Z
+        if s == 7:
+            temp_row.cross_section_table = make_table(w, h)
+        # tabulated_trapezium or tabulated_rectangle: height, width
+        else:
+            temp_row.cross_section_table = make_table(h, w)
         session.commit()
     # add cross_section_friction_table to cross_section_definition
     res = conn.execute(sa.text("""
