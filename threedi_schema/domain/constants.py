@@ -62,10 +62,17 @@ class CalculationTypeCulvert(Enum):
     DOUBLE_CONNECTED = 105
 
 
+# TODO: rename enum (?)
 class CalculationTypeNode(Enum):
     EMBEDDED = 0
     ISOLATED = 1
     CONNECTED = 2
+
+
+class AmbiguousClosedError(Exception):
+    def __init__(self, shape):
+        self.shape = shape
+        super().__init__(f"Closed state is ambiguous for shape: {self.shape}")
 
 
 class CrossSectionShape(Enum):
@@ -77,6 +84,22 @@ class CrossSectionShape(Enum):
     TABULATED_TRAPEZIUM = 6
     TABULATED_YZ = 7
     INVERTED_EGG = 8
+
+    @property
+    def is_tabulated(self):
+        return self in {
+            CrossSectionShape.TABULATED_RECTANGLE,
+            CrossSectionShape.TABULATED_TRAPEZIUM,
+            CrossSectionShape.TABULATED_YZ,
+        }
+
+    @property
+    def is_closed(self):
+        if self.is_tabulated:
+            raise AmbiguousClosedError(self)
+        if self == CrossSectionShape.RECTANGLE:
+            return False
+        return True
 
 
 class FrictionType(Enum):
@@ -157,17 +180,6 @@ class InfiltrationSurfaceOption(Enum):
     RAIN = 0
     WHOLE_SURFACE = 1
     WET_SURFACE = 2
-
-
-class ZoomCategories(Enum):
-    # Visibility in live-site: 0 is lowest for smallest level (i.e. ditch)
-    # and 5 for highest (rivers).
-    LOWEST_VISIBILITY = 0
-    LOW_VISIBILITY = 1
-    MEDIUM_LOW_VISIBILITY = 2
-    MEDIUM_VISIBILITY = 3
-    HIGH_VISIBILITY = 4
-    HIGHEST_VISIBILITY = 5
 
 
 class InflowType(Enum):
