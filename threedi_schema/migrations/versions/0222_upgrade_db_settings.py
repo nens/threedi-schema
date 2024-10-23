@@ -392,7 +392,7 @@ def upgrade():
     for dst_table, columns in COPY_FROM_GLOBAL.items():
         move_multiple_values_to_empty_table("model_settings", dst_table, columns)
     # copy data from model_settings to existing table
-    # move_values_to_table('model_settings', 'flooding_threshold', 'numerical_settings', 'flooding_threshold')
+    move_values_to_table('model_settings', 'flooding_threshold', 'numerical_settings', 'flooding_threshold')
     # set several 'use' columns based on other settings
     set_use_from_settings_id()
     set_use_inteception()
