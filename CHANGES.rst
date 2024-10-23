@@ -6,7 +6,7 @@ Changelog of threedi-schema
 0.227.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix setting of model_settings.use_interception in migration to 0.222
 
 
 0.227.1 (2024-10-21)
