@@ -358,7 +358,7 @@ def create_connection_node():
                      "calculation_type", "exchange_thickness",
                      "hydraulic_conductivity_in", "hydraulic_conductivity_out"]
     rename_map = {"surface_level": "manhole_surface_level",
-                  "bottom_level": "manhole_bottom_level",
+                  "bottom_level": "bottom_level",
                   "drain_level": "exchange_level",
                   "calculation_type": "exchange_type",
                   "manhole_indicator": "visualisation"}

@@ -263,7 +263,7 @@ class ConnectionNode(Base):
     initial_water_level = Column(Float)
     visualisation = Column(Integer)
     manhole_surface_level = Column(Float)
-    manhole_bottom_level = Column(Float)
+    bottom_level = Column(Float)
     exchange_level = Column(Float)
     exchange_type = Column(IntegerEnum(constants.CalculationTypeNode))
     exchange_thickness = Column(Float)
