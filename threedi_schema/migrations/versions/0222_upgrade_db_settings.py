@@ -271,8 +271,23 @@ def drop_columns(table, columns):
             batch_op.drop_column(column)
 
 
-def set_use_from_exists(table, settings_col):
-    op.execute(f"UPDATE model_settings SET {settings_col} = TRUE WHERE EXISTS (SELECT 1 FROM {table});")
+def set_use_inteception():
+    # Set use_interception based on interception and interception_file values
+    op.execute(sa.text("""
+    UPDATE model_settings
+    SET use_interception = (
+        SELECT 
+            CASE WHEN
+                interception.interception IS NOT NULL  
+                OR 
+                (interception.interception_file IS NOT NULL 
+                AND interception.interception_file != '') 
+                THEN 1
+                ELSE 0
+            END
+        FROM interception
+    );    
+    """))
 
 
 def delete_all_but_matching_id(table, settings_id):
@@ -377,10 +392,10 @@ def upgrade():
     for dst_table, columns in COPY_FROM_GLOBAL.items():
         move_multiple_values_to_empty_table("model_settings", dst_table, columns)
     # copy data from model_settings to existing table
-    move_values_to_table('model_settings', 'flooding_threshold', 'numerical_settings', 'flooding_threshold')
+    # move_values_to_table('model_settings', 'flooding_threshold', 'numerical_settings', 'flooding_threshold')
     # set several 'use' columns based on other settings
     set_use_from_settings_id()
-    set_use_from_exists("interception", "use_interception")
+    set_use_inteception()
     # keep first row of settings tables that have no explicit mapping
     delete_all_but_matching_id("numerical_settings", "numerical_settings_id")
     # drop unused id columns in model_settings
