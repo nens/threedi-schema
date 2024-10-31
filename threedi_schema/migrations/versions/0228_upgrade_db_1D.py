@@ -170,7 +170,6 @@ def extend_cross_section_definition_table():
            SELECT id, shape, width, height 
            FROM v2_cross_section_definition"""
     ))
-    # add_cross_section_table_to_temp(session)
     def make_table(*args):
         split_args = [arg.split() for arg in args]
         if not all(len(args) == len(split_args[0]) for args in split_args):
@@ -185,7 +184,7 @@ def extend_cross_section_definition_table():
     for id, h, w, s in res:
         temp_row = session.query(Temp).filter_by(id=id).first()
         # tabulated_YZ: width -> Y; height -> Z
-        if s == 7:
+        if s == constants.CrossSectionShape.TABULATED_YZ.value:
             temp_row.cross_section_table = make_table(w, h)
         # tabulated_trapezium or tabulated_rectangle: height, width
         else:
@@ -193,9 +192,9 @@ def extend_cross_section_definition_table():
         session.commit()
     # add cross_section_friction_table to cross_section_definition
     res = conn.execute(sa.text("""
-    SELECT id, friction_values FROM v2_cross_section_definition 
-    WHERE friction_values IS NOT NULL
-    AND v2_cross_section_definition.shape = 7 
+        SELECT id, friction_values FROM v2_cross_section_definition 
+        WHERE friction_values IS NOT NULL
+        AND v2_cross_section_definition.shape = 7 
     """)).fetchall()
     for id, friction_values in res:
         temp_row = session.query(Temp).filter_by(id=id).first()
@@ -203,13 +202,13 @@ def extend_cross_section_definition_table():
         session.commit()
     # add cross_section_vegetation_table to cross_section_definition
     res = conn.execute(sa.text("""
-    SELECT id, vegetation_stem_densities, vegetation_stem_diameters, vegetation_heights, vegetation_drag_coefficients
-    FROM v2_cross_section_definition 
-    WHERE vegetation_stem_densities IS NOT NULL
-    AND vegetation_stem_diameters IS NOT NULL
-    AND vegetation_heights IS NOT NULL
-    AND vegetation_drag_coefficients IS NOT NULL
-    AND v2_cross_section_definition.shape = 7 
+        SELECT id, vegetation_stem_densities, vegetation_stem_diameters, vegetation_heights, vegetation_drag_coefficients
+        FROM v2_cross_section_definition 
+        WHERE vegetation_stem_densities IS NOT NULL
+        AND vegetation_stem_diameters IS NOT NULL
+        AND vegetation_heights IS NOT NULL
+        AND v2_cross_section_definition.shape = 7 
+        AND vegetation_drag_coefficients IS NOT NULL
     """)).fetchall()
     for id, dens, diam, h, c in res:
         temp_row = session.query(Temp).filter_by(id=id).first()
@@ -332,10 +331,10 @@ def create_pump_map():
     new_col_names = ["pump_id", "connection_node_id_end", "code", "display_name", "geom"]
     old_col_names = ["id", "connection_node_end_id", "code", "display_name", "map_geom"]
     op.execute(sa.text(f"""
-    INSERT INTO pump_map ({','.join(new_col_names)}) 
-    SELECT {','.join(old_col_names)} FROM v2_pumpstation
-    WHERE v2_pumpstation.connection_node_end_id IS NOT NULL
-    AND v2_pumpstation.connection_node_start_id IS NOT NULL
+        INSERT INTO pump_map ({','.join(new_col_names)}) 
+        SELECT {','.join(old_col_names)} FROM v2_pumpstation
+        WHERE v2_pumpstation.connection_node_end_id IS NOT NULL
+        AND v2_pumpstation.connection_node_start_id IS NOT NULL
     """))
 
 
@@ -349,8 +348,8 @@ def create_connection_node():
     rename_map = {"initial_waterlevel": "initial_water_level", "the_geom": "geom"}
     new_col_names = [rename_map.get(old_name, old_name) for old_name in old_col_names]
     op.execute(sa.text(f"""
-    INSERT INTO connection_node ({','.join(new_col_names)}) 
-    SELECT {','.join(old_col_names)} FROM v2_connection_nodes
+        INSERT INTO connection_node ({','.join(new_col_names)}) 
+        SELECT {','.join(old_col_names)} FROM v2_connection_nodes
     """))
     # conditional copy from v2_manhole
     old_col_names = ["display_name", "code", "manhole_indicator",
@@ -366,13 +365,13 @@ def create_connection_node():
         SELECT v2_manhole.{col_name} FROM v2_manhole
         WHERE v2_manhole.connection_node_id = connection_node.id)""" for col_name in old_col_names)
     op.execute(sa.text(f"""
-    UPDATE connection_node
-    SET {set_items}
-    WHERE EXISTS (
-        SELECT 1
-        FROM v2_manhole
-        WHERE v2_manhole.connection_node_id = connection_node.id
-    );
+        UPDATE connection_node
+        SET {set_items}
+        WHERE EXISTS (
+            SELECT 1
+            FROM v2_manhole
+            WHERE v2_manhole.connection_node_id = connection_node.id
+        );
     """))
 
 
@@ -403,9 +402,9 @@ def modify_obstacle():
 def modify_control_target_type():
     for table_name in ['table_control', 'memory_control']:
         op.execute(sa.text(f"""
-        UPDATE {table_name}
-        SET target_type = REPLACE(target_type, 'v2_', '')
-        WHERE target_type LIKE 'v2_%';
+            UPDATE {table_name}
+            SET target_type = REPLACE(target_type, 'v2_', '')
+            WHERE target_type LIKE 'v2_%';
         """))
 
 
@@ -434,6 +433,7 @@ def upgrade():
     # Prepare object tables for renaming by copying cross section data and setting the_geom
     for table_name in ['v2_culvert', 'v2_weir', 'v2_pipe', 'v2_orifice']:
         migrate_cross_section_definition_to_object(table_name)
+        # Set geometry for tables without one
         if table_name != 'v2_culvert':
             set_geom_for_object(table_name)
     set_geom_for_v2_pumpstation()

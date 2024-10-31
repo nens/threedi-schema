@@ -15,7 +15,6 @@ def test_get_spatialite_version(empty_sqlite_v3):
 
 
 def test_copy_model(empty_sqlite_v3, empty_sqlite_v4):
-    # TODO: reconsider this test; if the empty db's are upgraded, this fails!!
     db_from = empty_sqlite_v3
     db_to = empty_sqlite_v4
     # Create v2_grid_refinement_area on the fly to match database scheme in the used sqlitest
