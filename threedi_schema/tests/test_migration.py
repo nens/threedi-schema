@@ -89,8 +89,8 @@ def test_upgrade_success(sqlite_file, tmp_path_factory):
         pytest.fail(f"Failed to upgrade {sqlite_file}")
 
 
-class TestMigration227:
-    pytestmark = pytest.mark.migration_227
+class TestMigration228:
+    pytestmark = pytest.mark.migration_228
     removed_tables = set(["v2_channel",
                       "v2_windshielding",
                       "v2_cross_section_location",

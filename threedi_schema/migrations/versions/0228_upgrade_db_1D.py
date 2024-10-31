@@ -86,7 +86,7 @@ REMOVE_COLUMNS = {
 RETYPE_COLUMNS = {}
 
 
-class Schema227UpgradeException(Exception):
+class Schema228UpgradeException(Exception):
     pass
 
 
@@ -141,7 +141,7 @@ def fix_geometry_columns():
 
 
 class Temp(Base):
-    __tablename__ = f'_temp_227_{uuid.uuid4().hex}'
+    __tablename__ = f'_temp_228_{uuid.uuid4().hex}'
 
     id = Column(Integer, primary_key=True)
     cross_section_table = Column(String)
@@ -387,7 +387,7 @@ def create_material():
     session = Session(bind=op.get_bind())
     nof_settings = session.execute(select(func.count()).select_from(models.ModelSettings)).scalar()
     if nof_settings > 0:
-        with open(data_dir.joinpath('0227_materials.csv')) as file:
+        with open(data_dir.joinpath('0228_materials.csv')) as file:
             reader = csv.DictReader(file)
             session.bulk_save_objects([models.Material(**row) for row in reader])
             session.commit()
@@ -419,7 +419,7 @@ def check_for_null_geoms():
     for table in tables:
         nof_null = conn.execute(sa.text(f"SELECT COUNT(*) FROM {table} WHERE the_geom IS NULL;")).fetchone()[0]
         if nof_null > 0:
-            raise Schema227UpgradeException("Cannot migrate because of empty geometries in table {table}")
+            raise Schema228UpgradeException("Cannot migrate because of empty geometries in table {table}")
 
 
 
