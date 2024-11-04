@@ -317,7 +317,11 @@ def correct_raster_paths():
         ("groundwater", "infiltration_decay_period_file"),
         ("groundwater", "groundwater_hydraulic_conductivity_file"),
         ("initial_conditions", "initial_water_level_file"),
-        ("initial_conditions", "initial_groundwater_level_file")
+        ("initial_conditions", "initial_groundwater_level_file"),
+        ("vegetation_drag_2d", "vegetation_height_file"),
+        ("vegetation_drag_2d", "vegetation_stem_count_file"),
+        ("vegetation_drag_2d", "vegetation_stem_diameter_file"),
+        ("vegetation_drag_2d", "vegetation_drag_coefficient_file"),
     ]
     conn = op.get_bind()
     for table, col in raster_paths:

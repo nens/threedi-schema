@@ -3,7 +3,7 @@ Changelog of threedi-schema
 
 
 
-0.227.3 (unreleased)
+0.227.4 (unreleased)
 --------------------
 
 - Implement changes for schema version 300 concerning 1D
@@ -13,6 +13,12 @@ v2_orifice and v2_weir
 - Move data from v2_manhole to connection_nodes and remove v2_manhole table
 - Rename v2_pumpstation to pump and add table pump_map that maps the end nodes to pumps
 - Remove tables v2_floodfill and v2_cross_section_definition
+
+
+0.227.3 (2024-11-04)
+--------------------
+
+- Extend list of file paths that are replaced with the file name with the files in vegetation_drag_2d"
 
 
 0.227.2 (2024-10-23)
