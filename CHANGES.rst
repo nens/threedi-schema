@@ -3,7 +3,7 @@ Changelog of threedi-schema
 
 
 
-0.227.3 (unreleased)
+0.227.3 (2024-11-04)
 --------------------
 
 - Extend list of file paths that are replaced with the file name with the files in vegetation_drag_2d"
