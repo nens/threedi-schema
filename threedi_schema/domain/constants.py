@@ -252,3 +252,8 @@ class AdvectionTypes1D(Enum):
     MOMENTUM_CONSERVATIVE = 1
     ENERGY_CONSERVATIVE = 2
     COMBINED_MOMENTUM_AND_ENERGY_CONSERVATIVE = 3
+
+
+class NodeOpenWaterDetection(Enum):
+    HAS_CHANNEL = 0
+    HAS_STORAGE = 1

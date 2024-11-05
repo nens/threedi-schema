@@ -363,7 +363,7 @@ class ModelSettings(Base):
     use_groundwater_flow = Column(Boolean)
     use_groundwater_storage = Column(Boolean)
     use_vegetation_drag_2d = Column(Boolean)
-    node_open_water_detection = Column(Integer)
+    node_open_water_detection = Column(IntegerEnum(constants.NodeOpenWaterDetection))
 
     # Alias needed for API compatibility
     @property
