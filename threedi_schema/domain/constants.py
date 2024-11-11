@@ -217,12 +217,12 @@ class ControlType(Enum):
 
 
 class StructureControlTypes(Enum):
-    pumpstation = "v2_pumpstation"
-    pipe = "v2_pipe"
-    orifice = "v2_orifice"
-    culvert = "v2_culvert"
-    weir = "v2_weir"
-    channel = "v2_channel"
+    pumpstation = "pumpstation"
+    pipe = "pipe"
+    orifice = "orifice"
+    culvert = "culvert"
+    weir = "weir"
+    channel = "channel"
 
 
 class ControlTableActionTypes(Enum):
