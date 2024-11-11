@@ -338,9 +338,6 @@ def create_pump_map():
     """))
 
 
-
-
-
 def create_connection_node():
     create_sqlite_table_from_model(models.ConnectionNode)
     # copy from v2_connection_nodes
@@ -392,7 +389,6 @@ def create_material():
             session.commit()
 
 
-
 def modify_obstacle():
     op.execute(sa.text(f'ALTER TABLE obstacle ADD COLUMN affects_2d BOOLEAN DEFAULT TRUE;'))
     op.execute(sa.text(f'ALTER TABLE obstacle ADD COLUMN affects_1d2d_open_water BOOLEAN DEFAULT TRUE;'))
@@ -431,10 +427,20 @@ def fix_material_id():
                            "ELSE material_id END"))
 
 
+
+def drop_conflicting():
+    new_tables = [new_name for _, new_name in RENAME_TABLES] + ['material', 'pump_map']
+    for table_name in new_tables:
+        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+
+
+
 def upgrade():
-    # Known issues (maybe solve)
-    # - empty or non-existing connection node id (start or end) in Orifice, Pipe, Pumpstation or Weir creates a NULL geometry
+    # Empty or non-existing connection node id (start or end) in Orifice, Pipe, Pumpstation or Weir will break
+    # migration, so an error is raised in these cases
     check_for_null_geoms()
+    # Prevent custom tables in schematisation from breaking migration when they conflict with new table names
+    drop_conflicting()
     # Extent cross section definition table (actually stored in temp)
     extend_cross_section_definition_table()
     # Migrate data from cross_section_definition to cross_section_location
