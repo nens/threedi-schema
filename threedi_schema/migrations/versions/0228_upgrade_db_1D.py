@@ -421,6 +421,15 @@ def check_for_null_geoms():
             raise Schema228UpgradeException("Cannot migrate because of empty geometries in table {table}")
 
 
+def fix_material_id():
+    # Replace migrated material_id's with correct values
+    replace_map = {9 : 2, 10 : 7}
+    material_id_tables = ['pipe', 'culvert', 'weir', 'orifice']
+    for table in material_id_tables:
+        op.execute(sa.text(f"UPDATE {table} SET material_id = CASE material_id "
+                           f"{' '.join([f'WHEN {old} THEN {new}' for old, new in replace_map.items()])} "
+                           "ELSE material_id END"))
+
 
 def upgrade():
     # Known issues (maybe solve)
@@ -447,6 +456,7 @@ def upgrade():
     modify_model_settings()
     modify_obstacle()
     modify_control_target_type()
+    fix_material_id()
     fix_geometry_columns()
     remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES)
 
