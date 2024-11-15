@@ -177,13 +177,6 @@ def extend_cross_section_definition_table():
                 WHERE {col_name} = '';
             """))
 
-    # f"""INSERT INTO {Temp.__tablename__} (id, cross_section_shape, cross_section_width, cross_section_height)
-    #    SELECT id, shape, width, height
-    #    FROM v2_cross_section_definition
-    #    WHERE COALESCE(shape, '') != ''
-    #    AND COALESCE(CAST(width AS TEXT), '') != ''
-    #    AND COALESCE(CAST(height AS TEXT), '') != ''
-    # """
     def make_table(*args):
         split_args = [arg.split() for arg in args]
         if not all(len(args) == len(split_args[0]) for args in split_args):
@@ -478,7 +471,7 @@ def upgrade():
     modify_control_target_type()
     fix_material_id()
     fix_geometry_columns()
-    remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES)
+    remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES+[Temp.__tablename__, 'v2_manhole'])
 
 
 def downgrade():
