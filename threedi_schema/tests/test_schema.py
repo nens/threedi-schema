@@ -219,7 +219,7 @@ def test_set_spatial_indexes(in_memory_sqlite):
             connection.execute(
                 text("SELECT DisableSpatialIndex('connection_node', 'geom')")
             ).scalar()
-            connection.execute(text("DROP TABLE idx_v2_connection_nodes_the_geom"))
+            connection.execute(text("DROP TABLE idx_connection_node_geom"))
 
     schema.set_spatial_indexes()
 
