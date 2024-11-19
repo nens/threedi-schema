@@ -217,12 +217,21 @@ class ControlType(Enum):
 
 
 class StructureControlTypes(Enum):
-    pumpstation = "pumpstation"
+    pumpstation = "pump"
     pipe = "pipe"
     orifice = "orifice"
     culvert = "culvert"
     weir = "weir"
     channel = "channel"
+
+    def get_legacy_value(self) -> str:
+        """
+        Get value of structure control as used in schema 2.x
+        """
+        if self == StructureControlTypes.pumpstation:
+            return "v2_pump"
+        else:
+            return f"v2_{self.value}"
 
 
 class ControlTableActionTypes(Enum):

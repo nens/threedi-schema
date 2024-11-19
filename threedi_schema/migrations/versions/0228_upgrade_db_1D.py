@@ -406,9 +406,15 @@ def modify_control_target_type():
     for table_name in ['table_control', 'memory_control']:
         op.execute(sa.text(f"""
             UPDATE {table_name}
+            SET target_type = REPLACE(target_type, 'v2_pumpstation', 'pump')
+            WHERE target_type = 'v2_pumpstation';
+        """))
+        op.execute(sa.text(f"""
+            UPDATE {table_name}
             SET target_type = REPLACE(target_type, 'v2_', '')
             WHERE target_type LIKE 'v2_%';
         """))
+
 
 
 def modify_model_settings():
