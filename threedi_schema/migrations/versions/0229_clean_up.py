@@ -29,10 +29,13 @@ def find_tables_by_pattern(pattern: str) -> List[str]:
     return [item[0] for item in query.fetchall()]
 
 
-def upgrade():
+def remove_old_tables():
     remaining_v2_idx_tables = find_tables_by_pattern('idx_v2_%_the_geom')
     remaining_alembic = find_tables_by_pattern('%_alembic_%_the_geom')
     remove_tables(remaining_v2_idx_tables+remaining_alembic)
+
+def upgrade():
+    remove_old_tables()
 
 
 def downgrade():
