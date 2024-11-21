@@ -97,9 +97,14 @@ def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
             batch_op.add_column(col)
 
 
+def drop_geo_table(table):
+    """ Drop tables using DropTable to ensure that tables with geometries are properly removed """
+    op.execute(sa.text(f"SELECT DropTable(NULL, '{table}');"))
+
+
 def remove_tables(tables: List[str]):
     for table in tables:
-        op.drop_table(table)
+        drop_geo_table(table)
 
 
 def modify_table(old_table_name, new_table_name):
@@ -440,12 +445,13 @@ def fix_material_id():
                            "ELSE material_id END"))
 
 
-
 def drop_conflicting():
+    connection = op.get_bind()
+    existing_tables = [item[0] for item in connection.execute(
+        sa.text("SELECT name FROM sqlite_master WHERE type='table';")).fetchall()]
     new_tables = [new_name for _, new_name in RENAME_TABLES] + ['material', 'pump_map']
-    for table_name in new_tables:
-        op.execute(f"DROP TABLE IF EXISTS {table_name};")
-
+    for table_name in set(existing_tables).intersection(new_tables):
+        drop_geo_table(table_name)
 
 
 def upgrade():
