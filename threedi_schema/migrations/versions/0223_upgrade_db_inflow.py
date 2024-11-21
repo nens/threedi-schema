@@ -134,15 +134,14 @@ def add_geometry_column(table: str, geocol: Column):
     op.execute(sa.text(query))
 
 
+def drop_geo_table(table):
+    """ Drop tables using DropGeoTable to ensure that tables with geometries are properly removed """
+    op.execute(sa.text(f"SELECT DropGeoTable('{table}', 0);"))
+
+
 def remove_tables(tables: List[str]):
-    connection = op.get_bind()
-    listen(connection.engine, "connect", load_spatialite)
     for table in tables:
-        # op.drop_table(table)
-        query = f"SELECT DropGeoTable('{table}');"
-        connection.execute(sa.text(query))
-        tables_in_db = [item[0] for item in connection.execute(sa.text("SELECT name FROM sqlite_master WHERE type='table';")).fetchall()]
-        print(query, table, table in tables_in_db)
+        drop_geo_table(table)
 
 
 def copy_values_to_new_table(src_table: str, src_columns: List[str], dst_table: str, dst_columns: List[str]):
@@ -493,7 +492,8 @@ def fix_geometry_columns():
 def drop_conflicting():
     new_tables = list(ADD_TABLES.keys()) + [new_name for _, new_name in RENAME_TABLES]
     for table_name in new_tables:
-        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+        op.execute(f"-- DROP TABLE IF EXISTS {table_name};")
+        drop_geo_table(table_name)
 
 
 def upgrade():
