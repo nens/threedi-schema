@@ -123,6 +123,11 @@ def rename_tables(table_sets: List[Tuple[str, str]]):
         op.rename_table(src_name, dst_name)
 
 
+def drop_geo_table(table):
+    """ Drop tables using DropGeoTable to ensure that tables with geometries are properly removed """
+    op.execute(sa.text(f"SELECT DropGeoTable('{table}', 0);"))
+
+
 def create_new_tables(new_tables: Dict[str, sa.Column]):
     # no checks for existence are done, this will fail if any table already exists
     for table_name, columns in new_tables.items():
@@ -183,7 +188,7 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
     create_table_query = f"""CREATE TABLE {temp_name} ({', '.join(new_columns_list_sql_formatted)});"""
     op.execute(sa.text(create_table_query))
     op.execute(sa.text(f"INSERT INTO {temp_name} ({','.join(new_columns_list)}) SELECT {','.join(old_columns_list)} from {table_name};"))
-    op.execute(sa.text(f"DROP TABLE {table_name};"))
+    drop_geo_table(table_name)
     op.execute(sa.text(f"ALTER TABLE {temp_name} RENAME TO {table_name};"))
 
     for entry in new_columns:
@@ -218,7 +223,7 @@ def populate_table(table: str, values: dict):
 def drop_conflicting():
     new_tables = [new_name for _, new_name in RENAME_TABLES]
     for table_name in new_tables:
-        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+        drop_geo_table(table_name)
 
 
 def upgrade():
