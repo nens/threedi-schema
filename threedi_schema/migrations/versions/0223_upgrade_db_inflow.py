@@ -135,8 +135,14 @@ def add_geometry_column(table: str, geocol: Column):
 
 
 def remove_tables(tables: List[str]):
+    connection = op.get_bind()
+    listen(connection.engine, "connect", load_spatialite)
     for table in tables:
-        op.drop_table(table)
+        # op.drop_table(table)
+        query = f"SELECT DropGeoTable('{table}');"
+        connection.execute(sa.text(query))
+        tables_in_db = [item[0] for item in connection.execute(sa.text("SELECT name FROM sqlite_master WHERE type='table';")).fetchall()]
+        print(query, table, table in tables_in_db)
 
 
 def copy_values_to_new_table(src_table: str, src_columns: List[str], dst_table: str, dst_columns: List[str]):
