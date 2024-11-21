@@ -72,9 +72,14 @@ def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
             batch_op.add_column(col)
 
 
+def drop_geo_table(table):
+    """ Drop tables using DropGeoTable to ensure that tables with geometries are properly removed """
+    op.execute(sa.text(f"SELECT DropGeoTable('{table}', 0);"))
+
+
 def remove_tables(tables: List[str]):
     for table in tables:
-        op.drop_table(table)
+        drop_geo_table(table)
 
 
 def modify_table(old_table_name, new_table_name):
@@ -170,7 +175,7 @@ def set_potential_breach_final_exchange_level():
 def drop_conflicting():
     new_tables = [new_name for _, new_name in RENAME_TABLES]
     for table_name in new_tables:
-        op.execute(f"DROP TABLE IF EXISTS {table_name};")
+        drop_geo_table(table_name)
 
 
 def upgrade():
