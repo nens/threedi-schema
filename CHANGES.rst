@@ -7,6 +7,7 @@ Changelog of threedi-schema
 --------------------
 
 - Remove indices referring to removed tables in previous migrations
+- Remove columns referencing v2 in geometry_column
 
 
 0.228.0 (unreleased)
