@@ -14,7 +14,24 @@ def drop_geo_table(op, table_name: str):
     table_name : str
         The name of the table to be dropped.
     """
-    op.execute(sa.text(f"SELECT DropTable(NULL, '{table_name}');"))
+    connection = op.get_bind()
+    res = connection.execute(sa.text(f"SELECT DropGeoTable('{table_name}', 0);")).fetchall()[0][0]
+    if res == 0:
+        op.execute(f"DROP TABLE IF EXISTS {table_name}")
+        has_geom_cols = connection.execute(sa.text(f"""
+            SELECT COUNT(*) FROM geometry_columns WHERE f_table_name = '{table_name}'
+        """)).fetchall()[0][0] > 0
+        if has_geom_cols:
+            op.execute(sa.text(f"""
+                DELETE FROM geometry_columns WHERE f_table_name = '{table_name}';
+            """))
+        triggers = [item[0] for item in connection.execute(sa.text(f"""
+            SELECT name FROM sqlite_master 
+            WHERE type = 'trigger' AND (tbl_name = '{table_name}' OR sql LIKE '%{table_name}%');        
+        """)).fetchall()]
+        for trigger in triggers:
+            op.execute(f"DROP TRIGGER IF EXISTS {trigger};")
+    # op.execute(sa.text(f"SELECT DropTable(NULL, '{table_name}');"))
 
 
 def drop_conflicting(op, new_tables: List[str]):
