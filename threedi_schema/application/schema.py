@@ -18,6 +18,7 @@ from ..infrastructure.spatial_index import ensure_spatial_indexes
 from ..infrastructure.spatialite_versions import copy_models, get_spatialite_version
 from ..infrastructure.views import recreate_views
 from .errors import MigrationMissingError, UpgradeFailedError
+from .upgrade_utils import setup_logging
 
 __all__ = ["ModelSchema"]
 
@@ -40,11 +41,12 @@ def get_schema_version():
         return int(env.get_head_revision())
 
 
-def _upgrade_database(db, revision="head", unsafe=True):
+def _upgrade_database(db, revision="head", unsafe=True, progress_func=None):
     """Upgrade ThreediDatabase instance"""
     engine = db.engine
-
     config = get_alembic_config(engine, unsafe=unsafe)
+    if progress_func is not None:
+        setup_logging(db.schema, revision, config, progress_func)
     alembic_command.upgrade(config, revision)
 
 
@@ -90,6 +92,7 @@ class ModelSchema:
         set_views=True,
         upgrade_spatialite_version=False,
         convert_to_geopackage=False,
+        progress_func=None,
     ):
         """Upgrade the database to the latest version.
 
@@ -112,6 +115,9 @@ class ModelSchema:
 
         Specify 'convert_to_geopackage=True' to also convert from spatialite
         to geopackage file version after the upgrade.
+
+        Specify a 'progress_func' to handle progress updates. `progress_func` should
+        expect a single argument representing the fraction of progress
         """
         try:
             rev_nr = get_schema_version() if revision == "head" else int(revision)
@@ -141,9 +147,13 @@ class ModelSchema:
             raise ValueError(f"Cannot set views when upgrading to version '{revision}'")
         if backup:
             with self.db.file_transaction() as work_db:
-                _upgrade_database(work_db, revision=revision, unsafe=True)
+                _upgrade_database(
+                    work_db, revision=revision, unsafe=True, progress_func=progress_func
+                )
         else:
-            _upgrade_database(self.db, revision=revision, unsafe=False)
+            _upgrade_database(
+                self.db, revision=revision, unsafe=False, progress_func=progress_func
+            )
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
         elif convert_to_geopackage:

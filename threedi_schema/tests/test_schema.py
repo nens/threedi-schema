@@ -198,7 +198,6 @@ def test_set_views(oldest_sqlite, set_views, upgrade_spatialite_version):
         upgrade_spatialite_version=upgrade_spatialite_version,
     )
     assert schema.get_version() == get_schema_version()
-
     # Test all views
     with oldest_sqlite.session_scope() as session:
         for view_name in ALL_VIEWS:
