@@ -12,7 +12,7 @@ from alembic import op
 from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 from sqlalchemy.orm import declarative_base
 
-from threedi_schema.domain.custom_types import Geometry
+from threedi_schema.migrations.utils import drop_conflicting, drop_geo_table
 
 # revision identifiers, used by Alembic.
 revision = "0226"
@@ -72,14 +72,9 @@ def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
             batch_op.add_column(col)
 
 
-def drop_geo_table(table):
-    """ Drop tables using DropGeoTable to ensure that tables with geometries are properly removed """
-    op.execute(sa.text(f"SELECT DropGeoTable('{table}', 0);"))
-
-
 def remove_tables(tables: List[str]):
     for table in tables:
-        drop_geo_table(table)
+        drop_geo_table(op, table)
 
 
 def modify_table(old_table_name, new_table_name):
@@ -172,15 +167,9 @@ def set_potential_breach_final_exchange_level():
     ))
 
 
-def drop_conflicting():
-    new_tables = [new_name for _, new_name in RENAME_TABLES]
-    for table_name in new_tables:
-        drop_geo_table(table_name)
-
-
 def upgrade():
     # Drop tables that conflict with new table names
-    drop_conflicting()
+    drop_conflicting(op, [new_name for _, new_name in RENAME_TABLES])
     rem_tables = []
     for old_table_name, new_table_name in RENAME_TABLES:
         modify_table(old_table_name, new_table_name)
