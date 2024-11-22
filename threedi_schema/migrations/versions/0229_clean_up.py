@@ -46,9 +46,19 @@ def clean_geometry_columns():
         """))
 
 
+def clean_triggers():
+    """ Remove triggers referencing v2 tables """
+    connection = op.get_bind()
+    triggers = [item[0] for item in connection.execute(
+        sa.text("SELECT tbl_name FROM sqlite_master WHERE type='trigger' AND tbl_name LIKE '%v2%';")).fetchall()]
+    for trigger in triggers:
+        op.execute(f"DROP TRIGGER IF EXISTS {trigger};")
+
+
 def upgrade():
     remove_old_tables()
     clean_geometry_columns()
+    clean_triggers()
 
 
 def downgrade():
