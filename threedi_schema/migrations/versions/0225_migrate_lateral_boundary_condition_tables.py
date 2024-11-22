@@ -120,8 +120,13 @@ DEFAULT_VALUES = {
 
 def rename_tables(table_sets: List[Tuple[str, str]]):
     # no checks for existence are done, this will fail if a source table doesn't exist
+    connection = op.get_bind()
+    spatialite_version = connection.execute(sa.text("SELECT spatialite_version();")).fetchall()[0][0]
     for src_name, dst_name in table_sets:
-        op.execute(sa.text(f"SELECT RenameTable(NULL, '{src_name}', '{dst_name}');"))
+        if spatialite_version.startswith('5'):
+            op.execute(sa.text(f"SELECT RenameTable(NULL, '{src_name}', '{dst_name}');"))
+        else:
+            op.rename_table(src_name, dst_name)
 
 
 def create_new_tables(new_tables: Dict[str, sa.Column]):
