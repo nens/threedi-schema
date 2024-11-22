@@ -229,7 +229,7 @@ class StructureControlTypes(Enum):
         Get value of structure control as used in schema 2.x
         """
         if self == StructureControlTypes.pumpstation:
-            return "v2_pump"
+            return "v2_pumpstation"
         else:
             return f"v2_{self.value}"
 
