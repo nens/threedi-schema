@@ -4,7 +4,6 @@ Revision ID: 022
 9Revises:
 Create Date: 2024-11-15 14:18
 
-"""
 from typing import List
 
 import sqlalchemy as sa
@@ -40,5 +39,3 @@ def upgrade():
 
 def downgrade():
     pass
-
-
