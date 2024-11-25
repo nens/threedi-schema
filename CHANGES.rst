@@ -2,11 +2,15 @@ Changelog of threedi-schema
 ===================================================
 
 
+
 0.228.1 (unreleased)
 --------------------
 
+- Nothing chaned yet
 
-0.228.0 (unreleased)
+
+
+0.228.0 (2024-11-25)
 --------------------
 
 - Implement changes for schema version 300 concerning 1D
