@@ -10,6 +10,8 @@ from typing import List
 import sqlalchemy as sa
 from alembic import op
 
+from threedi_schema import models
+
 # revision identifiers, used by Alembic.
 revision = "0229"
 down_revision = "0228"
@@ -59,6 +61,40 @@ def upgrade():
     remove_old_tables()
     clean_geometry_columns()
     clean_triggers()
+
+def update_use_settings():
+    use_settings = [
+        (models.ModelSettings.use_groundwater_storage, models.GroundWater),
+        (models.ModelSettings.use_groundwater_flow, models.GroundWater),
+        (models.ModelSettings.use_interflow, models.Interflow),
+        (models.ModelSettings.use_simple_infiltration, models.SimpleInfiltration),
+        (models.ModelSettings.use_vegetation_drag_2d, models.VegetationDrag),
+        (models.ModelSettings.use_interception, models.Interception)
+    ]
+    connection = op.get_bind()  # Get the connection for raw SQL execution
+    for setting, table in use_settings:
+        use_row = connection.execute(
+            sa.select(getattr(models.ModelSettings, setting.name))
+        ).scalar()
+        if not use_row:
+            continue
+        row = connection.execute(sa.select(table)).first()
+        use_row = (row is not None)
+        if use_row:
+            use_row = not all(
+                getattr(row, column.name) in (None, "")
+                for column in table.__table__.columns
+                if column.name != "id"
+            )
+        if not use_row:
+            connection.execute(
+                sa.update(models.ModelSettings)
+                .values({setting.name: False})
+            )
+
+
+def upgrade():
+    update_use_settings()
 
 
 def downgrade():
