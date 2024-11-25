@@ -395,6 +395,7 @@ def upgrade():
     rename_measure_operator('memory_control')
     move_setting('model_settings', 'use_structure_control',
                  'simulation_template_settings', 'use_structure_control')
+    update_use_structure_control()
     remove_tables(DEL_TABLES)
     # Fix geometry columns and also make all but geom column nullable
     fix_geometry_columns()
