@@ -2,6 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
+
 0.228.1 (unreleased)
 --------------------
 
@@ -9,7 +10,7 @@ Changelog of threedi-schema
 - Remove columns referencing v2 in geometry_column
 
 
-0.228.0 (unreleased)
+0.228.0 (2024-11-25)
 --------------------
 
 - Implement changes for schema version 300 concerning 1D
