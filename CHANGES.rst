@@ -3,10 +3,15 @@ Changelog of threedi-schema
 
 
 
-0.227.4 (unreleased)
+0.228.0 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Implement changes for schema version 300 concerning 1D
+- Remove v2 prefix from table names v2_channel, v2_windshielding, v2_cross_section_location, v2_pipe, v2_culvert` v2_orifice and v2_weir
+- Move data from v2_cross_section_definition to linked tables (cross_section_location, pipe, culvert, orifice and weir)
+- Move data from v2_manhole to connection_nodes and remove v2_manhole table
+- Rename v2_pumpstation to pump and add table pump_map that maps the end nodes to pumps
+- Remove tables v2_floodfill and v2_cross_section_definition
 
 
 0.227.3 (2024-11-04)

@@ -89,6 +89,49 @@ def test_upgrade_success(sqlite_file, tmp_path_factory):
         pytest.fail(f"Failed to upgrade {sqlite_file}")
 
 
+class TestMigration228:
+    pytestmark = pytest.mark.migration_228
+    removed_tables = set(["v2_channel",
+                      "v2_windshielding",
+                      "v2_cross_section_location",
+                      "v2_pipe",
+                      "v2_culvert",
+                      "v2_weir",
+                      "v2_orifice",
+                      "v2_pumpstation",
+                      "v2_cross_section_definition",
+                      "v2_floodfill",
+                      "v2_connection_nodes"])
+    added_tables = set(["channel",
+                    "windshielding_1d",
+                    "cross_section_location",
+                    "pipe",
+                    "culvert",
+                    "weir",
+                    "orifice",
+                    "pump",
+                    "connection_node",
+                    "material",
+                    "pump_map"])
+
+    def test_tables(self, schema_ref, schema_upgraded):
+        # Test whether the added tables are present
+        # and whether the removed tables are not present*
+        tables_new = set(get_sql_tables(get_cursor_for_schema(schema_upgraded)))
+        assert self.added_tables.issubset(tables_new)
+        assert self.removed_tables.isdisjoint(tables_new)
+
+
+    def test_columns_added_tables(self, schema_upgraded):
+        # Note that only the added tables are touched.
+        # So this check covers both added and removed columns.
+        cursor = get_cursor_for_schema(schema_upgraded)
+        for table in self.added_tables:
+            cols_sqlite = get_columns_from_sqlite(cursor, table)
+            cols_schema = get_columns_from_schema(schema_upgraded, table)
+            assert cols_sqlite == cols_schema
+
+
 class TestMigration226:
     pytestmark = pytest.mark.migration_226
     removed_tables = set(['v2_dem_average_area',
