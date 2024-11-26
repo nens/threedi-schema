@@ -3,7 +3,7 @@ Changelog of threedi-schema
 
 
 
-0.228.1 (unreleased)
+0.228.1 (2024-11-26)
 --------------------
 
 - Add `progress_func` argument to schema.upgrade
