@@ -6,7 +6,7 @@ Changelog of threedi-schema
 0.228.1 (unreleased)
 --------------------
 
-- Nothing chaned yet
+- Remove indices referring to removed tables in previous migrations
 
 
 

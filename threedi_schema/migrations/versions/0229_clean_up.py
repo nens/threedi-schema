@@ -6,6 +6,8 @@ Create Date: 2024-11-15 14:18
 
 """
 
+from typing import List
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -16,19 +18,27 @@ branch_labels = None
 depends_on = None
 
 
-def change_to_bool():
-    change_fields = [('model_settings', 'use_2d_rain'),
-                     ('physical_settings', 'use_advection_2d')]
-    # this does not work, dunno why
-    # alter not supported -> fix in original migrations
-    for table_name, column_name in change_fields:
-        op.alter_column(table_name, column_name, type_=sa.Boolean)
+def remove_tables(tables: List[str]):
+    for table in tables:
+        op.drop_table(table)
+
+
+def find_tables_by_pattern(pattern: str) -> List[str]:
+    connection = op.get_bind()
+    query = connection.execute(sa.text(f"select name from sqlite_master where type = 'table' and name like '{pattern}'"))
+    return [item[0] for item in query.fetchall()]
+
+
+def remove_old_tables():
+    remaining_v2_idx_tables = find_tables_by_pattern('idx_v2_%_the_geom')
+    remaining_alembic = find_tables_by_pattern('%_alembic_%_the_geom')
+    remove_tables(remaining_v2_idx_tables+remaining_alembic)
 
 
 
 
 def upgrade():
-    change_to_bool()
+    remove_old_tables()
 
 def downgrade():
     pass
