@@ -16,9 +16,19 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
-    pass
+def change_to_bool():
+    change_fields = [('model_settings', 'use_2d_rain'),
+                     ('physical_settings', 'use_advection_2d')]
+    # this does not work, dunno why
+    # alter not supported -> fix in original migrations
+    for table_name, column_name in change_fields:
+        op.alter_column(table_name, column_name, type_=sa.Boolean)
 
+
+
+
+def upgrade():
+    change_to_bool()
 
 def downgrade():
     pass

@@ -356,7 +356,7 @@ class ModelSettings(Base):
     max_angle_1d_advection = Column(Float)
     friction_averaging = Column(IntegerEnum(constants.OffOrStandard))
     table_step_size_1d = Column(Float)
-    use_2d_rain = Column(Integer)
+    use_2d_rain = Column(Boolean)
     use_interflow = Column(Boolean)
     use_interception = Column(Boolean)
     use_simple_infiltration = Column(Boolean)
@@ -409,7 +409,7 @@ class PhysicalSettings(Base):
     __tablename__ = "physical_settings"
     id = Column(Integer, primary_key=True)
     use_advection_1d = Column(IntegerEnum(constants.AdvectionTypes1D))
-    use_advection_2d = Column(IntegerEnum(constants.OffOrStandard))
+    use_advection_2d = Column(Boolean)
 
 
 class SimulationTemplateSettings(Base):
