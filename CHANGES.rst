@@ -9,7 +9,8 @@ Changelog of threedi-schema
 - Remove indices referring to removed tables in previous migrations
 
 
-0.228.0 (unreleased)
+
+0.228.0 (2024-11-25)
 --------------------
 
 - Implement changes for schema version 300 concerning 1D
