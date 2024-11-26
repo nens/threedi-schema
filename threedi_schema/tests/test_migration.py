@@ -224,7 +224,6 @@ class TestMigration223:
         # and whether the removed tables are not present*
         tables_new = set(get_sql_tables(get_cursor_for_schema(schema_upgraded)))
         assert self.added_tables.issubset(tables_new)
-        # breakpoint()
         assert self.removed_tables.isdisjoint(tables_new)
 
     def test_columns_added_tables(self, schema_upgraded):
