@@ -7,6 +7,7 @@ Changelog of threedi-schema
 --------------------
 
 - Rename sqlite table "tags" to "tag"
+- Remove indices referring to removed tables in previous migrations
 
 
 
