@@ -7,6 +7,8 @@ Create Date: 2024-11-15 14:18
 """
 from typing import List
 
+from typing import List
+
 import sqlalchemy as sa
 from alembic import op
 

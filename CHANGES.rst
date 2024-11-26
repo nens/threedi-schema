@@ -10,6 +10,7 @@ Changelog of threedi-schema
 - Remove columns referencing v2 in geometry_column
 
 
+
 0.228.0 (2024-11-25)
 --------------------
 
