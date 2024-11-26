@@ -41,7 +41,6 @@ def migrate(
     schema.upgrade(
         revision=revision,
         backup=backup,
-        set_views=set_views,
         upgrade_spatialite_version=upgrade_spatialite_version,
         convert_to_geopackage=convert_to_geopackage,
     )

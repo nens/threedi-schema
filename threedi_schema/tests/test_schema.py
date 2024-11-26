@@ -7,7 +7,6 @@ from threedi_schema import ModelSchema
 from threedi_schema.application import errors
 from threedi_schema.application.schema import get_schema_version
 from threedi_schema.domain import constants
-from threedi_schema.domain.views import ALL_VIEWS
 from threedi_schema.infrastructure.spatialite_versions import get_spatialite_version
 
 
@@ -113,17 +112,17 @@ def test_validate_schema_too_high_migration(sqlite_latest, version):
 def test_full_upgrade_empty(in_memory_sqlite):
     """Upgrade an empty database to the latest version"""
     schema = ModelSchema(in_memory_sqlite)
-    schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=False)
+    schema.upgrade(backup=False, upgrade_spatialite_version=False)
     assert schema.get_version() == get_schema_version()
-    assert in_memory_sqlite.has_table("v2_connection_nodes")
+    assert in_memory_sqlite.has_table("connection_node")
 
 
 def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
     """Upgrade an empty database to the latest version"""
     schema = ModelSchema(south_latest_sqlite)
-    schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=False)
+    schema.upgrade(backup=False, upgrade_spatialite_version=False)
     assert schema.get_version() == get_schema_version()
-    assert south_latest_sqlite.has_table("v2_connection_nodes")
+    assert south_latest_sqlite.has_table("connection_node")
     # https://github.com/nens/threedi-schema/issues/10:
     assert not south_latest_sqlite.has_table("v2_levee")
 
@@ -131,9 +130,9 @@ def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
 def test_full_upgrade_oldest(oldest_sqlite):
     """Upgrade a legacy database to the latest version"""
     schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=False)
+    schema.upgrade(backup=False, upgrade_spatialite_version=False)
     assert schema.get_version() == get_schema_version()
-    assert oldest_sqlite.has_table("v2_connection_nodes")
+    assert oldest_sqlite.has_table("connection_node")
     # https://github.com/nens/threedi-schema/issues/10:
     assert not oldest_sqlite.has_table("v2_levee")
 
@@ -145,9 +144,7 @@ def test_upgrade_south_not_latest_errors(in_memory_sqlite):
         schema, "get_version", return_value=constants.LATEST_SOUTH_MIGRATION_ID - 1
     ):
         with pytest.raises(errors.MigrationMissingError):
-            schema.upgrade(
-                backup=False, set_views=False, upgrade_spatialite_version=False
-            )
+            schema.upgrade(backup=False, upgrade_spatialite_version=False)
 
 
 def test_upgrade_with_backup(south_latest_sqlite):
@@ -157,9 +154,7 @@ def test_upgrade_with_backup(south_latest_sqlite):
         "threedi_schema.application.schema._upgrade_database", side_effect=RuntimeError
     ) as upgrade, mock.patch.object(schema, "get_version", return_value=199):
         with pytest.raises(RuntimeError):
-            schema.upgrade(
-                backup=True, set_views=False, upgrade_spatialite_version=False
-            )
+            schema.upgrade(backup=True, upgrade_spatialite_version=False)
 
     (db,), kwargs = upgrade.call_args
     assert db is not south_latest_sqlite
@@ -172,42 +167,10 @@ def test_upgrade_without_backup(south_latest_sqlite):
         "threedi_schema.application.schema._upgrade_database", side_effect=RuntimeError
     ) as upgrade, mock.patch.object(schema, "get_version", return_value=199):
         with pytest.raises(RuntimeError):
-            schema.upgrade(
-                backup=False, set_views=False, upgrade_spatialite_version=False
-            )
+            schema.upgrade(backup=False, upgrade_spatialite_version=False)
 
     (db,), kwargs = upgrade.call_args
     assert db is south_latest_sqlite
-
-
-@pytest.mark.parametrize(
-    "set_views, upgrade_spatialite_version",
-    [
-        (True, False),
-        (False, True),
-        (True, True),
-    ],
-)
-@pytest.mark.filterwarnings("ignore::UserWarning")
-def test_set_views(oldest_sqlite, set_views, upgrade_spatialite_version):
-    """Make sure that the views are regenerated"""
-    schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(
-        backup=False,
-        set_views=set_views,
-        upgrade_spatialite_version=upgrade_spatialite_version,
-    )
-    assert schema.get_version() == get_schema_version()
-    # Test all views
-    with oldest_sqlite.session_scope() as session:
-        for view_name in ALL_VIEWS:
-            session.execute(text(f"SELECT * FROM {view_name} LIMIT 1")).fetchall()
-
-
-def test_set_views_warning(oldest_sqlite):
-    schema = ModelSchema(oldest_sqlite)
-    with pytest.warns(UserWarning):
-        schema.upgrade(backup=False, set_views=False, upgrade_spatialite_version=True)
 
 
 def test_convert_to_geopackage_raise(oldest_sqlite):
@@ -216,10 +179,7 @@ def test_convert_to_geopackage_raise(oldest_sqlite):
     schema = ModelSchema(oldest_sqlite)
     with pytest.raises(errors.UpgradeFailedError):
         schema.upgrade(
-            backup=False,
-            set_views=False,
-            upgrade_spatialite_version=False,
-            convert_to_geopackage=True,
+            backup=False, upgrade_spatialite_version=False, convert_to_geopackage=True
         )
 
 
@@ -243,7 +203,7 @@ def test_upgrade_spatialite_3(oldest_sqlite):
     # the spatial indexes are there
     with oldest_sqlite.engine.connect() as connection:
         check_result = connection.execute(
-            text("SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')")
+            text("SELECT CheckSpatialIndex('connection_node', 'geom')")
         ).scalar()
     assert check_result == 1
 
@@ -257,7 +217,7 @@ def test_set_spatial_indexes(in_memory_sqlite):
     with engine.connect() as connection:
         with connection.begin():
             connection.execute(
-                text("SELECT DisableSpatialIndex('v2_connection_nodes', 'the_geom')")
+                text("SELECT DisableSpatialIndex('connection_node', 'geom')")
             ).scalar()
             connection.execute(text("DROP TABLE idx_v2_connection_nodes_the_geom"))
 
@@ -265,7 +225,7 @@ def test_set_spatial_indexes(in_memory_sqlite):
 
     with engine.connect() as connection:
         check_result = connection.execute(
-            text("SELECT CheckSpatialIndex('v2_connection_nodes', 'the_geom')")
+            text("SELECT CheckSpatialIndex('connection_node', 'geom')")
         ).scalar()
 
     assert check_result == 1
