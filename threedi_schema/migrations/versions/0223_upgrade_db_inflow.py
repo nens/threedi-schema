@@ -78,7 +78,7 @@ ADD_TABLES = {
         Column("tags", Text),
         Column("distribution", Text)
     ],
-    "tags": [
+    "tag": [
         Column("description", Text)
     ]
 }
