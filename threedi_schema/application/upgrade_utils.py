@@ -41,10 +41,14 @@ def get_upgrade_steps_count(
         except TypeError:
             # this should lead to issues in the upgrade pipeline, lets not take over that error handling here
             return 0
-    offset = 0
+    # walk_revisions also includes the revision from current_revision to previous
+    # reduce the number of steps with 1
+    offset = -1
+    # The first defined revision is 200; revision numbers < 200 will cause walk_revisions to fail
     if current_revision < 200:
         current_revision = 200
-        offset = 1
+        # set offset to 0 because previous to current is not included in walk_revisions
+        offset = 0
     if target_revision != "head" and int(target_revision) < current_revision:
         # assume that this will be correctly handled by alembic
         return 0
@@ -52,8 +56,7 @@ def get_upgrade_steps_count(
     script = ScriptDirectory.from_config(config)
     # Determine upgrade steps
     revisions = script.walk_revisions(current_revision_str, target_revision)
-    # Revisions also includes the revision from current_revision to previous
-    return len(list(revisions)) - 1 + offset
+    return len(list(revisions)) + offset
 
 
 def setup_logging(
