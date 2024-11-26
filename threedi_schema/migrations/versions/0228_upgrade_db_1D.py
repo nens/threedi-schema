@@ -17,6 +17,7 @@ from sqlalchemy.orm import declarative_base, Session
 
 from threedi_schema.domain import constants, models
 from threedi_schema.domain.custom_types import IntegerEnum
+from threedi_schema.migrations.utils import drop_conflicting, drop_geo_table
 
 Base = declarative_base()
 
@@ -99,7 +100,7 @@ def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
 
 def remove_tables(tables: List[str]):
     for table in tables:
-        op.drop_table(table)
+        drop_geo_table(op, table)
 
 
 def modify_table(old_table_name, new_table_name):
@@ -439,21 +440,12 @@ def fix_material_id():
                            f"{' '.join([f'WHEN {old} THEN {new}' for old, new in replace_map.items()])} "
                            "ELSE material_id END"))
 
-
-
-def drop_conflicting():
-    new_tables = [new_name for _, new_name in RENAME_TABLES] + ['material', 'pump_map']
-    for table_name in new_tables:
-        op.execute(f"DROP TABLE IF EXISTS {table_name};")
-
-
-
 def upgrade():
     # Empty or non-existing connection node id (start or end) in Orifice, Pipe, Pumpstation or Weir will break
     # migration, so an error is raised in these cases
     check_for_null_geoms()
     # Prevent custom tables in schematisation from breaking migration when they conflict with new table names
-    drop_conflicting()
+    drop_conflicting(op, [new_name for _, new_name in RENAME_TABLES] + ['material', 'pump_map'])
     # Extent cross section definition table (actually stored in temp)
     extend_cross_section_definition_table()
     # Migrate data from cross_section_definition to cross_section_location

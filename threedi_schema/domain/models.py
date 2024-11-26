@@ -686,7 +686,7 @@ class ExchangeLine(Base):
 
 
 class Tags(Base):
-    __tablename__ = "tags"
+    __tablename__ = "tag"
     id = Column(Integer, primary_key=True)
     description = Column(Text)
 

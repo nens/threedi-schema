@@ -15,6 +15,7 @@ from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 from sqlalchemy.orm import declarative_base
 
 from threedi_schema.domain.custom_types import Geometry
+from threedi_schema.migrations.utils import drop_conflicting, drop_geo_table
 
 # revision identifiers, used by Alembic.
 revision = "0224"
@@ -335,7 +336,7 @@ def remove_column_from_table(table_name: str, column: str):
 
 def remove_tables(tables: List[str]):
     for table in tables:
-        op.drop_table(table)
+        drop_geo_table(op, table)
 
 
 def make_geom_col_notnull(table_name):
@@ -357,7 +358,7 @@ def make_geom_col_notnull(table_name):
     temp_name = f'_temp_224_{uuid.uuid4().hex}'
     op.execute(sa.text(f"CREATE TABLE {temp_name} ({','.join(cols)});"))
     op.execute(sa.text(f"INSERT INTO {temp_name} ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
-    op.execute(sa.text(f"DROP TABLE {table_name};"))
+    drop_geo_table(op, table_name)
     op.execute(sa.text(f"ALTER TABLE {temp_name} RENAME TO {table_name};"))
 
 
@@ -370,15 +371,9 @@ def fix_geometry_columns():
         op.execute(sa.text(migration_query))
 
 
-def drop_conflicting():
-    new_tables = list(ADD_TABLES.keys()) + [new_name for _, new_name in RENAME_TABLES]
-    for table_name in new_tables:
-        op.execute(f"DROP TABLE IF EXISTS {table_name};")
-
-
 def upgrade():
     # Remove existing tables (outside of the specs) that conflict with new table names
-    drop_conflicting()
+    drop_conflicting(op, list(ADD_TABLES.keys()) + [new_name for _, new_name in RENAME_TABLES])
     # create new tables and rename existing tables
     create_new_tables(ADD_TABLES)
     rename_tables(RENAME_TABLES)
