@@ -63,6 +63,7 @@ def upgrade():
     clean_triggers()
 
 def update_use_settings():
+    # Ensure that use_* settings are only True when there is actual data for them
     use_settings = [
         (models.ModelSettings.use_groundwater_storage, models.GroundWater),
         (models.ModelSettings.use_groundwater_flow, models.GroundWater),
