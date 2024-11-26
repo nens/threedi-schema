@@ -354,7 +354,7 @@ class ModelSettings(Base):
     embedded_cutoff_threshold = Column(Float)
     epsg_code = Column(Integer)
     max_angle_1d_advection = Column(Float)
-    friction_averaging = Column(IntegerEnum(constants.OffOrStandard))
+    friction_averaging = Column(Boolean)
     table_step_size_1d = Column(Float)
     use_2d_rain = Column(Boolean)
     use_interflow = Column(Boolean)
