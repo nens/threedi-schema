@@ -6,7 +6,7 @@ Changelog of threedi-schema
 0.228.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Significantly speed up migration to schema 228 for schematisations with many 1D components
 
 
 0.228.1 (2024-11-26)
