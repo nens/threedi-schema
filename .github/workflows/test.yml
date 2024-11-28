@@ -15,13 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # 2019
-          - python: 3.8
-            os: ubuntu-20.04
-            pins: "sqlalchemy==1.4.44 alembic==1.8.* geoalchemy2==0.14.0"
           # 2021
           - python: 3.9
-            os: ubuntu-20.04
+            os: ubuntu-22.04
             pins: "sqlalchemy==1.4.44 alembic==1.8.* geoalchemy2==0.14.0"
           # 2022
           - python: "3.10"
