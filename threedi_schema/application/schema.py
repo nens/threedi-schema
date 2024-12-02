@@ -13,11 +13,11 @@ from alembic.script import ScriptDirectory
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
-from ..domain import constants, models, views
+from ..domain import constants, models
 from ..infrastructure.spatial_index import ensure_spatial_indexes
 from ..infrastructure.spatialite_versions import copy_models, get_spatialite_version
-from ..infrastructure.views import recreate_views
 from .errors import MigrationMissingError, UpgradeFailedError
+from .upgrade_utils import setup_logging
 
 __all__ = ["ModelSchema"]
 
@@ -40,11 +40,12 @@ def get_schema_version():
         return int(env.get_head_revision())
 
 
-def _upgrade_database(db, revision="head", unsafe=True):
+def _upgrade_database(db, revision="head", unsafe=True, progress_func=None):
     """Upgrade ThreediDatabase instance"""
     engine = db.engine
-
     config = get_alembic_config(engine, unsafe=unsafe)
+    if progress_func is not None:
+        setup_logging(db.schema, revision, config, progress_func)
     alembic_command.upgrade(config, revision)
 
 
@@ -87,9 +88,9 @@ class ModelSchema:
         self,
         revision="head",
         backup=True,
-        set_views=True,
         upgrade_spatialite_version=False,
         convert_to_geopackage=False,
+        progress_func=None,
     ):
         """Upgrade the database to the latest version.
 
@@ -103,15 +104,14 @@ class ModelSchema:
         If the database is temporary already (or if it is PostGIS), disable
         it.
 
-        Specify 'set_views=True' to also (re)create views after the upgrade.
-        This is not compatible when upgrading to a different version than the
-        latest version.
-
         Specify 'upgrade_spatialite_version=True' to also upgrade the
         spatialite file version after the upgrade.
 
         Specify 'convert_to_geopackage=True' to also convert from spatialite
         to geopackage file version after the upgrade.
+
+        Specify a 'progress_func' to handle progress updates. `progress_func` should
+        expect a single argument representing the fraction of progress
         """
         try:
             rev_nr = get_schema_version() if revision == "head" else int(revision)
@@ -124,12 +124,6 @@ class ModelSchema:
                 f"Cannot convert to geopackage for {revision=} because geopackage support is "
                 "enabled from revision 300",
             )
-        if upgrade_spatialite_version and not set_views:
-            set_views = True
-            warnings.warn(
-                "Setting set_views to True because the spatialite version cannot be upgraded without setting the views",
-                UserWarning,
-            )
         v = self.get_version()
         if v is not None and v < constants.LATEST_SOUTH_MIGRATION_ID:
             raise MigrationMissingError(
@@ -137,20 +131,19 @@ class ModelSchema:
                 f"{constants.LATEST_SOUTH_MIGRATION_ID}. Please consult the "
                 f"3Di documentation on how to update legacy databases."
             )
-        if set_views and revision not in ("head", get_schema_version()):
-            raise ValueError(f"Cannot set views when upgrading to version '{revision}'")
         if backup:
             with self.db.file_transaction() as work_db:
-                _upgrade_database(work_db, revision=revision, unsafe=True)
+                _upgrade_database(
+                    work_db, revision=revision, unsafe=True, progress_func=progress_func
+                )
         else:
-            _upgrade_database(self.db, revision=revision, unsafe=False)
+            _upgrade_database(
+                self.db, revision=revision, unsafe=False, progress_func=progress_func
+            )
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
         elif convert_to_geopackage:
             self.convert_to_geopackage()
-            set_views = True
-        if set_views:
-            self.set_views()
 
     def validate_schema(self):
         """Very basic validation of 3Di schema.
@@ -177,20 +170,6 @@ class ModelSchema:
                 f"results. "
             )
         return True
-
-    def set_views(self):
-        """(Re)create views in the spatialite according to the latest definitions."""
-        version = self.get_version()
-        schema_version = get_schema_version()
-        if version != schema_version:
-            raise MigrationMissingError(
-                f"Setting views requires schema version "
-                f"{schema_version}. Current version: {version}."
-            )
-
-        _, file_version = get_spatialite_version(self.db)
-
-        recreate_views(self.db, file_version, views.ALL_VIEWS, views.VIEWS_TO_DELETE)
 
     def set_spatial_indexes(self):
         """(Re)create spatial indexes in the spatialite according to the latest definitions."""

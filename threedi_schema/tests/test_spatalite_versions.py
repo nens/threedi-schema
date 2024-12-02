@@ -1,7 +1,6 @@
 from sqlalchemy import Column, func, Integer, String
 from sqlalchemy.orm import declarative_base
 
-from threedi_schema.domain import models
 from threedi_schema.domain.custom_types import Geometry
 from threedi_schema.infrastructure.spatialite_versions import (
     copy_model,
@@ -39,15 +38,15 @@ def test_copy_model(empty_sqlite_v3, empty_sqlite_v4):
         session.commit()
 
     # Copy it
-    copy_model(db_from, db_to, models.ConnectionNode)
+    copy_model(db_from, db_to, TestModel)
 
     # Check if it is present in 'db_to'
     with db_to.session_scope() as session:
         records = list(
             session.query(
-                models.ConnectionNode.id,
-                models.ConnectionNode.code,
-                func.ST_AsText(models.ConnectionNode.the_geom),
+                TestModel.id,
+                TestModel.code,
+                func.ST_AsText(TestModel.the_geom),
             )
         )
 
