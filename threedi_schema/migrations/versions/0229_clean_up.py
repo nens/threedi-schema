@@ -5,6 +5,7 @@ Revision ID: 022
 Create Date: 2024-11-15 14:18
 
 """
+import uuid
 from typing import List
 
 import sqlalchemy as sa
@@ -12,11 +13,50 @@ from alembic import op
 
 from threedi_schema import models
 
+
 # revision identifiers, used by Alembic.
 revision = "0229"
 down_revision = "0228"
 branch_labels = None
 depends_on = None
+
+
+def find_model(table_name):
+    for model in models.DECLARED_MODELS:
+        if model.__tablename__ == table_name:
+            return model
+    # This can only go wrong if the migration or model is incorrect
+    raise
+
+
+def create_sqlite_table_from_model(model, table_name):
+    cols = get_cols_for_model(model, skip_cols=["id"])
+    op.execute(sa.text(f"""
+        CREATE TABLE {table_name} (
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+        {','.join(f"{col.name} {col.type}" for col in cols)}
+    );"""))
+
+
+def get_cols_for_model(model, skip_cols=None):
+    from sqlalchemy.orm.attributes import InstrumentedAttribute
+    if skip_cols is None:
+        skip_cols = []
+    return [getattr(model, item) for item in model.__dict__
+            if item not in skip_cols
+            and isinstance(getattr(model, item), InstrumentedAttribute)]
+
+
+def sync_orm_types_to_sqlite(table_name):
+    temp_table_name = f'_temp_229_{uuid.uuid4().hex}'
+    model = find_model(table_name)
+    create_sqlite_table_from_model(model, temp_table_name)
+    col_names = [col.name for col in get_cols_for_model(model)]
+    # This may copy wrong type data because some types change!!
+    op.execute(sa.text(f"INSERT INTO {temp_table_name} ({','.join(col_names)}) "
+                       f"SELECT {','.join(col_names)} FROM {table_name}"))
+    op.execute(sa.text(f"DROP TABLE {table_name}"))
+    op.execute(sa.text(f"ALTER TABLE {temp_table_name} RENAME TO {table_name};"))
 
 
 def remove_tables(tables: List[str]):
@@ -57,11 +97,6 @@ def clean_triggers():
         op.execute(f"DROP TRIGGER IF EXISTS {trigger};")
 
 
-def upgrade():
-    remove_old_tables()
-    clean_geometry_columns()
-    clean_triggers()
-
 def update_use_settings():
     # Ensure that use_* settings are only True when there is actual data for them
     use_settings = [
@@ -93,9 +128,14 @@ def update_use_settings():
                 .values({setting.name: False})
             )
 
-
+            
 def upgrade():
+    remove_old_tables()
+    clean_geometry_columns()
+    clean_triggers()
     update_use_settings()
+    # Apply changing use_2d_rain and friction_averaging type to bool
+    sync_orm_types_to_sqlite('model_settings')
 
 
 def downgrade():
