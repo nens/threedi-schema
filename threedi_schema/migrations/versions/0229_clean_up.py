@@ -13,7 +13,6 @@ from alembic import op
 
 from threedi_schema import models
 
-
 # revision identifiers, used by Alembic.
 revision = "0229"
 down_revision = "0228"
