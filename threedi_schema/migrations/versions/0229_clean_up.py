@@ -11,7 +11,7 @@ from typing import List
 import sqlalchemy as sa
 from alembic import op
 
-from threedi_schema.domain import models
+from threedi_schema import models
 
 # revision identifiers, used by Alembic.
 revision = "0229"
@@ -96,12 +96,46 @@ def clean_triggers():
         op.execute(f"DROP TRIGGER IF EXISTS {trigger};")
 
 
+def update_use_settings():
+    # Ensure that use_* settings are only True when there is actual data for them
+    use_settings = [
+        (models.ModelSettings.use_groundwater_storage, models.GroundWater),
+        (models.ModelSettings.use_groundwater_flow, models.GroundWater),
+        (models.ModelSettings.use_interflow, models.Interflow),
+        (models.ModelSettings.use_simple_infiltration, models.SimpleInfiltration),
+        (models.ModelSettings.use_vegetation_drag_2d, models.VegetationDrag),
+        (models.ModelSettings.use_interception, models.Interception)
+    ]
+    connection = op.get_bind()  # Get the connection for raw SQL execution
+    for setting, table in use_settings:
+        use_row = connection.execute(
+            sa.select(getattr(models.ModelSettings, setting.name))
+        ).scalar()
+        if not use_row:
+            continue
+        row = connection.execute(sa.select(table)).first()
+        use_row = (row is not None)
+        if use_row:
+            use_row = not all(
+                getattr(row, column.name) in (None, "")
+                for column in table.__table__.columns
+                if column.name != "id"
+            )
+        if not use_row:
+            connection.execute(
+                sa.update(models.ModelSettings)
+                .values({setting.name: False})
+            )
+
+            
 def upgrade():
     remove_old_tables()
     clean_geometry_columns()
     clean_triggers()
+    update_use_settings()
     # Apply changing use_2d_rain and friction_averaging type to bool
     sync_orm_types_to_sqlite('model_settings')
+
 
 def downgrade():
     pass

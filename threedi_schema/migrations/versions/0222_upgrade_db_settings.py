@@ -291,6 +291,12 @@ def set_use_inteception():
     );    
     """))
 
+    op.execute(sa.text("""
+    DELETE FROM interception 
+    WHERE (interception IS NULL OR interception = '')
+    AND (interception_file IS NULL OR interception_file = '');    
+    """))
+
 
 def delete_all_but_matching_id(table, settings_id):
     op.execute(f"DELETE FROM {table} WHERE id NOT IN (SELECT {settings_id} FROM model_settings);")

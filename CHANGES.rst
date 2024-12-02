@@ -10,7 +10,7 @@ Changelog of threedi-schema
 - Remove indices referring to removed tables in previous migrations
 - Make model_settings.use_2d_rain and model_settings.friction_averaging booleans
 - Remove columns referencing v2 in geometry_column
-
+- Ensure correct use_* values when matching tables have no data
 
 
 0.228.1 (2024-11-26)

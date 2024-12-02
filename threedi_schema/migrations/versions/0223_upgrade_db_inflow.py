@@ -436,6 +436,17 @@ def populate_surface_and_dry_weather_flow():
     # Populate tables with default values
     populate_dry_weather_flow_distribution()
     populate_surface_parameters()
+    update_use_0d_inflow()
+
+def update_use_0d_inflow():
+    op.execute(sa.text("""
+    UPDATE simulation_template_settings
+    SET use_0d_inflow = 0 
+    WHERE 
+        (SELECT COUNT(*) FROM surface) = 0 
+        AND 
+        (SELECT COUNT(*) FROM dry_weather_flow) = 0;    
+    """))
 
 
 def set_surface_parameters_id():
