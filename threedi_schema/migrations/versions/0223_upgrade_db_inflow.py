@@ -189,12 +189,10 @@ def set_map_geometries(basename):
     # Set geom as a line between point on surface/dry_weather_flow and connection node
     query = f"""
         UPDATE {basename}_map AS map
-        SET geom = (
-            SELECT MakeLine(PointOnSurface(obj.geom), vcn.the_geom)
+        SET geom = MakeLine(PointOnSurface(obj.geom), vcn.the_geom)
             FROM {basename} obj
             JOIN v2_connection_nodes vcn ON map.connection_node_id = vcn.id
-            WHERE obj.id = map.{basename}_id
-        );        
+            WHERE obj.id = map.{basename}_id;        
     """
     op.execute(sa.text(query))
 
@@ -235,7 +233,6 @@ def add_map_geometries(src_table: str):
     op.execute(sa.text(query))
 
 
-
 def get_global_srid():
     conn = op.get_bind()
     use_0d_inflow = conn.execute(sa.text("SELECT use_0d_inflow FROM simulation_template_settings LIMIT 1")).fetchone()
@@ -257,6 +254,7 @@ def copy_polygons(src_table: str, tmp_geom: str):
     # - copy the first item of all multipolygons
     # - add new rows for each extra polygon inside a multipolygon
     conn = op.get_bind()
+
     # Copy polygons directly
     op.execute(sa.text(f"UPDATE {src_table} SET {tmp_geom} = the_geom WHERE GeometryType(the_geom) = 'POLYGON';"))
     # Copy first polygon of each multipolygon and correct the area
@@ -305,23 +303,25 @@ def copy_polygons(src_table: str, tmp_geom: str):
 def create_buffer_polygons(src_table: str, tmp_geom: str):
     # create circular polygon of area 1 around the connection node
     surf_id = f"{src_table.strip('v2_')}_id"
-    op.execute(sa.text(f"""
-    UPDATE {src_table} 
-    SET {tmp_geom} = (
-        SELECT ST_Buffer(v2_connection_nodes.the_geom, 1)
-        FROM v2_connection_nodes 
-        JOIN {src_table}_map 
-        ON v2_connection_nodes.id = {src_table}_map.connection_node_id
-        WHERE {src_table}.id = {src_table}_map.{surf_id}
-    )
-    WHERE {tmp_geom} IS NULL
-    AND id IN (
-        SELECT {src_table}_map.{surf_id}
-        FROM v2_connection_nodes 
-        JOIN {src_table}_map 
-        ON v2_connection_nodes.id = {src_table}_map.connection_node_id
-    );
-    """))
+    query = f"""
+        WITH connection_data AS (
+            SELECT
+                {src_table}_map.{surf_id} AS item_id,
+                ST_Buffer(v2_connection_nodes.the_geom, 1) AS buffer_geom
+            FROM
+                v2_connection_nodes
+            JOIN
+                {src_table}_map
+            ON
+                v2_connection_nodes.id = {src_table}_map.connection_node_id
+        )
+        UPDATE {src_table}
+        SET {tmp_geom} = connection_data.buffer_geom
+        FROM connection_data
+        WHERE {src_table}.id = connection_data.item_id
+        AND {tmp_geom} IS NULL;
+    """
+    op.execute(sa.text(query))
 
 
 def create_square_polygons(src_table: str, tmp_geom: str):
@@ -333,38 +333,38 @@ def create_square_polygons(src_table: str, tmp_geom: str):
     srid = get_global_srid()
     query_str = f"""
         WITH center AS (
-          SELECT {src_table}.id AS item_id,
-                    ST_Centroid(ST_Collect(
-                        ST_Transform(v2_connection_nodes.the_geom, {srid}))) AS geom
-          FROM {src_table}_map
-          JOIN v2_connection_nodes ON {src_table}_map.connection_node_id = v2_connection_nodes.id
-          JOIN {src_table} ON {src_table}_map.{surf_id} = {src_table}.id    
-          WHERE {src_table}_map.{surf_id} = {src_table}.id
-          GROUP BY {src_table}.id
+            SELECT {src_table}.id AS item_id,
+                   ST_Centroid(ST_Collect(
+                       ST_Transform(v2_connection_nodes.the_geom, {srid}))) AS geom
+            FROM {src_table}_map
+            JOIN v2_connection_nodes ON {src_table}_map.connection_node_id = v2_connection_nodes.id
+            JOIN {src_table} ON {src_table}_map.{surf_id} = {src_table}.id    
+            GROUP BY {src_table}.id
         ),
         side_length AS (
-          SELECT {side_expr} AS side
+            SELECT id, sqrt(area) AS side
+            FROM {src_table}
         )
         UPDATE {src_table}
-        SET {tmp_geom} = (
-            SELECT ST_Transform(
-                    SetSRID(
-                        ST_GeomFromText('POLYGON((' ||
-                            (ST_X(center.geom) - side_length.side / 2) || ' ' || (ST_Y(center.geom) - side_length.side / 2) || ',' ||
-                            (ST_X(center.geom) + side_length.side / 2) || ' ' || (ST_Y(center.geom) - side_length.side / 2) || ',' ||
-                            (ST_X(center.geom) + side_length.side / 2) || ' ' || (ST_Y(center.geom) + side_length.side / 2) || ',' ||
-                            (ST_X(center.geom) - side_length.side / 2) || ' ' || (ST_Y(center.geom) + side_length.side / 2) || ',' ||
-                            (ST_X(center.geom) - side_length.side / 2) || ' ' || (ST_Y(center.geom) - side_length.side / 2) ||
-                            '))'),
-                        {srid}),
-                4326
-            ) AS transformed_geom
-            FROM center, side_length
-            WHERE center.item_id = {src_table}.id
-        )
-        WHERE {tmp_geom} IS NULL;
+        SET {tmp_geom} = ST_Transform(
+                             SetSRID(
+                                 ST_GeomFromText('POLYGON((' ||
+                                     (ST_X(center.geom) - side_length.side / 2) || ' ' || (ST_Y(center.geom) - side_length.side / 2) || ',' ||
+                                     (ST_X(center.geom) + side_length.side / 2) || ' ' || (ST_Y(center.geom) - side_length.side / 2) || ',' ||
+                                     (ST_X(center.geom) + side_length.side / 2) || ' ' || (ST_Y(center.geom) + side_length.side / 2) || ',' ||
+                                     (ST_X(center.geom) - side_length.side / 2) || ' ' || (ST_Y(center.geom) + side_length.side / 2) || ',' ||
+                                     (ST_X(center.geom) - side_length.side / 2) || ' ' || (ST_Y(center.geom) - side_length.side / 2) ||
+                                     '))'),
+                                 {srid}),
+                             4326
+                         )
+        FROM center
+        JOIN side_length ON center.item_id = side_length.id
+        WHERE {src_table}.id = center.item_id
+          AND {tmp_geom} IS NULL;
         """
     op.execute(sa.text(query_str))
+
 
 def fix_src_geometry(src_table: str, tmp_geom: str, create_polygons):
     conn = op.get_bind()
@@ -383,7 +383,7 @@ def fix_src_geometry(src_table: str, tmp_geom: str, create_polygons):
     create_polygons(src_table, tmp_geom)
 
 
-def remove_invalid_rows(src_table:str):
+def remove_invalid_rows(src_table: str):
     # Remove rows with insufficient data
     op.execute(sa.text(f"DELETE FROM {src_table} WHERE area = 0 "
                        "AND (nr_of_inhabitants = 0 OR dry_weather_flow = 0);"))
@@ -398,6 +398,7 @@ def remove_invalid_rows(src_table:str):
         msg = (f"Could not migrate the following rows from {src_table} because "
                f"they are not mapped to a connection node in {src_table}_map: {no_map_id}")
         warnings.warn(msg, NoMappingWarning)
+
 
 def populate_surface_and_dry_weather_flow():
     conn = op.get_bind()
@@ -425,7 +426,6 @@ def populate_surface_and_dry_weather_flow():
     # Remove rows in maps that refer to non-existing objects
     remove_orphans_from_map(basename="surface")
     remove_orphans_from_map(basename="dry_weather_flow")
-
     # Create geometries in new maps
     add_map_geometries("surface")
     add_map_geometries("dry_weather_flow")
