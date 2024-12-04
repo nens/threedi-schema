@@ -30,4 +30,3 @@ def drop_conflicting(op, new_tables: List[str]):
         sa.text("SELECT name FROM sqlite_master WHERE type='table';")).fetchall()]
     for table_name in set(existing_tables).intersection(new_tables):
         drop_geo_table(op, table_name)
-
