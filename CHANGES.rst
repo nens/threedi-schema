@@ -13,11 +13,12 @@ Changelog of threedi-schema
 - Ensure correct use_* values when matching tables have no data
 
 
-0.228.2 (unreleased)
+0.228.2 (2024-12-04)
 --------------------
 
 - Significantly speed up migration to schema 228 for schematisations with many 1D components
 - Remove support for python 3.8 and require python 3.9 as minimal version
+- Add tags column to cross_section_location and windshielding_1d
 
 
 0.228.1 (2024-11-26)
