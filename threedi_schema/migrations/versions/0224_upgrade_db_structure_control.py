@@ -371,6 +371,17 @@ def fix_geometry_columns():
         op.execute(sa.text(migration_query))
 
 
+def update_use_structure_control():
+    op.execute("""
+        UPDATE simulation_template_settings SET use_structure_control = CASE
+            WHEN
+                (SELECT COUNT(*) FROM table_control) = 0 AND
+                (SELECT COUNT(*) FROM memory_control) = 0 THEN 0
+            ELSE use_structure_control
+            END;    
+    """)
+
+
 def upgrade():
     # Remove existing tables (outside of the specs) that conflict with new table names
     drop_conflicting(op, list(ADD_TABLES.keys()) + [new_name for _, new_name in RENAME_TABLES])
@@ -395,6 +406,7 @@ def upgrade():
     rename_measure_operator('memory_control')
     move_setting('model_settings', 'use_structure_control',
                  'simulation_template_settings', 'use_structure_control')
+    update_use_structure_control()
     remove_tables(DEL_TABLES)
     # Fix geometry columns and also make all but geom column nullable
     fix_geometry_columns()

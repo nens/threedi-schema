@@ -191,7 +191,6 @@ def extend_cross_section_definition_table():
     """)).fetchall()
     update_data = []
     for id, h, w, s in res:
-        # temp_row = session.query(Temp).filter_by(id=id).first()
         # tabulated_YZ: width -> Y; height -> Z
         if s == constants.CrossSectionShape.TABULATED_YZ.value:
             cross_section_table = make_table(w, h)

@@ -4,7 +4,7 @@ authors = [
     {name = "Nelen & Schuurmans", email = "info@nelen-schuurmans.nl"},
 ]
 description = "The schema of 3Di schematization files"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 keywords = []
 license = {text = "MIT"}
 classifiers = [
