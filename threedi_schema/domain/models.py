@@ -489,12 +489,14 @@ class Windshielding(Base):
     northwest = Column(Float)
     geom = Column(Geometry("POINT"), nullable=False)
     channel_id = Column(Integer)
+    tags = Column(Text)
 
 
 class CrossSectionLocation(Base):
     __tablename__ = "cross_section_location"
     id = Column(Integer, primary_key=True)
     code = Column(String(100))
+    tags = Column(Text)
     reference_level = Column(Float)
     friction_type = Column(IntegerEnum(constants.FrictionType))
     friction_value = Column(Float)

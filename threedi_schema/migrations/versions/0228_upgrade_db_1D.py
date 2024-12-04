@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy import Column, Float, func, Integer, select, String
+from sqlalchemy import Column, func, Integer, select, String
 from sqlalchemy.orm import declarative_base, Session
 
 from threedi_schema.domain import constants, models
@@ -82,6 +82,7 @@ REMOVE_COLUMNS = {
     "weir": ["zoom_category", "cross_section_definition_id"],
     "pump": ["connection_node_end_id", "zoom_category", "classification"]
 }
+
 
 RETYPE_COLUMNS = {}
 
