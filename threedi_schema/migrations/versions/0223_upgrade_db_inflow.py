@@ -497,7 +497,6 @@ def fix_geometry_columns():
 
 
 def upgrade():
-    print('booh')
     connection = op.get_bind()
     listen(connection.engine, "connect", load_spatialite)
     # Remove existing tables (outside of the specs) that conflict with new table names

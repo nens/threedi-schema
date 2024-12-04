@@ -464,7 +464,7 @@ def upgrade():
     create_pump_map()
     create_material()
     create_connection_node()
-    # # Modify exsiting tables
+    # Modify exsiting tables
     modify_model_settings()
     modify_obstacle()
     modify_control_target_type()
