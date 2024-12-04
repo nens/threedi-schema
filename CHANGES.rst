@@ -6,7 +6,8 @@ Changelog of threedi-schema
 0.228.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Significantly speed up migration to schema 228 for schematisations with many 1D components
+- Remove support for python 3.8 and require python 3.9 as minimal version
 
 
 0.228.1 (2024-11-26)
