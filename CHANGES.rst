@@ -3,7 +3,7 @@ Changelog of threedi-schema
 
 
 
-0.228.2 (unreleased)
+0.228.3 (unreleased)
 --------------------
 
 - Rename sqlite table "tags" to "tag"
@@ -11,6 +11,13 @@ Changelog of threedi-schema
 - Make model_settings.use_2d_rain and model_settings.friction_averaging booleans
 - Remove columns referencing v2 in geometry_column
 - Ensure correct use_* values when matching tables have no data
+
+
+0.228.2 (unreleased)
+--------------------
+
+- Significantly speed up migration to schema 228 for schematisations with many 1D components
+- Remove support for python 3.8 and require python 3.9 as minimal version
 
 
 0.228.1 (2024-11-26)

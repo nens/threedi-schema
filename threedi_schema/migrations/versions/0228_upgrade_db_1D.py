@@ -189,15 +189,17 @@ def extend_cross_section_definition_table():
         WHERE v2_cross_section_definition.shape IN (5,6,7)   
         AND height IS NOT NULL AND width IS NOT NULL
     """)).fetchall()
+    update_data = []
     for id, h, w, s in res:
-        temp_row = session.query(Temp).filter_by(id=id).first()
         # tabulated_YZ: width -> Y; height -> Z
         if s == constants.CrossSectionShape.TABULATED_YZ.value:
-            temp_row.cross_section_table = make_table(w, h)
+            cross_section_table = make_table(w, h)
         # tabulated_trapezium or tabulated_rectangle: height, width
         else:
-            temp_row.cross_section_table = make_table(h, w)
-        session.commit()
+            cross_section_table = make_table(h, w)
+        update_data.append({"id": id, "cross_section_table": cross_section_table})
+    session.bulk_update_mappings(Temp, update_data)
+    session.commit()
     # add cross_section_friction_table to cross_section_definition
     res = conn.execute(sa.text("""
         SELECT id, friction_values FROM v2_cross_section_definition 
@@ -369,14 +371,12 @@ def create_connection_node():
     set_items = ',\n'.join(f"""{rename_map.get(col_name, col_name)} = (
         SELECT v2_manhole.{col_name} FROM v2_manhole
         WHERE v2_manhole.connection_node_id = connection_node.id)""" for col_name in old_col_names)
+    op.execute("CREATE INDEX IF NOT EXISTS idx_v2_manhole_connection_node_id ON v2_manhole(connection_node_id)")
     op.execute(sa.text(f"""
         UPDATE connection_node
         SET {set_items}
-        WHERE EXISTS (
-            SELECT 1
-            FROM v2_manhole
-            WHERE v2_manhole.connection_node_id = connection_node.id
-        );
+        FROM v2_manhole
+        WHERE v2_manhole.connection_node_id = connection_node.id;
     """))
 
 
