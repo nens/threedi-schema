@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 from sqlalchemy.orm import declarative_base
 
 from . import constants
@@ -140,9 +140,7 @@ class Surface(Base):
     code = Column(String(100))
     display_name = Column(String(255))
     area = Column(Float)
-    surface_parameters_id = Column(
-        Integer, ForeignKey(SurfaceParameter.__tablename__ + ".id"), nullable=False
-    )
+    surface_parameters_id = Column(Integer)
     geom = Column(
         Geometry("POLYGON"),
         nullable=True,
@@ -450,9 +448,7 @@ class SurfaceMap(Base):
     __tablename__ = "surface_map"
     id = Column(Integer, primary_key=True)
     surface_id = Column(Integer, nullable=False)
-    connection_node_id = Column(
-        Integer, ForeignKey(ConnectionNode.__tablename__ + ".id"), nullable=False
-    )
+    connection_node_id = Column(Integer)
     percentage = Column(Float)
     geom = Column(Geometry("LINESTRING"), nullable=False)
     tags = Column(Text)
