@@ -183,7 +183,7 @@ def extend_cross_section_definition_table():
             height = None
         data_to_insert.append({"id": id, "shape": shape, "width": width, "height": height})    # insert data into the temp table
     for data in data_to_insert:
-        op.execute(sa.text(
+        conn.execute(sa.text(
             f"""INSERT INTO {Temp.__tablename__} (id, cross_section_shape, cross_section_width, cross_section_height)
             VALUES (:id, :shape, :width, :height)"""), data)  # Pass parameters as dictionary directly
     def make_table(*args):
