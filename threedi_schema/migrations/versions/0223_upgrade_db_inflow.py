@@ -209,17 +209,17 @@ def add_map_geometries(src_table: str):
                 WHEN ST_Equals(c.the_geom, PointOnSurface(s.geom)) THEN
                     -- Transform to EPSG:4326 for the projection, then back to the original SRID
                     MakeLine(
-                        c.the_geom,
                         PointOnSurface(ST_Transform(
                             ST_Translate(
                                 ST_Transform(s.geom, {srid}),
                                 0, 1, 0
                             ),
                             4326
-                        ))                       
+                        )),
+                        c.the_geom                                         
                     )
                 ELSE
-                    MakeLine(c.the_geom, PointOnSurface(s.geom))
+                    MakeLine(PointOnSurface(s.geom), c.the_geom)
                 END                
             FROM v2_connection_nodes c, {src_table} s
             WHERE c.id = {src_table}_map.connection_node_id 
