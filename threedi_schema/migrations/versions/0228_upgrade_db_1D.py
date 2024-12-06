@@ -486,7 +486,7 @@ def upgrade():
     modify_control_target_type()
     fix_material_id()
     fix_geometry_columns()
-    # remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES+[Temp.__tablename__, 'v2_manhole'])
+    remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES+[Temp.__tablename__, 'v2_manhole'])
 
 
 def downgrade():
