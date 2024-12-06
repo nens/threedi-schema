@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 from sqlalchemy.orm import declarative_base
 
 from . import constants
@@ -140,9 +140,7 @@ class Surface(Base):
     code = Column(String(100))
     display_name = Column(String(255))
     area = Column(Float)
-    surface_parameters_id = Column(
-        Integer, ForeignKey(SurfaceParameter.__tablename__ + ".id"), nullable=False
-    )
+    surface_parameters_id = Column(Integer)
     geom = Column(
         Geometry("POLYGON"),
         nullable=True,
@@ -354,9 +352,9 @@ class ModelSettings(Base):
     embedded_cutoff_threshold = Column(Float)
     epsg_code = Column(Integer)
     max_angle_1d_advection = Column(Float)
-    friction_averaging = Column(IntegerEnum(constants.OffOrStandard))
+    friction_averaging = Column(Boolean)
     table_step_size_1d = Column(Float)
-    use_2d_rain = Column(Integer)
+    use_2d_rain = Column(Boolean)
     use_interflow = Column(Boolean)
     use_interception = Column(Boolean)
     use_simple_infiltration = Column(Boolean)
@@ -409,7 +407,7 @@ class PhysicalSettings(Base):
     __tablename__ = "physical_settings"
     id = Column(Integer, primary_key=True)
     use_advection_1d = Column(IntegerEnum(constants.AdvectionTypes1D))
-    use_advection_2d = Column(IntegerEnum(constants.OffOrStandard))
+    use_advection_2d = Column(Boolean)
 
 
 class SimulationTemplateSettings(Base):
@@ -450,9 +448,7 @@ class SurfaceMap(Base):
     __tablename__ = "surface_map"
     id = Column(Integer, primary_key=True)
     surface_id = Column(Integer, nullable=False)
-    connection_node_id = Column(
-        Integer, ForeignKey(ConnectionNode.__tablename__ + ".id"), nullable=False
-    )
+    connection_node_id = Column(Integer)
     percentage = Column(Float)
     geom = Column(Geometry("LINESTRING"), nullable=False)
     tags = Column(Text)
@@ -489,12 +485,14 @@ class Windshielding(Base):
     northwest = Column(Float)
     geom = Column(Geometry("POINT"), nullable=False)
     channel_id = Column(Integer)
+    tags = Column(Text)
 
 
 class CrossSectionLocation(Base):
     __tablename__ = "cross_section_location"
     id = Column(Integer, primary_key=True)
     code = Column(String(100))
+    tags = Column(Text)
     reference_level = Column(Float)
     friction_type = Column(IntegerEnum(constants.FrictionType))
     friction_value = Column(Float)
