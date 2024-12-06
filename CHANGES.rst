@@ -11,6 +11,7 @@ Changelog of threedi-schema
 - Make model_settings.use_2d_rain and model_settings.friction_averaging booleans
 - Remove columns referencing v2 in geometry_column
 - Ensure correct use_* values when matching tables have no data
+- Correct direction of dwf and surface map
 
 
 0.228.2 (2024-12-04)
