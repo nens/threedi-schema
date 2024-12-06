@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy import Column, func, Integer, select, String
+from sqlalchemy import Column, Float, func, Integer, select, String
 from sqlalchemy.orm import declarative_base, Session
 
 from threedi_schema.domain import constants, models
@@ -149,6 +149,8 @@ class Temp(Base):
     cross_section_friction_values = Column(String)
     cross_section_vegetation_table = Column(String)
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
+    cross_section_width = Column(Float)
+    cross_section_height = Column(Float)
 
 
 def extend_cross_section_definition_table():
@@ -165,19 +167,25 @@ def extend_cross_section_definition_table():
              cross_section_friction_values TEXT,
              cross_section_vegetation_table TEXT)
         """))
-    # copy id's from v2_cross_section_definition
-    op.execute(sa.text(
-        f"""INSERT INTO {Temp.__tablename__} (id, cross_section_shape, cross_section_width, cross_section_height) 
-           SELECT id, shape, width, height 
-           FROM v2_cross_section_definition"""
-    ))
-    for col_name in ['cross_section_width', 'cross_section_height']:
-        op.execute(sa.text(f"""
-                UPDATE {Temp.__tablename__}
-                SET {col_name} = NULL 
-                WHERE {col_name} = '';
-            """))
-
+    res = conn.execute(sa.text("SELECT id, shape, width, height FROM v2_cross_section_definition")).fetchall()
+    # process data from v2_cross_section_definition by setting width and height to None when it's not a single float
+    # omitting this stop results in issues with the data types in the database
+    data_to_insert = []
+    for row in res:
+        id, shape, width, height = row
+        try:
+            width = float(width)
+        except (ValueError, TypeError):
+            width = None
+        try:
+            height = float(height)
+        except (ValueError, TypeError):
+            height = None
+        data_to_insert.append({"id": id, "shape": shape, "width": width, "height": height})    # insert data into the temp table
+    for data in data_to_insert:
+        op.execute(sa.text(
+            f"""INSERT INTO {Temp.__tablename__} (id, cross_section_shape, cross_section_width, cross_section_height)
+            VALUES (:id, :shape, :width, :height)"""), data)  # Pass parameters as dictionary directly
     def make_table(*args):
         split_args = [arg.split() for arg in args]
         if not all(len(args) == len(split_args[0]) for args in split_args):
@@ -197,7 +205,7 @@ def extend_cross_section_definition_table():
         # tabulated_trapezium or tabulated_rectangle: height, width
         else:
             cross_section_table = make_table(h, w)
-        update_data.append({"id": id, "cross_section_table": cross_section_table})
+        update_data.append({"id": id,  "cross_section_table": cross_section_table})
     session.bulk_update_mappings(Temp, update_data)
     session.commit()
     # add cross_section_friction_table to cross_section_definition
@@ -478,7 +486,7 @@ def upgrade():
     modify_control_target_type()
     fix_material_id()
     fix_geometry_columns()
-    remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES+[Temp.__tablename__, 'v2_manhole'])
+    # remove_tables([old for old, _ in RENAME_TABLES]+DELETE_TABLES+[Temp.__tablename__, 'v2_manhole'])
 
 
 def downgrade():
