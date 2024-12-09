@@ -2,7 +2,7 @@ from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 from sqlalchemy.orm import declarative_base
 
 from . import constants
-from .custom_types import CSVText, Geometry, IntegerEnum, VarcharEnum
+from .custom_types import CSVTable, CSVText, Geometry, IntegerEnum, VarcharEnum
 
 Base = declarative_base()  # automap_base()
 
@@ -80,7 +80,7 @@ class ControlMemory(Base):
 class ControlTable(Base):
     __tablename__ = "table_control"
     id = Column(Integer, primary_key=True)
-    action_table = Column(Text)
+    action_table = Column(CSVTable)
     action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
     measure_operator = Column(VarcharEnum(constants.MeasureOperators))
     target_type = Column(VarcharEnum(constants.StructureControlTypes))
@@ -501,8 +501,8 @@ class CrossSectionLocation(Base):
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
     cross_section_friction_values = Column(CSVText)
-    cross_section_vegetation_table = Column(Text)
-    cross_section_table = Column(Text)
+    cross_section_vegetation_table = Column(CSVTable)
+    cross_section_table = Column(CSVTable)
     vegetation_stem_density = Column(Float)
     vegetation_stem_diameter = Column(Float)
     vegetation_height = Column(Float)
@@ -531,7 +531,7 @@ class Pipe(Base):
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
-    cross_section_table = Column(Text)
+    cross_section_table = Column(CSVTable)
     exchange_thickness = Column(Float)
     hydraulic_conductivity_in = Column(Float)
     hydraulic_conductivity_out = Column(Float)
@@ -558,7 +558,7 @@ class Culvert(Base):
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
-    cross_section_table = Column(Text)
+    cross_section_table = Column(CSVTable)
 
 
 class DemAverageArea(Base):
@@ -591,7 +591,7 @@ class Weir(Base):
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
-    cross_section_table = Column(Text)
+    cross_section_table = Column(CSVTable)
 
 
 class Orifice(Base):
@@ -614,7 +614,7 @@ class Orifice(Base):
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
-    cross_section_table = Column(Text)
+    cross_section_table = Column(CSVTable)
 
 
 class Pump(Base):
