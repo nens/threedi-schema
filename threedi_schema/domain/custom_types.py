@@ -1,6 +1,6 @@
 import geoalchemy2
 from packaging import version
-from sqlalchemy.types import Integer, TypeDecorator, VARCHAR
+from sqlalchemy.types import Integer, Text, TypeDecorator, VARCHAR
 
 
 class Geometry(geoalchemy2.types.Geometry):
@@ -64,6 +64,22 @@ class IntegerEnum(CustomEnum):
 
     cache_ok = True
     impl = Integer
+
+
+class CSVText(TypeDecorator):
+    impl = Text
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            # custom clean up behavior
+            value = value.replace(" ", "").replace("\n", "")
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            # custom clean up behavior
+            value = value.replace(" ", "").replace("\n", "")
+        return value
 
 
 class VarcharEnum(CustomEnum):
