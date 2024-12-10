@@ -6,7 +6,7 @@ Changelog of threedi-schema
 0.228.3 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix issue with incorrect types of migrated cross_section_width and height that broke the spatialite upgrade
 
 
 0.228.2 (2024-12-04)
