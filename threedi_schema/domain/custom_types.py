@@ -1,3 +1,5 @@
+import re
+
 import geoalchemy2
 from packaging import version
 from sqlalchemy.types import Integer, Text, TypeDecorator, VARCHAR
@@ -66,21 +68,32 @@ class IntegerEnum(CustomEnum):
     impl = Integer
 
 
+def clean_csv_string(value: str) -> str:
+    return re.sub(r"\s*,\s*", ",", value.strip())
+
+
 class CSVText(TypeDecorator):
     impl = Text
     cache_ok = True
 
     def process_bind_param(self, value, dialect):
         if value is not None:
-            # custom clean up behavior
-            value = value.replace(" ", "").replace("\n", "")
+            value = clean_csv_string(value)
         return value
 
     def process_result_value(self, value, dialect):
         if value is not None:
-            # custom clean up behavior
-            value = value.replace(" ", "").replace("\n", "")
+            value = clean_csv_string(value)
         return value
+
+
+def clean_csv_table(value: str) -> str:
+    # convert windows line endings to unix first
+    value = value.replace("\r\n", "\n")
+    # remove leading and trailing whitespace
+    value = value.strip()
+    # clean up each line
+    return "\n".join([clean_csv_string(line) for line in value.split("\n")])
 
 
 class CSVTable(TypeDecorator):
@@ -89,20 +102,12 @@ class CSVTable(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is not None:
-            # convert windows line endings to unix first
-            value = value.replace("\r\n", "\n")
-            # clean up each line
-            lines = value.split("\n")
-            cleaned_lines = [line.replace(" ", "") for line in lines if line]
-            value = "\n".join(cleaned_lines)
+            value = clean_csv_table()
         return value
 
     def process_result_value(self, value, dialect):
         if value is not None:
-            # no need to replace \r\n here as the value came from the DB
-            lines = value.split("\n")
-            cleaned_lines = [line.replace(" ", "") for line in lines if line]
-            value = "\n".join(cleaned_lines)
+            value = clean_csv_table()
         return value
 
 
