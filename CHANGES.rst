@@ -12,6 +12,7 @@ Changelog of threedi-schema
 - Remove columns referencing v2 in geometry_column
 - Ensure correct use_* values when matching tables have no data
 - Use custom types for comma separated and table text fields to strip extra white space
+- Correct direction of dwf and surface map
 
 
 0.228.2 (2024-12-04)
