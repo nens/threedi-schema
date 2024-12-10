@@ -3,7 +3,7 @@ Changelog of threedi-schema
 
 
 
-0.228.3 (unreleased)
+0.228.4 (unreleased)
 --------------------
 
 - Rename sqlite table "tags" to "tag"
@@ -13,6 +13,12 @@ Changelog of threedi-schema
 - Ensure correct use_* values when matching tables have no data
 - Use custom types for comma separated and table text fields to strip extra white space
 - Correct direction of dwf and surface map
+
+
+0.228.3 (2024-12-10)
+--------------------
+
+- Fix issue with incorrect types of migrated cross_section_width and height that broke the spatialite upgrade
 
 
 0.228.2 (2024-12-04)
