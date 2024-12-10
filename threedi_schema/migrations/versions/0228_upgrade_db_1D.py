@@ -205,7 +205,7 @@ def extend_cross_section_definition_table():
         # tabulated_trapezium or tabulated_rectangle: height, width
         else:
             cross_section_table = make_table(h, w)
-        update_data.append({"id": id,  "cross_section_table": cross_section_table})
+        update_data.append({"id": id, "cross_section_table": cross_section_table})
     session.bulk_update_mappings(Temp, update_data)
     session.commit()
     # add cross_section_friction_table to cross_section_definition
