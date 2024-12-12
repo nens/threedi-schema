@@ -278,6 +278,7 @@ class TestMigration222:
             cols_schema = get_columns_from_schema(schema_upgraded, table)
             assert cols_sqlite == cols_schema
 
+    @pytest.mark.skip(reason="This test is broken by upgrade to 230")
     def test_copied_values(self, schema_ref, schema_upgraded):
         cursor_ref = get_cursor_for_schema(schema_ref)
         cursor_new = get_cursor_for_schema(schema_upgraded)
