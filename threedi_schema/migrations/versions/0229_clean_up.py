@@ -87,13 +87,12 @@ def clean_geometry_columns():
         """))
 
 
-def clean_triggers():
-    """ Remove triggers referencing v2 tables """
+def clean_by_type(type: str):
     connection = op.get_bind()
-    triggers = [item[0] for item in connection.execute(
-        sa.text("SELECT tbl_name FROM sqlite_master WHERE type='trigger' AND tbl_name LIKE '%v2%';")).fetchall()]
-    for trigger in triggers:
-        op.execute(f"DROP TRIGGER IF EXISTS {trigger};")
+    items = [item[0] for item in connection.execute(
+        sa.text(f"SELECT tbl_name FROM sqlite_master WHERE type='{type}' AND tbl_name LIKE '%v2%';")).fetchall()]
+    for item in items:
+        op.execute(f"DROP {type} IF EXISTS {item};")
 
 
 def update_use_settings():
@@ -131,7 +130,8 @@ def update_use_settings():
 def upgrade():
     remove_old_tables()
     clean_geometry_columns()
-    clean_triggers()
+    clean_by_type("trigger")
+    clean_by_type("view")
     update_use_settings()
     # Apply changing use_2d_rain and friction_averaging type to bool
     sync_orm_types_to_sqlite('model_settings')
