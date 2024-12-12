@@ -216,7 +216,7 @@ class TestMigration223:
     pytestmark = pytest.mark.migration_223
     removed_tables = set(['v2_surface', 'v2_surface_parameters', 'v2_surface_map',
                           'v2_impervious_surface', 'v2_impervious_surface_map'])
-    added_tables = set(['surface', 'surface_map', 'surface_parameters', 'tags',
+    added_tables = set(['surface', 'surface_map', 'surface_parameters', 'tag',
                         'dry_weather_flow', 'dry_weather_flow_map', 'dry_weather_flow_distribution'])
 
     def test_tables(self, schema_ref, schema_upgraded):
