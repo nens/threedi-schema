@@ -5,11 +5,11 @@ Revises:
 Create Date: 2024-11-12 12:30
 
 """
+import sqlite3
 import uuid
 
 import sqlalchemy as sa
 from alembic import op
-from pyproj import CRS
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 from threedi_schema import models
@@ -22,6 +22,21 @@ branch_labels = None
 depends_on = None
 
 
+def get_crs_info(srid):
+    # Create temporary spatialite to find crs unit and projection
+    conn = sqlite3.connect(":memory:")
+    conn.enable_load_extension(True)
+    conn.load_extension("mod_spatialite")
+    # Initialite spatialite without any meta data
+    conn.execute("SELECT InitSpatialMetaData(1, 'NONE');")
+    # Add CRS
+    success = conn.execute(f"SELECT InsertEpsgSrid({srid})").fetchone()[0]
+    if not success:
+        raise InvalidSRIDException(srid, "the supplied epsg_code is invalid")
+    # retrieve units and is_projected
+    unit = conn.execute(f'SELECT SridGetUnit({srid})').fetchone()[0]
+    is_projected = conn.execute(f'SELECT SridIsProjected({srid})').fetchone()[0]
+    return unit, is_projected
 
 
 def get_model_srid() -> int:
@@ -34,13 +49,10 @@ def get_model_srid() -> int:
         srid = int(srid_str[0])
     except TypeError:
         raise InvalidSRIDException(srid_str[0], "the epsg_code must be an integer")
-    try:
-        crs = CRS.from_epsg(srid)
-    except Exception as e:
-        raise InvalidSRIDException(srid, "the supplied epsg_code is invalid")
-    if crs.axis_info[0].unit_name != "metre":
+    unit, is_projected = get_crs_info(srid)
+    if unit != "metre":
         raise InvalidSRIDException(srid, "the CRS must be in meters")
-    if not crs.is_projected:
+    if not is_projected:
         raise InvalidSRIDException(srid, "the CRS must be in projected")
     return srid
 
@@ -72,8 +84,6 @@ def fix_geometry_column(model, srid):
     op.execute(sa.text(f"SELECT RecoverSpatialIndex('{model.__tablename__}', 'geom')"))
 
 
-
-
 def transform_column(model, srid):
     table_name = model.__tablename__
     temp_table_name = f'_temp_230_{table_name}'
@@ -98,12 +108,6 @@ def prep_spatialite(srid: int):
     has_srid = conn.execute(sa.text(f'SELECT COUNT(*) FROM spatial_ref_sys WHERE srid = {srid};')).fetchone()[0] > 0
     if not has_srid:
         conn.execute(sa.text(f"InsertEpsgSrid({srid})"))
-
-
-# def has_settings():
-#     connection = op.get_bind()
-#     nof_settings = connection.execute(sa.text('SELECT COUNT(*) FROM model_settings')).fetchone()[0]
-#     return nof_settings > 0
 
 
 def has_geom():

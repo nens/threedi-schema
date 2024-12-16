@@ -26,7 +26,7 @@ def db(tmp_path_factory, sqlite_path):
 @pytest.mark.parametrize("epsg_code", [
     999999, # non-existing
     2227, # projected / US survey foot
-    4979, # not project / meters
+    4979, # not project
 ])
 def test_check_valid_crs(db, epsg_code):
     session = db.get_session()
