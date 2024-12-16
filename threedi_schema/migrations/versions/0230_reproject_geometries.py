@@ -44,6 +44,8 @@ def get_model_srid() -> int:
     conn = op.get_bind()
     srid_str = conn.execute(sa.text("SELECT epsg_code FROM model_settings LIMIT 1")).fetchone()
     if srid_str is None or srid_str[0] is None:
+        if not has_geom():
+            return None
         raise InvalidSRIDException(None, "no epsg_code is defined")
     try:
         srid = int(srid_str[0])
@@ -118,17 +120,18 @@ def has_geom():
 
 
 def upgrade():
-    # transform geometries if there are any
-    if has_geom():
-        # retrieve srid from model settings
-        # raise exception if there is no srid, or if the srid is not valid
-        srid = get_model_srid()
-        # prepare spatialite databases
-        prep_spatialite(srid)
-        # transform all geometries
-        for model in models.DECLARED_MODELS:
-            if hasattr(model, "geom"):
-                transform_column(model, srid)
+    # retrieve srid from model settings
+    # raise exception if there is no srid, or if the srid is not valid
+    srid = get_model_srid()
+    if srid is None:
+        print('Model without geometries and epsg code, we need to think about this')
+        return
+    # prepare spatialite databases
+    prep_spatialite(srid)
+    # transform all geometries
+    for model in models.DECLARED_MODELS:
+        if hasattr(model, "geom"):
+            transform_column(model, srid)
     # remove crs from model_settings
     with op.batch_alter_table('model_settings') as batch_op:
         batch_op.drop_column('epsg_code')
