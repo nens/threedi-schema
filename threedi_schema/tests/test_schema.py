@@ -135,6 +135,11 @@ def test_full_upgrade_oldest(oldest_sqlite):
     assert oldest_sqlite.has_table("connection_node")
     # https://github.com/nens/threedi-schema/issues/10:
     assert not oldest_sqlite.has_table("v2_levee")
+    with oldest_sqlite.engine.connect() as connection:
+        check_result = connection.execute(
+            text("SELECT CheckSpatialIndex('connection_node', 'geom')")
+        ).scalar()
+    assert check_result == 1
 
 
 def test_upgrade_south_not_latest_errors(in_memory_sqlite):

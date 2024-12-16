@@ -81,9 +81,15 @@ def create_sqlite_table_from_model(model, table_name, add_geom=True):
 
 
 def fix_geometry_column(model, srid):
+    arg_str = f"'{model.__tablename__}', 'geom'"
+    conn = op.get_bind()
     op.execute(sa.text(f"SELECT RecoverGeometryColumn('{model.__tablename__}', "
                        f"'geom', {srid}, '{model.geom.type.geometry_type}', 'XY')"))
-    op.execute(sa.text(f"SELECT RecoverSpatialIndex('{model.__tablename__}', 'geom')"))
+    if conn.execute(sa.text(f"SELECT CheckSpatialIndex({arg_str})")).scalar() == 1:
+        op.execute(sa.text(f"SELECT DisableSpatialIndex({arg_str})"))
+    op.execute(sa.text(f"SELECT CreateSpatialIndex({arg_str})"))
+    op.execute(sa.text(f"SELECT RecoverSpatialIndex({arg_str})"))
+
 
 
 def transform_column(model, srid):
@@ -133,8 +139,8 @@ def upgrade():
         if hasattr(model, "geom"):
             transform_column(model, srid)
     # remove crs from model_settings
-    with op.batch_alter_table('model_settings') as batch_op:
-        batch_op.drop_column('epsg_code')
+    # with op.batch_alter_table('model_settings') as batch_op:
+    #     batch_op.drop_column('epsg_code')
 
 
 def downgrade():

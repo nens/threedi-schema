@@ -195,9 +195,26 @@ class ModelSchema:
         lib_version, file_version = get_spatialite_version(self.db)
         if file_version == 3 and lib_version in (4, 5):
             self.validate_schema()
-
             with self.db.file_transaction(start_empty=True) as work_db:
-                _upgrade_database(work_db, revision="head", unsafe=True)
+                rev_nr = min(get_schema_version(), 229)
+                first_rev = f"{rev_nr:04d}"
+                _upgrade_database(work_db, revision=first_rev, unsafe=True)
+                with self.db.get_session() as session:
+                    srid = session.execute(
+                        text(
+                            "SELECT srid FROM geometry_columns WHERE f_geometry_column = 'geom' AND f_table_name NOT LIKE '_alembic%';"
+                        )
+                    ).fetchone()[0]
+                with work_db.get_session() as session:
+                    session.execute(
+                        text(f"INSERT INTO model_settings (epsg_code) VALUES ({srid});")
+                    )
+                    session.commit()
+                if get_schema_version() > 229:
+                    _upgrade_database(work_db, revision="head", unsafe=True)
+                with work_db.get_session() as session:
+                    session.execute(text("DELETE FROM model_settings;"))
+                    session.commit()
                 try:
                     copy_models(self.db, work_db, self.declared_models)
                 except IntegrityError as e:
