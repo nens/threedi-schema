@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from sqlalchemy import text
 
 from threedi_schema import models, ModelSchema, ThreediDatabase
 from threedi_schema.migrations.exceptions import InvalidSRIDException
@@ -23,6 +24,7 @@ def db(tmp_path_factory, sqlite_path):
     return ThreediDatabase(tmp_sqlite)
 
 
+# TODO - match other testing and use generic fixtures
 @pytest.mark.parametrize("epsg_code", [
     999999, # non-existing
     2227, # projected / US survey foot
@@ -31,13 +33,14 @@ def db(tmp_path_factory, sqlite_path):
 def test_check_valid_crs(db, epsg_code):
     session = db.get_session()
     # Update the epsg_code in ModelSettings
-    model_settings_to_update = session.query(models.ModelSettings).filter_by(id=0).first()
-    model_settings_to_update.epsg_code = epsg_code
+    session.execute(text(f"UPDATE model_settings SET epsg_code = {epsg_code}"))
     session.commit()
     with pytest.raises(InvalidSRIDException) as exc_info:
         db.schema.upgrade(backup=False)
+    session.execute(text("UPDATE model_settings SET epsg_code = 28992"))
 
 
+# TODO - match other testing and use generic fixtures
 def test_migration(tmp_path_factory):
     # Ensure all geometries are transformed
     sqlite_path = data_dir.joinpath("v2_bergermeer_221.sqlite")
