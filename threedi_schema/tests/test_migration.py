@@ -64,7 +64,11 @@ def get_columns_from_sqlite(cursor, table_name):
     for c in cursor.fetchall():
         if 'geom' in c[1]:
             continue
-        type_str = c[2].lower() if c[2] != 'bool' else 'boolean'
+        type_str = c[2].lower()
+        if type_str == 'bool':
+            type_str = 'boolean'
+        if type_str == 'int':
+            type_str = 'integer'
         col_map[c[1]] = (type_str, not c[3])
     return col_map
 
