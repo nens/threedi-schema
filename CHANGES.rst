@@ -2,8 +2,14 @@ Changelog of threedi-schema
 ===================================================
 
 
+0.230.0 (unreleased)
+--------------------
 
-0.228.4 (unreleased)
+- Reproject all geometries to the srid in model_settings.epsg_code
+- Remove model_settings.epsg_code
+
+
+0.229.0 (unreleased)
 --------------------
 
 - Rename sqlite table "tags" to "tag"
