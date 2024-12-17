@@ -110,8 +110,8 @@ def update_use_settings():
 def upgrade():
     remove_old_tables()
     clean_geometry_columns()
-    clean_by_type('triggers')
-    clean_by_type('views')
+    clean_by_type('trigger')
+    clean_by_type('view')
     update_use_settings()
     change_types_in_settings_table()
 
