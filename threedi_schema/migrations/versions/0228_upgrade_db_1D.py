@@ -194,14 +194,6 @@ def modify_table(old_table_name, new_table_name):
                        f"SELECT id, {','.join(old_col_names)} FROM {old_table_name}"))
 
 
-def find_model(table_name):
-    # TODO replace / remove need
-    for model in models.DECLARED_MODELS:
-        if model.__tablename__ == table_name:
-            return model
-    # This can only go wrong if the migration or model is incorrect
-    raise
-
 def fix_geometry_columns():
     tables = ['channel', 'connection_node', 'cross_section_location', 'culvert',
               'orifice', 'pipe', 'pump', 'pump_map', 'weir', 'windshielding_1d']
@@ -375,30 +367,16 @@ def set_geom_for_v2_pumpstation():
     op.execute(sa.text(q))
 
 
-def get_cols_for_model(model, skip_cols=None):
-    from sqlalchemy.orm.attributes import InstrumentedAttribute
-    if skip_cols is None:
-        skip_cols = []
-    return [getattr(model, item) for item in model.__dict__
-            if item not in skip_cols
-            and isinstance(getattr(model, item), InstrumentedAttribute)]
-
-
-def create_sqlite_table_from_model(model):
-    cols = get_cols_for_model(model, skip_cols = ["id", "geom"])
-    op.execute(sa.text(f"""
-        CREATE TABLE {model.__tablename__} (
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
-        {','.join(f"{col.name} {col.type}" for col in cols)},
-        geom {model.geom.type.geometry_type} NOT NULL
-    );"""))
-
-
 def create_pump_map():
     # Create table
-    # TODO: replace
-    create_sqlite_table_from_model(models.PumpMap)
-
+    query = """
+        CREATE TABLE pump_map (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+                pump_id INTEGER,connection_node_id_end INTEGER,tags TEXT,code VARCHAR(100),display_name VARCHAR(255),
+                geom LINESTRING NOT NULL
+            );
+    """
+    op.execute(sa.text(query))
     # Create geometry
     op.execute(sa.text(f"SELECT AddGeometryColumn('v2_pumpstation', 'map_geom', 4326, 'LINESTRING', 'XY', 0);"))
     op.execute(sa.text("""
@@ -429,8 +407,15 @@ def create_pump_map():
 
 
 def create_connection_node():
-    # TODO: replace
-    create_sqlite_table_from_model(models.ConnectionNode)
+    # Create table
+    query = """
+            CREATE TABLE connection_node (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
+            code VARCHAR(100),tags TEXT,display_name TEXT,storage_area FLOAT,initial_water_level FLOAT,visualisation INTEGER,manhole_surface_level FLOAT,bottom_level FLOAT,exchange_level FLOAT,exchange_type INTEGER,exchange_thickness FLOAT,hydraulic_conductivity_in FLOAT,hydraulic_conductivity_out FLOAT,
+            geom POINT NOT NULL
+        );    
+    """
+    op.execute(sa.text(query))
     # copy from v2_connection_nodes
     old_col_names = ["id", "initial_waterlevel", "storage_area", "the_geom", "code"]
     rename_map = {"initial_waterlevel": "initial_water_level", "the_geom": "geom"}
