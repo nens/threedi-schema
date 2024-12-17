@@ -13,6 +13,7 @@ Changelog of threedi-schema
 - Ensure correct use_* values when matching tables have no data
 - Use custom types for comma separated and table text fields to strip extra white space
 - Correct direction of dwf and surface map
+- Remove v2 related views from sqlite
 
 
 0.228.3 (2024-12-10)
