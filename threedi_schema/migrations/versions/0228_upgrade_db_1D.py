@@ -446,6 +446,15 @@ def create_connection_node():
     """))
 
 
+# define Material class needed to populate table in create_material
+class Material(Base):
+    __tablename__ = "material"
+    id = Column(Integer, primary_key=True)
+    description = Column(Text)
+    friction_type = Column(IntegerEnum(constants.FrictionType))
+    friction_coefficient = Column(Float)
+
+
 def create_material():
     op.execute(sa.text("""
     CREATE TABLE material (
@@ -457,11 +466,10 @@ def create_material():
     connection = op.get_bind()
     nof_settings = connection.execute(sa.text("SELECT COUNT(*) FROM model_settings")).scalar()
     session = Session(bind=op.get_bind())
-    # TODO fix this without using models (make temp model)
     if nof_settings > 0:
         with open(data_dir.joinpath('0228_materials.csv')) as file:
             reader = csv.DictReader(file)
-            session.bulk_save_objects([models.Material(**row) for row in reader])
+            session.bulk_save_objects([Material(**row) for row in reader])
             session.commit()
 
 
