@@ -12,11 +12,11 @@ from typing import Dict, List, Tuple
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy import Column, Float, func, Integer, select, String
+from sqlalchemy import Column, Float, func, Integer, select, String, Text
 from sqlalchemy.orm import declarative_base, Session
 
 from threedi_schema.domain import constants, models
-from threedi_schema.domain.custom_types import IntegerEnum
+from threedi_schema.domain.custom_types import Geometry, IntegerEnum
 from threedi_schema.migrations.utils import drop_conflicting, drop_geo_table
 
 Base = declarative_base()
@@ -84,8 +84,42 @@ REMOVE_COLUMNS = {
     "pump": ["connection_node_end_id", "zoom_category", "classification"]
 }
 
+ADD_COLUMNS = [
+    ("channel", Column("tags", Text)),
+    ("cross_section_location", Column("tags", Text)),
+    ("culvert", Column("tags", Text)),
+    ("culvert", Column("material_id", Integer)),
+    ("orifice", Column("tags", Text)),
+    ("orifice", Column("material_id", Integer)),
+    # ("orifice", Column("geom", Geometry("LINESTRING"), nullable=False)),
+    # ("pipe", Column("geom", Geometry("LINESTRING"), nullable=False)),
+    ("pump", Column("tags", Text)),
+    ("weir", Column("tags", Text)),
+    ("weir", Column("material_id", Integer)),
+    # ("weir", Column("geom", Geometry("LINESTRING"), nullable=False)),
+    ("windshielding_1d", Column("tags", Text)),
+]
 
 RETYPE_COLUMNS = {}
+
+
+def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
+    # no checks for existence are done, this will fail if any column already exists
+    for dst_table, col in table_columns:
+        if isinstance(col.type, Geometry):
+            add_geometry_column(dst_table, col)
+        else:
+            with op.batch_alter_table(dst_table) as batch_op:
+                batch_op.add_column(col)
+
+
+def add_geometry_column(table: str, geocol: Column):
+    # Adding geometry columns via alembic doesn't work
+    # https://postgis.net/docs/AddGeometryColumn.html
+    geotype = geocol.type
+    query = (
+        f"SELECT AddGeometryColumn('{table}', '{geocol.name}', {geotype.srid}, '{geotype.geometry_type}', 'XY', 1);")
+    op.execute(sa.text(query))
 
 
 class Schema228UpgradeException(Exception):
@@ -105,27 +139,59 @@ def remove_tables(tables: List[str]):
 
 
 def modify_table(old_table_name, new_table_name):
-    # Create a new table named `new_table_name` using the declared models
+    # Create a new table named `new_table_name` by copying the
+    # data from `old_table_name`.
     # Use the columns from `old_table_name`, with the following exceptions:
+    # * columns in `REMOVE_COLUMNS[new_table_name]` are skipped
     # * columns in `RENAME_COLUMNS[new_table_name]` are renamed
+    # * columns in `RETYPE_COLUMNS[new_table_name]` change type
     # * `the_geom` is renamed to `geom` and NOT NULL is enforced
-    model = find_model(new_table_name)
-    # create new table
-    create_sqlite_table_from_model(model)
-    # get column names from model and match them to available data in sqlite
     connection = op.get_bind()
-    rename_cols = {**RENAME_COLUMNS.get(new_table_name, {}), "the_geom": "geom"}
-    rename_cols_rev = {v: k for k, v in rename_cols.items()}
-    col_map = [(col.name, rename_cols_rev.get(col.name, col.name)) for col in get_cols_for_model(model)]
-    available_cols = [col[1] for col in connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()]
-    new_col_names, old_col_names = zip(*[(new_col, old_col) for new_col, old_col in col_map if old_col in available_cols])
+    columns = connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()
+    # get all column names and types
+    col_names = [col[1] for col in columns]
+    col_types = [col[2] for col in columns]
+    # get type of the geometry column
+    geom_type = None
+    for col in columns:
+        if col[1] == 'the_geom':
+            geom_type = col[2]
+            break
+    # create list of new columns and types for creating the new table
+    # create list of old columns to copy to new table
+    skip_cols = ['id', 'the_geom']
+    if new_table_name in REMOVE_COLUMNS:
+        skip_cols += REMOVE_COLUMNS[new_table_name]
+    old_col_names = []
+    new_col_names = []
+    new_col_types = []
+    for cname, ctype in zip(col_names, col_types):
+        if cname in skip_cols:
+            continue
+        old_col_names.append(cname)
+        if new_table_name in RENAME_COLUMNS and cname in RENAME_COLUMNS[new_table_name]:
+            new_col_names.append(RENAME_COLUMNS[new_table_name][cname])
+        else:
+            new_col_names.append(cname)
+        if new_table_name in RETYPE_COLUMNS and cname in RETYPE_COLUMNS[new_table_name]:
+            new_col_types.append(RETYPE_COLUMNS[new_table_name][cname])
+        else:
+            new_col_types.append(ctype)
+    # add to the end manually
+    old_col_names.append('the_geom')
+    new_col_names.append('geom')
+    new_col_types.append(f'{geom_type} NOT NULL')
+    # Create new table (temp), insert data, drop original and rename temp to table_name
+    new_col_str = ','.join(['id INTEGER PRIMARY KEY NOT NULL'] + [f'{cname} {ctype}' for cname, ctype in
+                                                                  zip(new_col_names, new_col_types)])
+    op.execute(sa.text(f"CREATE TABLE {new_table_name} ({new_col_str});"))
     # Copy data
-    # This may copy wrong type data because some types change!!
-    op.execute(sa.text(f"INSERT INTO {new_table_name} ({','.join(new_col_names)}) "
-                       f"SELECT {','.join(old_col_names)} FROM {old_table_name}"))
+    op.execute(sa.text(f"INSERT INTO {new_table_name} (id, {','.join(new_col_names)}) "
+                       f"SELECT id, {','.join(old_col_names)} FROM {old_table_name}"))
 
 
 def find_model(table_name):
+    # TODO replace / remove need
     for model in models.DECLARED_MODELS:
         if model.__tablename__ == table_name:
             return model
@@ -133,6 +199,7 @@ def find_model(table_name):
     raise
 
 def fix_geometry_columns():
+    # TODO: remove usage of models!
     update_models = [models.Channel, models.ConnectionNode, models.CrossSectionLocation,
                      models.Culvert, models.Orifice, models.Pipe, models.Pump,
                      models.PumpMap, models.Weir, models.Windshielding]
@@ -326,6 +393,7 @@ def create_sqlite_table_from_model(model):
 
 def create_pump_map():
     # Create table
+    # TODO: replace
     create_sqlite_table_from_model(models.PumpMap)
 
     # Create geometry
@@ -358,6 +426,7 @@ def create_pump_map():
 
 
 def create_connection_node():
+    # TODO: replace
     create_sqlite_table_from_model(models.ConnectionNode)
     # copy from v2_connection_nodes
     old_col_names = ["id", "initial_waterlevel", "storage_area", "the_geom", "code"]
@@ -398,6 +467,7 @@ def create_material():
     friction_coefficient REAL);
     """))
     session = Session(bind=op.get_bind())
+    # TODO replace
     nof_settings = session.execute(select(func.count()).select_from(models.ModelSettings)).scalar()
     if nof_settings > 0:
         with open(data_dir.joinpath('0228_materials.csv')) as file:
@@ -468,6 +538,7 @@ def upgrade():
     set_geom_for_v2_pumpstation()
     for old_table_name, new_table_name in RENAME_TABLES:
         modify_table(old_table_name, new_table_name)
+    add_columns_to_tables(ADD_COLUMNS)
     # Create new tables
     create_pump_map()
     create_material()
