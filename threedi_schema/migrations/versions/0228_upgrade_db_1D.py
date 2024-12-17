@@ -15,7 +15,7 @@ from alembic import op
 from sqlalchemy import Column, Float, func, Integer, select, String, Text
 from sqlalchemy.orm import declarative_base, Session
 
-from threedi_schema.domain import constants, models
+from threedi_schema.domain import constants
 from threedi_schema.domain.custom_types import Geometry, IntegerEnum
 from threedi_schema.migrations.utils import drop_conflicting, drop_geo_table
 
