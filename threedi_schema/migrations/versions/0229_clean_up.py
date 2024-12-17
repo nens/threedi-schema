@@ -11,8 +11,6 @@ from typing import List
 import sqlalchemy as sa
 from alembic import op
 
-from threedi_schema import models
-
 # revision identifiers, used by Alembic.
 revision = "0229"
 down_revision = "0228"
@@ -20,40 +18,31 @@ branch_labels = None
 depends_on = None
 
 
-def find_model(table_name):
-    for model in models.DECLARED_MODELS:
-        if model.__tablename__ == table_name:
-            return model
-    # This can only go wrong if the migration or model is incorrect
-    raise
+def get_geom_type(table_name, geo_col_name):
+    connection = op.get_bind()
+    columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
+    for col in columns:
+        if col[1] == geo_col_name:
+            return col[2]
 
-
-def create_sqlite_table_from_model(model, table_name):
-    cols = get_cols_for_model(model, skip_cols=["id"])
-    op.execute(sa.text(f"""
-        CREATE TABLE {table_name} (
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
-        {','.join(f"{col.name} {col.type}" for col in cols)}
-    );"""))
-
-
-def get_cols_for_model(model, skip_cols=None):
-    from sqlalchemy.orm.attributes import InstrumentedAttribute
-    if skip_cols is None:
-        skip_cols = []
-    return [getattr(model, item) for item in model.__dict__
-            if item not in skip_cols
-            and isinstance(getattr(model, item), InstrumentedAttribute)]
-
-
-def sync_orm_types_to_sqlite(table_name):
+def change_types_in_settings_table():
     temp_table_name = f'_temp_229_{uuid.uuid4().hex}'
-    model = find_model(table_name)
-    create_sqlite_table_from_model(model, temp_table_name)
-    col_names = [col.name for col in get_cols_for_model(model)]
-    # This may copy wrong type data because some types change!!
-    op.execute(sa.text(f"INSERT INTO {temp_table_name} ({','.join(col_names)}) "
-                       f"SELECT {','.join(col_names)} FROM {table_name}"))
+    table_name = 'model_settings'
+    change_types = {'use_d2_rain': 'bool', 'friction_averaging': 'bool'}
+    connection = op.get_bind()
+    columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
+    # get all column names and types
+    skip_cols = ['id', 'the_geom']
+    col_names = [col[1] for col in columns if col[1] not in skip_cols]
+    old_col_types = [col[2] for col in columns if col[1] not in skip_cols]
+    col_types = [change_types.get(col_name, col_type) for col_name, col_type in zip(col_names, old_col_types)]
+    # Create new table, insert data, drop original and rename temp to table_name
+    col_str = ','.join(['id INTEGER PRIMARY KEY NOT NULL'] + [f'{cname} {ctype}' for cname, ctype in
+                                                                  zip(col_names, col_types)])
+    op.execute(sa.text(f"CREATE TABLE {temp_table_name} ({col_str});"))
+    # Copy data
+    op.execute(sa.text(f"INSERT INTO {temp_table_name} (id, {','.join(col_names)}) "
+                       f"SELECT id, {','.join(col_names)} FROM {table_name}"))
     op.execute(sa.text(f"DROP TABLE {table_name}"))
     op.execute(sa.text(f"ALTER TABLE {temp_table_name} RENAME TO {table_name};"))
 
@@ -124,8 +113,7 @@ def upgrade():
     clean_by_type('triggers')
     clean_by_type('views')
     update_use_settings()
-    # Apply changing use_2d_rain and friction_averaging type to bool
-    sync_orm_types_to_sqlite('model_settings')
+    change_types_in_settings_table()
 
 
 def downgrade():
