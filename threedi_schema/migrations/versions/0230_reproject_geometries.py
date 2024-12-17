@@ -53,7 +53,7 @@ def get_model_srid() -> int:
         raise InvalidSRIDException(srid_str[0], "the epsg_code must be an integer")
     unit, is_projected = get_crs_info(srid)
     if unit != "metre":
-        raise InvalidSRIDException(srid, "the CRS must be in meters")
+        raise InvalidSRIDException(srid, f"the CRS must be in meters, not {unit}")
     if not is_projected:
         raise InvalidSRIDException(srid, "the CRS must be in projected")
     return srid
@@ -67,48 +67,42 @@ def get_cols_for_model(model, skip_cols=None):
             and isinstance(getattr(model, item), InstrumentedAttribute)]
 
 
-def create_sqlite_table_from_model(model, table_name, add_geom=True):
-    cols = get_cols_for_model(model, skip_cols = ["id", "geom"])
+def create_sqlite_table_from_model(model, table_name, add_geom=True, srid=None):
+    cols = get_cols_for_model(model, skip_cols=["id", "geom"])
     query = f"""
         CREATE TABLE {table_name} (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
-        {','.join(f"{col.name} {col.type}" for col in cols)}
+        {','.join(f"{col.name} {col.type}" for col in cols)});
     """
-    if add_geom:
-        query += f', geom {model.geom.type.geometry_type} NOT NULL'
-    query += ');'
     op.execute(sa.text(query))
-
-
-def fix_geometry_column(model, srid):
-    arg_str = f"'{model.__tablename__}', 'geom'"
-    conn = op.get_bind()
-    op.execute(sa.text(f"SELECT RecoverGeometryColumn('{model.__tablename__}', "
-                       f"'geom', {srid}, '{model.geom.type.geometry_type}', 'XY')"))
-    if conn.execute(sa.text(f"SELECT CheckSpatialIndex({arg_str})")).scalar() == 1:
-        op.execute(sa.text(f"SELECT DisableSpatialIndex({arg_str})"))
-    op.execute(sa.text(f"SELECT CreateSpatialIndex({arg_str})"))
-    op.execute(sa.text(f"SELECT RecoverSpatialIndex({arg_str})"))
-
+    if add_geom:
+        op.execute(sa.text(
+            f"SELECT AddGeometryColumn('{table_name}', 'geom', {srid}, '{model.geom.type.geometry_type}', 'XY', 1);"))
 
 
 def transform_column(model, srid):
     table_name = model.__tablename__
     temp_table_name = f'_temp_230_{table_name}'
-    create_sqlite_table_from_model(model, temp_table_name)
-    col_names = ",".join([col.name for col in get_cols_for_model(model, skip_cols = ["geom"])])
+    create_sqlite_table_from_model(model, temp_table_name, add_geom=True, srid=srid)
+    col_names = ",".join([col.name for col in get_cols_for_model(model, skip_cols=["geom"])])
     # Copy transformed geometry and other columns to temp table
     op.execute(sa.text(f"""
         INSERT INTO `{temp_table_name}` ({col_names}, `geom`) 
         SELECT {col_names}, ST_Transform(`geom`, {srid}) AS `geom` FROM `{table_name}`
         """))
+
     # Discard geometry column in old table
     op.execute(sa.text(f"SELECT DiscardGeometryColumn('{table_name}', 'geom')"))
+    op.execute(sa.text(f"SELECT DiscardGeometryColumn('{temp_table_name}', 'geom')"))
     # Remove old table
     op.execute(sa.text(f"DROP TABLE `{table_name}`"))
     # Rename temp table
     op.execute(sa.text(f"ALTER TABLE `{temp_table_name}` RENAME TO `{table_name}`;"))
-    fix_geometry_column(model, srid)
+    # Recover geometry stuff
+    op.execute(sa.text(f"SELECT RecoverGeometryColumn('{table_name}', "
+                       f"'geom', {srid}, '{model.geom.type.geometry_type}', 'XY')"))
+    op.execute(sa.text(f"SELECT CreateSpatialIndex('{table_name}', 'geom')"))
+    op.execute(sa.text(f"SELECT RecoverSpatialIndex('{table_name}', 'geom')"))
 
 
 def prep_spatialite(srid: int):
