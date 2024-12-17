@@ -91,13 +91,10 @@ ADD_COLUMNS = [
     ("culvert", Column("material_id", Integer)),
     ("orifice", Column("tags", Text)),
     ("orifice", Column("material_id", Integer)),
-    # ("orifice", Column("geom", Geometry("LINESTRING"), nullable=False)),
-    # ("pipe", Column("geom", Geometry("LINESTRING"), nullable=False)),
     ("pipe", Column("tags", Text)),
     ("pump", Column("tags", Text)),
     ("weir", Column("tags", Text)),
     ("weir", Column("material_id", Integer)),
-    # ("weir", Column("geom", Geometry("LINESTRING"), nullable=False)),
     ("windshielding_1d", Column("tags", Text)),
 ]
 
