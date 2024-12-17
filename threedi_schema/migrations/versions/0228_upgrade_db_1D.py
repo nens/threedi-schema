@@ -454,9 +454,10 @@ def create_material():
     friction_type INTEGER,
     friction_coefficient REAL);
     """))
+    connection = op.get_bind()
+    nof_settings = connection.execute(sa.text("SELECT COUNT(*) FROM model_settings")).scalar()
     session = Session(bind=op.get_bind())
-    # TODO replace
-    nof_settings = session.execute(select(func.count()).select_from(models.ModelSettings)).scalar()
+    # TODO fix this without using models (make temp model)
     if nof_settings > 0:
         with open(data_dir.joinpath('0228_materials.csv')) as file:
             reader = csv.DictReader(file)
