@@ -90,18 +90,16 @@ def transform_column(table_name, srid):
     # Create new table, insert data, drop original and rename temp to table_name
     col_str = ','.join(['id INTEGER PRIMARY KEY NOT NULL'] + [f'{cname} {ctype}' for cname, ctype in
                                                               zip(col_names, col_types)])
-    query = f"CREATE TABLE {temp_table_name} ({col_str});"
-    op.execute(sa.text(query))
+    query = op.execute(sa.text(f"CREATE TABLE {temp_table_name} ({col_str});"))
     # Add geometry column with new srid!
     geom_type = get_geom_type(table_name, 'geom')
     add_geometry_column(temp_table_name, 'geom', srid, geom_type)
     # Copy transformed geometry and other columns to temp table
     col_str = ','.join(['id'] + col_names)
-    query = f"""
+    query = op.execute(sa.text(f"""
         INSERT INTO {temp_table_name} ({col_str}, geom) 
         SELECT {col_str}, ST_Transform(geom, {srid}) AS geom FROM {table_name}
-        """
-    op.execute(sa.text(query))
+        """))
     # Discard geometry column in old table
     op.execute(sa.text(f"SELECT DiscardGeometryColumn('{table_name}', 'geom')"))
     op.execute(sa.text(f"SELECT DiscardGeometryColumn('{temp_table_name}', 'geom')"))
@@ -110,6 +108,7 @@ def transform_column(table_name, srid):
     # Rename temp table
     op.execute(sa.text(f"ALTER TABLE '{temp_table_name}' RENAME TO '{table_name}';"))
     # Recover geometry stuff
+    # This gives a bunch of warnings but seems to be needed to fix spatialite stuff
     op.execute(sa.text(f"SELECT RecoverGeometryColumn('{table_name}', "
                        f"'geom', {srid}, '{geom_type}', 'XY')"))
     op.execute(sa.text(f"SELECT CreateSpatialIndex('{table_name}', 'geom')"))
