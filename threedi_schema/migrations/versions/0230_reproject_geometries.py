@@ -90,7 +90,7 @@ def transform_column(table_name, srid):
     # Create new table, insert data, drop original and rename temp to table_name
     col_str = ','.join(['id INTEGER PRIMARY KEY NOT NULL'] + [f'{cname} {ctype}' for cname, ctype in
                                                               zip(col_names, col_types)])
-    query = op.execute(sa.text(f"CREATE TABLE {temp_table_name} ({col_str});"))
+    op.execute(sa.text(f"CREATE TABLE {temp_table_name} ({col_str});"))
     # Add geometry column with new srid!
     geom_type = get_geom_type(table_name, 'geom')
     add_geometry_column(temp_table_name, 'geom', srid, geom_type)
@@ -132,14 +132,14 @@ def upgrade():
     # retrieve srid from model settings
     # raise exception if there is no srid, or if the srid is not valid
     srid = get_model_srid()
-    if srid is None:
+    if srid is not None:
+        # prepare spatialite databases
+        prep_spatialite(srid)
+        # transform all geometries
+        for table_name in GEOM_TABLES:
+            transform_column(table_name, srid)
+    else:
         print('Model without geometries and epsg code, we need to think about this')
-        return
-    # prepare spatialite databases
-    prep_spatialite(srid)
-    # transform all geometries
-    for table_name in GEOM_TABLES:
-        transform_column(table_name, srid)
     # remove crs from model_settings
     with op.batch_alter_table('model_settings') as batch_op:
         batch_op.drop_column('epsg_code')
