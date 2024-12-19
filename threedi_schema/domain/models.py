@@ -1,8 +1,8 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 from sqlalchemy.orm import declarative_base
 
 from . import constants
-from .custom_types import Geometry, IntegerEnum, VarcharEnum
+from .custom_types import CSVTable, CSVText, Geometry, IntegerEnum, VarcharEnum
 
 Base = declarative_base()  # automap_base()
 
@@ -13,12 +13,12 @@ class Lateral2D(Base):
     code = Column(Text)
     display_name = Column(Text)
     type = Column(IntegerEnum(constants.Later2dType))
-    timeseries = Column(Text)
+    timeseries = Column(CSVText)
     time_units = Column(Text)
     interpolate = Column(Boolean)
     offset = Column(Integer)
     units = Column(Text)
-    tags = Column(Text)
+    tags = Column(CSVText)
     geom = Column(Geometry("POINT"), nullable=False)
 
 
@@ -28,10 +28,10 @@ class BoundaryConditions2D(Base):
     code = Column(Text)
     display_name = Column(Text)
     type = Column(IntegerEnum(constants.BoundaryType))
-    timeseries = Column(Text)
+    timeseries = Column(CSVText)
     time_units = Column(Text)
     interpolate = Column(Boolean)
-    tags = Column(Text)
+    tags = Column(CSVText)
     geom = Column(Geometry("LINESTRING"), nullable=False)
 
 
@@ -43,7 +43,7 @@ class ControlMeasureLocation(Base):
     display_name = Column(Text)
     code = Column(Text)
     geom = Column(Geometry("POINT"), nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class ControlMeasureMap(Base):
@@ -56,7 +56,7 @@ class ControlMeasureMap(Base):
     display_name = Column(Text)
     code = Column(Text)
     geom = Column(Geometry("LINESTRING"), nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class ControlMemory(Base):
@@ -74,13 +74,13 @@ class ControlMemory(Base):
     display_name = Column(Text)
     code = Column(Text)
     geom = Column(Geometry("POINT"), nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class ControlTable(Base):
     __tablename__ = "table_control"
     id = Column(Integer, primary_key=True)
-    action_table = Column(Text)
+    action_table = Column(CSVTable)
     action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
     measure_operator = Column(VarcharEnum(constants.MeasureOperators))
     target_type = Column(VarcharEnum(constants.StructureControlTypes))
@@ -88,7 +88,7 @@ class ControlTable(Base):
     display_name = Column(Text)
     code = Column(Text)
     geom = Column(Geometry("POINT"), nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class Interflow(Base):
@@ -130,7 +130,7 @@ class SurfaceParameter(Base):
     min_infiltration_capacity = Column(Float, nullable=False)
     infiltration_decay_constant = Column(Float, nullable=False)
     infiltration_recovery_constant = Column(Float, nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
     description = Column(Text)
 
 
@@ -140,14 +140,12 @@ class Surface(Base):
     code = Column(String(100))
     display_name = Column(String(255))
     area = Column(Float)
-    surface_parameters_id = Column(
-        Integer, ForeignKey(SurfaceParameter.__tablename__ + ".id"), nullable=False
-    )
+    surface_parameters_id = Column(Integer)
     geom = Column(
         Geometry("POLYGON"),
         nullable=True,
     )
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class DryWeatherFlow(Base):
@@ -163,7 +161,7 @@ class DryWeatherFlow(Base):
         Geometry("POLYGON"),
         nullable=False,
     )
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class DryWeatherFlowMap(Base):
@@ -178,15 +176,15 @@ class DryWeatherFlowMap(Base):
         nullable=False,
     )
     percentage = Column(Float)
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class DryWeatherFlowDistribution(Base):
     __tablename__ = "dry_weather_flow_distribution"
     id = Column(Integer, primary_key=True)
     description = Column(Text)
-    tags = Column(Text)
-    distribution = Column(Text)
+    tags = Column(CSVText)
+    distribution = Column(CSVText)
 
 
 class GroundWater(Base):
@@ -239,7 +237,7 @@ class GridRefinementLine(Base):
     grid_level = Column(Integer)
     geom = Column(Geometry("LINESTRING"), nullable=False)
     code = Column(String(100))
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class GridRefinementArea(Base):
@@ -249,7 +247,7 @@ class GridRefinementArea(Base):
     grid_level = Column(Integer)
     code = Column(String(100))
     geom = Column(Geometry("POLYGON"), nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class ConnectionNode(Base):
@@ -257,7 +255,7 @@ class ConnectionNode(Base):
     id = Column(Integer, primary_key=True)
     geom = Column(Geometry("POINT"), nullable=False)
     code = Column(String(100))
-    tags = Column(Text)
+    tags = Column(CSVText)
     display_name = Column(Text)
     storage_area = Column(Float)
     initial_water_level = Column(Float)
@@ -276,12 +274,12 @@ class Lateral1d(Base):
     id = Column(Integer, primary_key=True)
     code = Column(Text)
     display_name = Column(Text)
-    timeseries = Column(Text)
+    timeseries = Column(CSVText)
     time_units = Column(Text)
     interpolate = Column(Boolean)
     offset = Column(Integer)
     units = Column(Text)
-    tags = Column(Text)
+    tags = Column(CSVText)
     geom = Column(Geometry("POINT"), nullable=False)
 
     connection_node_id = Column(Integer)
@@ -354,9 +352,9 @@ class ModelSettings(Base):
     embedded_cutoff_threshold = Column(Float)
     epsg_code = Column(Integer)
     max_angle_1d_advection = Column(Float)
-    friction_averaging = Column(IntegerEnum(constants.OffOrStandard))
+    friction_averaging = Column(Boolean)
     table_step_size_1d = Column(Float)
-    use_2d_rain = Column(Integer)
+    use_2d_rain = Column(Boolean)
     use_interflow = Column(Boolean)
     use_interception = Column(Boolean)
     use_simple_infiltration = Column(Boolean)
@@ -409,7 +407,7 @@ class PhysicalSettings(Base):
     __tablename__ = "physical_settings"
     id = Column(Integer, primary_key=True)
     use_advection_1d = Column(IntegerEnum(constants.AdvectionTypes1D))
-    use_advection_2d = Column(IntegerEnum(constants.OffOrStandard))
+    use_advection_2d = Column(Boolean)
 
 
 class SimulationTemplateSettings(Base):
@@ -437,10 +435,10 @@ class BoundaryCondition1D(Base):
     code = Column(Text)
     display_name = Column(Text)
     type = Column(IntegerEnum(constants.BoundaryType))
-    timeseries = Column(Text)
+    timeseries = Column(CSVText)
     time_units = Column(Text)
     interpolate = Column(Boolean)
-    tags = Column(Text)
+    tags = Column(CSVText)
     geom = Column(Geometry("POINT"), nullable=False)
 
     connection_node_id = Column(Integer)
@@ -450,12 +448,10 @@ class SurfaceMap(Base):
     __tablename__ = "surface_map"
     id = Column(Integer, primary_key=True)
     surface_id = Column(Integer, nullable=False)
-    connection_node_id = Column(
-        Integer, ForeignKey(ConnectionNode.__tablename__ + ".id"), nullable=False
-    )
+    connection_node_id = Column(Integer)
     percentage = Column(Float)
     geom = Column(Geometry("LINESTRING"), nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
     code = Column(String(100))
     display_name = Column(String(255))
 
@@ -465,7 +461,7 @@ class Channel(Base):
     id = Column(Integer, primary_key=True)
     display_name = Column(String(255))
     code = Column(String(100))
-    tags = Column(Text)
+    tags = Column(CSVText)
     exchange_type = Column(IntegerEnum(constants.CalculationType))
     calculation_point_distance = Column(Float)
     geom = Column(Geometry("LINESTRING"), nullable=False)
@@ -489,14 +485,14 @@ class Windshielding(Base):
     northwest = Column(Float)
     geom = Column(Geometry("POINT"), nullable=False)
     channel_id = Column(Integer)
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class CrossSectionLocation(Base):
     __tablename__ = "cross_section_location"
     id = Column(Integer, primary_key=True)
     code = Column(String(100))
-    tags = Column(Text)
+    tags = Column(CSVText)
     reference_level = Column(Float)
     friction_type = Column(IntegerEnum(constants.FrictionType))
     friction_value = Column(Float)
@@ -504,9 +500,9 @@ class CrossSectionLocation(Base):
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
-    cross_section_friction_values = Column(Text)
-    cross_section_vegetation_table = Column(Text)
-    cross_section_table = Column(Text)
+    cross_section_friction_values = Column(CSVText)
+    cross_section_vegetation_table = Column(CSVTable)
+    cross_section_table = Column(CSVTable)
     vegetation_stem_density = Column(Float)
     vegetation_stem_diameter = Column(Float)
     vegetation_height = Column(Float)
@@ -520,7 +516,7 @@ class Pipe(Base):
     id = Column(Integer, primary_key=True)
     display_name = Column(String(255))
     code = Column(String(100))
-    tags = Column(Text)
+    tags = Column(CSVText)
     geom = Column(Geometry("LINESTRING"), nullable=False)
     sewerage_type = Column(IntegerEnum(constants.SewerageType))
     exchange_type = Column(IntegerEnum(constants.PipeCalculationType))
@@ -535,7 +531,7 @@ class Pipe(Base):
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
-    cross_section_table = Column(Text)
+    cross_section_table = Column(CSVTable)
     exchange_thickness = Column(Float)
     hydraulic_conductivity_in = Column(Float)
     hydraulic_conductivity_out = Column(Float)
@@ -546,7 +542,7 @@ class Culvert(Base):
     id = Column(Integer, primary_key=True)
     display_name = Column(String(255))
     code = Column(String(100))
-    tags = Column(Text)
+    tags = Column(CSVText)
     exchange_type = Column(IntegerEnum(constants.CalculationTypeCulvert))
     friction_value = Column(Float)
     friction_type = Column(IntegerEnum(constants.FrictionType))
@@ -562,7 +558,7 @@ class Culvert(Base):
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
-    cross_section_table = Column(Text)
+    cross_section_table = Column(CSVTable)
 
 
 class DemAverageArea(Base):
@@ -571,7 +567,7 @@ class DemAverageArea(Base):
     geom = Column(Geometry("POLYGON"), nullable=False)
     display_name = Column(Text)
     code = Column(Text)
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class Weir(Base):
@@ -580,7 +576,7 @@ class Weir(Base):
     code = Column(String(100))
     display_name = Column(String(255))
     geom = Column(Geometry("LINESTRING"), nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
     crest_level = Column(Float)
     crest_type = Column(IntegerEnum(constants.CrestType))
     friction_value = Column(Float)
@@ -595,7 +591,7 @@ class Weir(Base):
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
-    cross_section_table = Column(Text)
+    cross_section_table = Column(CSVTable)
 
 
 class Orifice(Base):
@@ -603,7 +599,7 @@ class Orifice(Base):
     id = Column(Integer, primary_key=True)
     code = Column(String(100))
     display_name = Column(String(255))
-    tags = Column(Text)
+    tags = Column(CSVText)
     geom = Column(Geometry("LINESTRING"), nullable=False)
     crest_type = Column(IntegerEnum(constants.CrestType))
     crest_level = Column(Float)
@@ -618,7 +614,7 @@ class Orifice(Base):
     cross_section_shape = Column(IntegerEnum(constants.CrossSectionShape))
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
-    cross_section_table = Column(Text)
+    cross_section_table = Column(CSVTable)
 
 
 class Pump(Base):
@@ -636,7 +632,7 @@ class Pump(Base):
     sewerage = Column(Boolean)
     connection_node_id = Column(Integer)
     geom = Column(Geometry("POINT"), nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class PumpMap(Base):
@@ -645,7 +641,7 @@ class PumpMap(Base):
     pump_id = Column(Integer)
     connection_node_id_end = Column(Integer)
     geom = Column(Geometry("LINESTRING"), nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
     code = Column(String(100))
     display_name = Column(String(255))
 
@@ -656,7 +652,7 @@ class Obstacle(Base):
     code = Column(String(100))
     crest_level = Column(Float)
     geom = Column(Geometry("LINESTRING"), nullable=False)
-    tags = Column(Text)
+    tags = Column(CSVText)
     display_name = Column(String(255))
     affects_2d = Column(Boolean)
     affects_1d2d_open_water = Column(Boolean)
@@ -668,7 +664,7 @@ class PotentialBreach(Base):
     id = Column(Integer, primary_key=True)
     code = Column(String(100))
     display_name = Column(String(255))
-    tags = Column(Text)
+    tags = Column(CSVText)
     initial_exchange_level = Column(Float)
     final_exchange_level = Column(Float)
     levee_material = Column(IntegerEnum(constants.Material))
@@ -684,11 +680,11 @@ class ExchangeLine(Base):
     exchange_level = Column(Float)
     display_name = Column(Text)
     code = Column(Text)
-    tags = Column(Text)
+    tags = Column(CSVText)
 
 
 class Tags(Base):
-    __tablename__ = "tags"
+    __tablename__ = "tag"
     id = Column(Integer, primary_key=True)
     description = Column(Text)
 
