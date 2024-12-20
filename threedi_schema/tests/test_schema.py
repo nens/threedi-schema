@@ -117,6 +117,62 @@ def test_full_upgrade_empty(in_memory_sqlite):
     assert in_memory_sqlite.has_table("connection_node")
 
 
+def test_upgrade_with_custom_epsg_code(in_memory_sqlite):
+    """Upgrade an empty database to the latest version and set custom epsg"""
+    schema = ModelSchema(in_memory_sqlite)
+    schema.upgrade(
+        revision="0229",
+        backup=False,
+        upgrade_spatialite_version=False,
+        custom_epsg_code=28992,
+    )
+    # todo: check srid in geometry columns?
+
+
+def test_upgrade_with_custom_epsg_code_version_too_new(in_memory_sqlite):
+    """Set custom epsg code for schema version > 229"""
+    schema = ModelSchema(in_memory_sqlite)
+    schema.upgrade(revision="0230", backup=False, upgrade_spatialite_version=False)
+    with pytest.warns():
+        schema.upgrade(
+            backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+        )
+
+
+def test_upgrade_with_custom_epsg_code_revision_too_old(in_memory_sqlite):
+    """Set custom epsg code when upgrading to 228 or older"""
+    schema = ModelSchema(in_memory_sqlite)
+    with pytest.warns():
+        schema.upgrade(
+            revision="0228",
+            backup=False,
+            upgrade_spatialite_version=False,
+            custom_epsg_code=28992,
+        )
+
+
+def test_set_custom_epsg_valid(in_memory_sqlite):
+    schema = ModelSchema(in_memory_sqlite)
+    schema.upgrade(revision="0229", backup=False, upgrade_spatialite_version=False)
+    schema._set_custom_epsg_code(custom_epsg_code=28992)
+    with in_memory_sqlite.engine.connect() as connection:
+        check_result = connection.execute(
+            text("SELECT epsg_code FROM model_settings")
+        ).scalar()
+    assert check_result == 28992
+
+
+@pytest.mark.parametrize("start_revision", [None, "0220", "0230"])
+def test_set_custom_epsg_invalid_revision(in_memory_sqlite, start_revision):
+    schema = ModelSchema(in_memory_sqlite)
+    if start_revision is not None:
+        schema.upgrade(
+            revision=start_revision, backup=False, upgrade_spatialite_version=False
+        )
+    with pytest.raises(ValueError):
+        schema._set_custom_epsg_code(custom_epsg_code=28992)
+
+
 def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
     """Upgrade an empty database to the latest version"""
     schema = ModelSchema(south_latest_sqlite)
