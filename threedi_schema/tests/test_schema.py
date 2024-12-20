@@ -121,12 +121,21 @@ def test_upgrade_with_custom_epsg_code(in_memory_sqlite):
     """Upgrade an empty database to the latest version and set custom epsg"""
     schema = ModelSchema(in_memory_sqlite)
     schema.upgrade(
-        revision="0229",
+        revision="0230",
         backup=False,
         upgrade_spatialite_version=False,
         custom_epsg_code=28992,
     )
-    # todo: check srid in geometry columns?
+    with schema.db.get_session() as session:
+        srids = [
+            item[0]
+            for item in session.execute(
+                text(
+                    "SELECT srid FROM geometry_columns WHERE f_table_name NOT LIKE '_%'"
+                )
+            ).fetchall()
+        ]
+        assert all([srid == 28992 for srid in srids])
 
 
 def test_upgrade_with_custom_epsg_code_version_too_new(in_memory_sqlite):
