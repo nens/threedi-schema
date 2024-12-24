@@ -39,6 +39,8 @@ def upgrade():
     # rename column
     with op.batch_alter_table('control_measure_map') as batch_op:
         batch_op.alter_column('control_measure_location_id', new_column_name='measure_location_id')
+    op.execute(sa.text(f"SELECT DiscardGeometryColumn('control_measure_location', 'geom')"))
+    op.execute(sa.text(f"SELECT DiscardGeometryColumn('control_measure_map', 'geom')"))
     # rename tables
     for old_table_name, new_table_name in RENAME_TABLES:
         op.rename_table(old_table_name, new_table_name)
@@ -54,6 +56,8 @@ def downgrade():
     with op.batch_alter_table('measure_map') as batch_op:
         batch_op.alter_column('measure_location_id', new_column_name='control_measure_location_id')
     # rename tables
+    op.execute(sa.text(f"SELECT DiscardGeometryColumn('measure_location', 'geom')"))
+    op.execute(sa.text(f"SELECT DiscardGeometryColumn('measure_map', 'geom')"))
     for old_table_name, new_table_name in RENAME_TABLES:
         op.rename_table(new_table_name, old_table_name)
     fix_geometries(downgrade=True)
