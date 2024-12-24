@@ -113,6 +113,9 @@ class ModelSchema:
 
         Specify a 'progress_func' to handle progress updates. `progress_func` should
         expect a single argument representing the fraction of progress
+
+        Specify a `custom_epsg_code` to set the model epsg_code before migration. This
+        should only be used for testing!
         """
         try:
             rev_nr = get_schema_version() if revision == "head" else int(revision)
