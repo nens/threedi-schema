@@ -112,7 +112,9 @@ def test_validate_schema_too_high_migration(sqlite_latest, version):
 def test_full_upgrade_empty(in_memory_sqlite):
     """Upgrade an empty database to the latest version"""
     schema = ModelSchema(in_memory_sqlite)
-    schema.upgrade(backup=False, upgrade_spatialite_version=False)
+    schema.upgrade(
+        backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+    )
     assert schema.get_version() == get_schema_version()
     assert in_memory_sqlite.has_table("connection_node")
 
@@ -141,7 +143,12 @@ def test_upgrade_with_custom_epsg_code(in_memory_sqlite):
 def test_upgrade_with_custom_epsg_code_version_too_new(in_memory_sqlite):
     """Set custom epsg code for schema version > 229"""
     schema = ModelSchema(in_memory_sqlite)
-    schema.upgrade(revision="0230", backup=False, upgrade_spatialite_version=False)
+    schema.upgrade(
+        revision="0230",
+        backup=False,
+        upgrade_spatialite_version=False,
+        custom_epsg_code=28992,
+    )
     with pytest.warns():
         schema.upgrade(
             backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
@@ -171,12 +178,19 @@ def test_set_custom_epsg_valid(in_memory_sqlite):
     assert check_result == 28992
 
 
-@pytest.mark.parametrize("start_revision", [None, "0220", "0230"])
-def test_set_custom_epsg_invalid_revision(in_memory_sqlite, start_revision):
+@pytest.mark.parametrize(
+    "start_revision, custom_epsg_code", [(None, None), ("0220", None), ("0230", 28992)]
+)
+def test_set_custom_epsg_invalid_revision(
+    in_memory_sqlite, start_revision, custom_epsg_code
+):
     schema = ModelSchema(in_memory_sqlite)
     if start_revision is not None:
         schema.upgrade(
-            revision=start_revision, backup=False, upgrade_spatialite_version=False
+            revision=start_revision,
+            backup=False,
+            upgrade_spatialite_version=False,
+            custom_epsg_code=custom_epsg_code,
         )
     with pytest.raises(ValueError):
         schema._set_custom_epsg_code(custom_epsg_code=28992)
@@ -185,7 +199,9 @@ def test_set_custom_epsg_invalid_revision(in_memory_sqlite, start_revision):
 def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
     """Upgrade an empty database to the latest version"""
     schema = ModelSchema(south_latest_sqlite)
-    schema.upgrade(backup=False, upgrade_spatialite_version=False)
+    schema.upgrade(
+        backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+    )
     assert schema.get_version() == get_schema_version()
     assert south_latest_sqlite.has_table("connection_node")
     # https://github.com/nens/threedi-schema/issues/10:
@@ -282,7 +298,7 @@ def test_set_spatial_indexes(in_memory_sqlite):
     engine = in_memory_sqlite.engine
 
     schema = ModelSchema(in_memory_sqlite)
-    schema.upgrade(backup=False)
+    schema.upgrade(backup=False, custom_epsg_code=28992)
 
     with engine.connect() as connection:
         with connection.begin():

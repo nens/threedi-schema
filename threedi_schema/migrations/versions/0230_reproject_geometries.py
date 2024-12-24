@@ -48,8 +48,6 @@ def get_model_srid() -> int:
     conn = op.get_bind()
     srid_str = conn.execute(sa.text("SELECT epsg_code FROM model_settings")).fetchone()
     if srid_str is None or srid_str[0] is None:
-        if not has_geom():
-            return None
         raise InvalidSRIDException(None, "no epsg_code is defined")
     try:
         srid = int(srid_str[0])
@@ -120,12 +118,6 @@ def prep_spatialite(srid: int):
     has_srid = conn.execute(sa.text(f'SELECT COUNT(*) FROM spatial_ref_sys WHERE srid = {srid};')).fetchone()[0] > 0
     if not has_srid:
         conn.execute(sa.text(f"InsertEpsgSrid({srid})"))
-
-
-def has_geom():
-    connection = op.get_bind()
-    has_data = [connection.execute(sa.text(f'SELECT COUNT(*) FROM {table}')).fetchone()[0] > 0 for table in GEOM_TABLES]
-    return any(has_data)
 
 
 def upgrade():
