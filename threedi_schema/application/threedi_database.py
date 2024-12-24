@@ -106,7 +106,6 @@ class ThreediDatabase:
                 return engine
             else:
                 self._engine = engine
-                self._engine = engine
         return self._engine
 
     def get_session(self, **kwargs):

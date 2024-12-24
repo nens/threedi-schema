@@ -23,7 +23,6 @@ RENAME_TABLES = [('control_measure_location', 'measure_location'),
 def fix_geometries(downgrade: bool=False):
     op.execute(sa.text("SELECT RecoverGeometryColumn('memory_control', 'geom', 4326, 'POINT', 'XY')"))
     op.execute(sa.text("SELECT RecoverGeometryColumn('table_control', 'geom', 4326, 'POINT', 'XY')"))
-
     if downgrade:
         op.execute(sa.text("SELECT RecoverGeometryColumn('control_measure_location', 'geom', 4326, 'POINT', 'XY')"))
         op.execute(sa.text("SELECT RecoverGeometryColumn('control_measure_map', 'geom', 4326, 'LINESTRING', 'XY')"))

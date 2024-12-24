@@ -11,7 +11,6 @@ class Geometry(geoalchemy2.types.Geometry):
     def __init__(self, geometry_type, from_text="ST_GeomFromEWKT"):
         kwargs = {
             "geometry_type": geometry_type,
-            # TODO: change type, or will this break stuff?
             "srid": 4326,
             "spatial_index": True,
             "from_text": from_text,

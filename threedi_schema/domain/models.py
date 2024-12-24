@@ -350,7 +350,6 @@ class ModelSettings(Base):
     friction_coefficient = Column(Float)
     friction_coefficient_file = Column(String(255))
     embedded_cutoff_threshold = Column(Float)
-    # epsg_code = Column(Integer)
     max_angle_1d_advection = Column(Float)
     friction_averaging = Column(Boolean)
     table_step_size_1d = Column(Float)
