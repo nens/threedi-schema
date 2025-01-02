@@ -215,34 +215,7 @@ class ModelSchema:
         """
         if self.db.get_engine().dialect.name == "geopackage":
             return
-        # Check if ogr2ogr
-        result = subprocess.run(
-            "ogr2ogr --version",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        ## ogr2ogr is installed; make sure the version is high enough and return if not
-        if result.returncode == 0:
-            # get version
-            version = re.findall(r"\b(\d+\.\d+\.\d+)\b", result.stdout)[0]
-            # trim patch version and convert to float
-            float_version = float(version[0 : version.rfind(".")])
-            if float_version < 3.4:
-                warnings.warn(
-                    f"ogr2ogr 3.4 (part of GDAL) or newer is needed to convert spatialite to geopackage "
-                    f"but ogr2ogr {version} was found. {self.db.path} will not be converted"
-                    f"to geopackage."
-                )
-                return
-        # ogr2ogr is not (properly) installed; return
-        elif result.returncode != 0:
-            warnings.warn(
-                f"ogr2ogr (part of GDAL) is needed to convert spatialite to geopackage but no working"
-                f"working installation was found:\n{result.stderr}"
-            )
-            return
+
         # Ensure database is upgraded and views are recreated
         self.upgrade()
         self.validate_schema()
