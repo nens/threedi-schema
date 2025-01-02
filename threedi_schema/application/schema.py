@@ -10,10 +10,9 @@ from alembic.config import Config
 from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from osgeo import gdal
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
-
-from osgeo import gdal
 
 from ..domain import constants, models
 from ..infrastructure.spatial_index import ensure_spatial_indexes
