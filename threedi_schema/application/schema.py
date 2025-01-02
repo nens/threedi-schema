@@ -215,11 +215,11 @@ class ModelSchema:
 
     def convert_to_geopackage(self):
         """
-        Convert spatialite to geopackage using gdal's ogr2ogr.
+        Convert spatialite to geopackage using gdal.VectorTranslate.
 
         Does nothing if the current database is already a geopackage.
 
-        Raises UpgradeFailedError if the conversion of spatialite to geopackage with ogr2ogr fails.
+        Raises UpgradeFailedError if the conversion of spatialite to geopackage with VectorTranslate fails.
         """
 
         handler = GdalErrorHandler()
