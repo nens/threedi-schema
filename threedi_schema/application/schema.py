@@ -50,8 +50,7 @@ def _upgrade_database(db, revision="head", unsafe=True, progress_func=None):
     alembic_command.upgrade(config, revision)
 
 
-class GdalErrorHandler():
-
+class GdalErrorHandler:
     def __call__(self, err_level, err_no, err_msg):
         self.err_level = err_level
         self.err_no = err_no
@@ -241,10 +240,23 @@ class ModelSchema:
                 session.execute(text("DROP TABLE IF EXISTS views_geometry_columns;"))
 
                 all_tablenames = [model.__tablename__ for model in self.declared_models]
-                geometry_tablenames = session.execute(text("SELECT f_table_name FROM geometry_columns;")).scalars().all()
-                non_geometry_tablenames = [name for name in all_tablenames if name not in geometry_tablenames]
+                geometry_tablenames = (
+                    session.execute(text("SELECT f_table_name FROM geometry_columns;"))
+                    .scalars()
+                    .all()
+                )
+                non_geometry_tablenames = [
+                    name for name in all_tablenames if name not in geometry_tablenames
+                ]
 
-                if session.execute(text("SELECT count(*) FROM sqlite_master WHERE name='schema_version';")).scalar() > 0:
+                if (
+                    session.execute(
+                        text(
+                            "SELECT count(*) FROM sqlite_master WHERE name='schema_version';"
+                        )
+                    ).scalar()
+                    > 0
+                ):
                     non_geometry_tablenames.append("schema_version")
 
             infile = str(work_db.path)
@@ -268,18 +280,27 @@ class ModelSchema:
                 )
             for conversion_options in conversion_list:
                 try:
-                    ds = gdal.VectorTranslate(destNameOrDestDS=outfile, srcDS=infile, options=conversion_options)
+                    ds = gdal.VectorTranslate(
+                        destNameOrDestDS=outfile,
+                        srcDS=infile,
+                        options=conversion_options,
+                    )
                     # dereference dataset before writing additional layers to ensure the data is written
                     del ds
                 except RuntimeError as err:
                     raise UpgradeFailedError from err
                 else:
-                    if hasattr(handler, "err_level") and handler.err_level >= gdal.CE_Warning:
+                    if (
+                        hasattr(handler, "err_level")
+                        and handler.err_level >= gdal.CE_Warning
+                    ):
                         warnings.append(handler.err_msg)
 
             if len(warnings) > 0:
-                warning_string = '\n'.join(warnings)
-                raise UpgradeFailedError("GeoPackage conversion didn't finish as expected:\n", warning_string)
+                warning_string = "\n".join(warnings)
+                raise UpgradeFailedError(
+                    "GeoPackage conversion didn't finish as expected:\n", warning_string
+                )
 
         # Correct path of current database
         self.db.path = Path(self.db.path).with_suffix(".gpkg")
