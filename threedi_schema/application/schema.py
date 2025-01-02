@@ -279,7 +279,8 @@ class ModelSchema:
                         warnings.append(handler.err_msg)
 
             if len(warnings) > 0:
-                raise UpgradeFailedError(f"GeoPackage conversion didn't finish as expected:\n{'\n'.join(warnings)}")
+                warning_string = '\n'.join(warnings)
+                raise UpgradeFailedError("GeoPackage conversion didn't finish as expected:\n", warning_string)
 
         # Correct path of current database
         self.db.path = Path(self.db.path).with_suffix(".gpkg")
