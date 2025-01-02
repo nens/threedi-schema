@@ -270,7 +270,7 @@ class ModelSchema:
             for conversion_options in conversion_list:
                 try:
                     ds = gdal.VectorTranslate(destNameOrDestDS=outfile, srcDS=infile, options=conversion_options)
-                    # dereference dataset before writing additional layers
+                    # dereference dataset before writing additional layers to ensure the data is written
                     del ds
                 except RuntimeError as err:
                     raise UpgradeFailedError from err
