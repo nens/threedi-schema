@@ -51,6 +51,13 @@ def _upgrade_database(db, revision="head", unsafe=True, progress_func=None):
     alembic_command.upgrade(config, revision)
 
 
+class GdalErrorHandler(object):
+    def __call__(self, err_level, err_no, err_msg):
+        self.err_level = err_level
+        self.err_no = err_no
+        self.err_msg = err_msg
+
+
 class ModelSchema:
     def __init__(self, threedi_db, declared_models=models.DECLARED_MODELS):
         self.db = threedi_db
@@ -213,6 +220,13 @@ class ModelSchema:
 
         Raises UpgradeFailedError if the conversion of spatialite to geopackage with ogr2ogr fails.
         """
+
+        handler = GdalErrorHandler()
+        gdal.PushErrorHandler(handler)
+        gdal.UseExceptions()
+
+        warnings = []
+
         if self.db.get_engine().dialect.name == "geopackage":
             return
 
@@ -239,9 +253,15 @@ class ModelSchema:
                 format="gpkg",
                 skipFailures=True,
             )
-            ds = gdal.VectorTranslate(destNameOrDestDS=outfile, srcDS=infile, options=options)
-            # dereference dataset, then write additional layers
-            del ds
+            try:
+                ds = gdal.VectorTranslate(destNameOrDestDS=outfile, srcDS=infile, options=options)
+                # dereference dataset before writing additional layers
+                del ds
+            except RuntimeError as err:
+                raise UpgradeFailedError from err
+            else:
+                if handler.err_level >= gdal.CE_Warning:
+                    warnings.append(handler.err_msg)
             for table in non_geometry_tablenames:
                 options = gdal.VectorTranslateOptions(
                     format="gpkg",
@@ -249,8 +269,16 @@ class ModelSchema:
                     SQLStatement=f"SELECT * FROM {table}",
                     layerName=table,
                 )
-                ds = gdal.VectorTranslate(destNameOrDestDS=outfile, srcDS=infile, options=options)
-                del ds
+                try:
+                    ds = gdal.VectorTranslate(destNameOrDestDS=outfile, srcDS=infile, options=options)
+                    del ds
+                except RuntimeError as err:
+                    raise UpgradeFailedError from err
+                else:
+                    if handler.err_level >= gdal.CE_Warning:
+                        warnings.append(handler.err_msg)
+            if len(warnings) >= 0:
+                raise UpgradeFailedError(f"GeoPackage conversion didn't finish as expected:\n{'\n'.join(warnings)}")
 
         # Correct path of current database
         self.db.path = Path(self.db.path).with_suffix(".gpkg")
