@@ -315,3 +315,19 @@ def test_set_spatial_indexes(in_memory_sqlite):
         ).scalar()
 
     assert check_result == 1
+
+
+class TestGetEPSGData:
+    def test_no_epsg(self, in_memory_sqlite):
+        schema = ModelSchema(in_memory_sqlite)
+        schema.upgrade(
+            backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+        )
+        assert schema.epsg_code is None
+        assert schema.epsg_source == ""
+
+    def test_with_epsg(self, oldest_sqlite):
+        schema = ModelSchema(oldest_sqlite)
+        schema.upgrade(backup=False, upgrade_spatialite_version=False)
+        assert schema.epsg_code == 28992
+        assert schema.epsg_source == "boundary_condition_1d.geom"

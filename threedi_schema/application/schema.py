@@ -1,7 +1,9 @@
 import re
 import subprocess
 import warnings
+from functools import cached_property
 from pathlib import Path
+from typing import Tuple
 
 # This import is needed for alembic to recognize the geopackage dialect
 import geoalchemy2.alembic_helpers  # noqa: F401
@@ -10,6 +12,7 @@ from alembic.config import Config
 from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from geoalchemy2.functions import ST_SRID
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
@@ -83,6 +86,30 @@ class ModelSchema:
             return int(version)
         else:
             return self._get_version_old()
+
+    def _get_epsg_data(self) -> Tuple[int, str]:
+        """
+        Retrieve epsg code for schematisation loaded in session. This is done by
+        iterating over all geometries in the declared models and all raster files, and
+        stopping at the first geometry or raster file with data.
+
+        Returns the epsg code and the name (table.column) of the source.
+        """
+        session = self.db.get_session()
+        for model in self.declared_models:
+            if hasattr(model, "geom"):
+                srids = [item[0] for item in session.query(ST_SRID(model.geom)).all()]
+                if len(srids) > 0:
+                    return srids[0], f"{model.__tablename__}.geom"
+        return None, ""
+
+    @cached_property
+    def epsg_code(self):
+        return self._get_epsg_data()[0]
+
+    @cached_property
+    def epsg_source(self):
+        return self._get_epsg_data()[1]
 
     def upgrade(
         self,
