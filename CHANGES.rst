@@ -3,7 +3,7 @@ Changelog of threedi-schema
 
 
 
-0.229.0 (unreleased)
+0.229.0 (2025-01-08)
 --------------------
 
 - Rename sqlite table "tags" to "tag"
