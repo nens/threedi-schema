@@ -276,19 +276,25 @@ def migrate_cross_section_definition_to_object(table_name: str):
 
 
 def set_geom_for_object(table_name: str, col_name: str = 'the_geom'):
-    # line from connection_node_start_id to connection_node_end_id
-    # SELECT load_extension('mod_spatialite');
     op.execute(sa.text(f"SELECT AddGeometryColumn('{table_name}', '{col_name}', 4326, 'LINESTRING', 'XY', 0);"))
     q = f"""
         UPDATE
-            {table_name}
-        SET the_geom = (
-            SELECT MakeLine(start_node.the_geom, end_node.the_geom) FROM {table_name} AS object 
-            JOIN v2_connection_nodes AS start_node ON object.connection_node_start_id = start_node.id
-            JOIN v2_connection_nodes AS end_node ON object.connection_node_end_id = end_node.id
-        )         
+            {table_name} AS object
+        SET 
+            {col_name} = (
+                SELECT 
+                    MakeLine(start_node.the_geom, end_node.the_geom) 
+                FROM 
+                    v2_connection_nodes AS start_node,
+                    v2_connection_nodes AS end_node 
+                WHERE 
+                    object.connection_node_start_id = start_node.id
+                    AND 
+                    object.connection_node_end_id = end_node.id
+            )         
     """
     op.execute(sa.text(q))
+
 
 
 def set_geom_for_v2_pumpstation():
