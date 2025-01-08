@@ -64,7 +64,11 @@ def get_columns_from_sqlite(cursor, table_name):
     for c in cursor.fetchall():
         if 'geom' in c[1]:
             continue
-        type_str = c[2].lower() if c[2] != 'bool' else 'boolean'
+        type_str = c[2].lower()
+        if type_str == 'bool':
+            type_str = 'boolean'
+        if type_str == 'int':
+            type_str = 'integer'
         col_map[c[1]] = (type_str, not c[3])
     return col_map
 
@@ -216,7 +220,7 @@ class TestMigration223:
     pytestmark = pytest.mark.migration_223
     removed_tables = set(['v2_surface', 'v2_surface_parameters', 'v2_surface_map',
                           'v2_impervious_surface', 'v2_impervious_surface_map'])
-    added_tables = set(['surface', 'surface_map', 'surface_parameters', 'tags',
+    added_tables = set(['surface', 'surface_map', 'surface_parameters', 'tag',
                         'dry_weather_flow', 'dry_weather_flow_map', 'dry_weather_flow_distribution'])
 
     def test_tables(self, schema_ref, schema_upgraded):

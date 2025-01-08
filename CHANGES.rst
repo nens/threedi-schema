@@ -3,10 +3,17 @@ Changelog of threedi-schema
 
 
 
-0.228.4 (unreleased)
+0.229.0 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Rename sqlite table "tags" to "tag"
+- Remove indices referring to removed tables in previous migrations
+- Make model_settings.use_2d_rain and model_settings.friction_averaging booleans
+- Remove columns referencing v2 in geometry_column
+- Ensure correct use_* values when matching tables have no data
+- Use custom types for comma separated and table text fields to strip extra white space
+- Correct direction of dwf and surface map
+- Remove v2 related views from sqlite
 
 
 0.228.3 (2024-12-10)
