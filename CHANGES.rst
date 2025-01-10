@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.228.4 (unreleased)
+0.228.4 (2025-01-10)
 --------------------
 
 - Fix incorrectly setting of geometry for pipe, weir and orifice in migration
