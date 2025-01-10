@@ -3,6 +3,12 @@ Changelog of threedi-schema
 
 
 
+0.228.4 (unreleased)
+--------------------
+
+- Fix issue where invalid geometries broke migration 228 for culverts
+
+
 0.228.3 (2024-12-10)
 --------------------
 
