@@ -2,7 +2,6 @@ Changelog of threedi-schema
 ===================================================
 
 
-
 0.229.1 (unreleased)
 --------------------
 
@@ -20,6 +19,13 @@ Changelog of threedi-schema
 - Use custom types for comma separated and table text fields to strip extra white space
 - Correct direction of dwf and surface map
 - Remove v2 related views from sqlite
+
+
+0.228.4 (2025-01-10)
+--------------------
+
+- Fix incorrectly setting of geometry for pipe, weir and orifice in migration
+- Fix issue where invalid geometries broke migration 228 for culverts
 
 
 0.228.3 (2024-12-10)
