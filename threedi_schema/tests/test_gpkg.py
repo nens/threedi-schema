@@ -1,10 +1,8 @@
 import pytest
-
 from sqlalchemy import text
 
 from threedi_schema.application.schema import get_schema_version
 from threedi_schema.infrastructure.spatialite_versions import get_spatialite_version
-
 
 
 @pytest.mark.parametrize("upgrade_spatialite", [True, False])
@@ -16,7 +14,13 @@ def test_convert_to_geopackage(oldest_sqlite, upgrade_spatialite):
 
     # Ensure that before the conversion, spatialite is used
     with oldest_sqlite.session_scope() as session:
-        spatialite_table_exists = bool(session.execute(text("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='spatial_ref_sys';")).scalar())
+        spatialite_table_exists = bool(
+            session.execute(
+                text(
+                    "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='spatial_ref_sys';"
+                )
+            ).scalar()
+        )
 
     assert spatialite_table_exists
 
@@ -32,7 +36,13 @@ def test_convert_to_geopackage(oldest_sqlite, upgrade_spatialite):
     # Ensure that after the conversion the geopackage is used
     assert oldest_sqlite.path.suffix == ".gpkg"
     with oldest_sqlite.session_scope() as session:
-        gpkg_table_exists = bool(session.execute(text("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='gpkg_contents';")).scalar())
+        gpkg_table_exists = bool(
+            session.execute(
+                text(
+                    "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='gpkg_contents';"
+                )
+            ).scalar()
+        )
 
     assert gpkg_table_exists
     assert oldest_sqlite.schema.validate_schema()
