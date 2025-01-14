@@ -308,7 +308,7 @@ def create_buffer_polygons(src_table: str, tmp_geom: str):
         WITH connection_data AS (
             SELECT
                 {src_table}_map.{surf_id} AS item_id,
-                ST_Transform(ST_Buffer(ST_Transform(v2_connection_nodes.the_geom, {28992}), 1), {srid}) AS buffer_geom
+                ST_Transform(ST_Buffer(ST_Transform(v2_connection_nodes.the_geom, {srid}), 1), 4326) AS buffer_geom
             FROM
                 v2_connection_nodes
             JOIN
