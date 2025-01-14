@@ -22,6 +22,13 @@ Changelog of threedi-schema
 - Remove v2 related views from sqlite
 
 
+0.228.4 (2025-01-10)
+--------------------
+
+- Fix incorrectly setting of geometry for pipe, weir and orifice in migration
+- Fix issue where invalid geometries broke migration 228 for culverts
+
+
 0.228.3 (2024-12-10)
 --------------------
 
