@@ -6,6 +6,7 @@ Create Date: 2024-05-27 10:35
 
 """
 import json
+import uuid
 import warnings
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -482,6 +483,29 @@ def populate_dry_weather_flow_distribution():
     op.execute(sa.text(sql_query))
 
 
+def make_geom_col_notnull(table_name):
+    # Make control_measure_map.geom not nullable by creating a new table with
+    # not nullable geometry column, copying the data from control_measure_map
+    # to the new table, dropping the original and renaming the new one to control_measure_map
+    # For some reason, changing this via batch_op.alter_column does not seem to work
+
+    # Retrieve column names and types from table
+    # Note that it is expected that the geometry column is the last column!
+    connection = op.get_bind()
+    columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
+    col_names = [col[1] for col in columns]
+    col_types = [col[2] for col in columns]
+    cols = (['id INTEGER PRIMARY KEY'] +
+            [f'{cname} {ctype}' for cname, ctype in zip(col_names[:-1], col_types[:-1]) if cname != 'id'] +
+            [f'geom {columns[-1][2]} NOT NULL'])
+    # Create new table, insert data, drop original and rename to table_name
+    temp_name = f'_temp_223_{uuid.uuid4().hex}'
+    op.execute(sa.text(f"CREATE TABLE {temp_name} ({','.join(cols)});"))
+    op.execute(sa.text(f"INSERT INTO {temp_name} ({','.join(col_names)}) SELECT {','.join(col_names)} FROM {table_name}"))
+    drop_geo_table(op, table_name)
+    op.execute(sa.text(f"ALTER TABLE {temp_name} RENAME TO {table_name};"))
+
+
 def fix_geometry_columns():
     GEO_COL_INFO = [
         ('dry_weather_flow', 'geom', 'POLYGON'),
@@ -490,8 +514,7 @@ def fix_geometry_columns():
         ('surface_map', 'geom', 'LINESTRING'),
     ]
     for table, column, geotype in GEO_COL_INFO:
-        with op.batch_alter_table(table) as batch_op:
-            batch_op.alter_column(column_name=column, nullable=False)
+        make_geom_col_notnull(table)
         migration_query = f"SELECT RecoverGeometryColumn('{table}', '{column}', {4326}, '{geotype}', 'XY')"
         op.execute(sa.text(migration_query))
 
