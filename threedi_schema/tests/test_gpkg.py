@@ -43,6 +43,13 @@ def test_convert_to_geopackage(oldest_sqlite, upgrade_spatialite):
                 )
             ).scalar()
         )
+        spatialite_table_exists = bool(
+            session.execute(
+                text(
+                    "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='spatial_ref_sys';"
+                )
+            ).scalar()
+        )
 
-    assert gpkg_table_exists
+    assert gpkg_table_exists and not spatialite_table_exists
     assert oldest_sqlite.schema.validate_schema()
