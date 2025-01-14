@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.229.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix setting of geometry columns for revision 223 and 228
 
 
 0.229.0 (2025-01-08)
