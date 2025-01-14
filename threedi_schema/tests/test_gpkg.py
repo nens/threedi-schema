@@ -14,6 +14,12 @@ def test_convert_to_geopackage(oldest_sqlite, upgrade_spatialite):
     # In case the fixture changes and refers to a geopackage,
     # convert_to_geopackage will be ignored because the db is already a geopackage
 
+    # Ensure that before the conversion, spatialite is used
+    with oldest_sqlite.session_scope() as session:
+        spatialite_table_exists = bool(session.execute(text("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='spatial_ref_sys';")).scalar())
+
+    assert spatialite_table_exists
+
     if upgrade_spatialite:
         _, file_version = get_spatialite_version(oldest_sqlite)
         assert file_version == 3
