@@ -207,7 +207,7 @@ class ModelSchema:
             or self.get_version() < 222
             or self.get_version() > 229
         ):
-            raise ValueError(f"Cannot set epgs code for revision {self.get_version()}")
+            raise ValueError(f"Cannot set epsg code for revision {self.get_version()}")
         # modify epsg_code
         with self.db.get_session() as session:
             session.execute(

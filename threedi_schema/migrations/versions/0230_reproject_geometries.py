@@ -55,7 +55,7 @@ def get_model_srid() -> int:
         raise InvalidSRIDException(srid_str[0], "the epsg_code must be an integer")
     unit, is_projected = get_crs_info(srid)
     if unit != "metre":
-        raise InvalidSRIDException(srid, f"the CRS must be in meters, not {unit}")
+        raise InvalidSRIDException(srid, f"the CRS must be in metres, not {unit}")
     if not is_projected:
         raise InvalidSRIDException(srid, "the CRS must be in projected")
     return srid
