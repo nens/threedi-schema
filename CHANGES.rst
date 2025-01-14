@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.229.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix incorrect creation of geometry for dry weather flow and surface during migration
 
 
 0.229.0 (2025-01-08)
