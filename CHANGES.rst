@@ -6,6 +6,7 @@ Changelog of threedi-schema
 --------------------
 
 - Fix setting of geometry columns for revision 223 and 228
+- Fix incorrect creation of geometry for dry weather flow and surface during migration
 
 
 0.229.0 (2025-01-08)
