@@ -302,12 +302,13 @@ def copy_polygons(src_table: str, tmp_geom: str):
 
 def create_buffer_polygons(src_table: str, tmp_geom: str):
     # create circular polygon of area 1 around the connection node
+    srid = get_global_srid()
     surf_id = f"{src_table.strip('v2_')}_id"
     query = f"""
         WITH connection_data AS (
             SELECT
                 {src_table}_map.{surf_id} AS item_id,
-                ST_Buffer(v2_connection_nodes.the_geom, 1) AS buffer_geom
+                ST_Transform(ST_Buffer(ST_Transform(v2_connection_nodes.the_geom, {srid}), 1), 4326) AS buffer_geom
             FROM
                 v2_connection_nodes
             JOIN
