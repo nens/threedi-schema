@@ -9,6 +9,12 @@ Changelog of threedi-schema
 - Remove model_settings.epsg_code
 
 
+0.229.1 (unreleased)
+--------------------
+
+- Fix incorrect creation of geometry for dry weather flow and surface during migration
+
+
 0.229.0 (2025-01-08)
 --------------------
 
