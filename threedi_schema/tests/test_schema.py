@@ -1,7 +1,7 @@
 from unittest import mock
 
 import pytest
-from sqlalchemy import Column, Integer, MetaData, String, Table, text
+from sqlalchemy import Column, inspect, Integer, MetaData, String, Table, text
 
 from threedi_schema import ModelSchema
 from threedi_schema.application import errors
@@ -109,14 +109,64 @@ def test_validate_schema_too_high_migration(sqlite_latest, version):
             schema.validate_schema()
 
 
+def get_sql_tables(cursor):
+    return [
+        item[0]
+        for item in cursor.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table';")
+        ).fetchall()
+    ]
+
+
+def get_columns_from_schema(schema, table_name):
+    inspector = inspect(schema.db.get_engine())
+    return [column["name"] for column in inspector.get_columns(table_name)]
+
+
+def get_columns_from_sqlite(session, table_name):
+    res = session.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+    return [col_info[1] for col_info in res]
+
+
+def test_full_upgrade_oldest(oldest_sqlite):
+    """Upgrade a legacy database to the latest version"""
+    schema = ModelSchema(oldest_sqlite)
+    schema.upgrade(backup=False, upgrade_spatialite_version=False)
+    run_upgrade_test(schema)
+
+
 def test_full_upgrade_empty(in_memory_sqlite):
     """Upgrade an empty database to the latest version"""
     schema = ModelSchema(in_memory_sqlite)
     schema.upgrade(
         backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
     )
+    run_upgrade_test(schema)
+
+
+def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
+    """Upgrade an empty database to the latest version"""
+    schema = ModelSchema(south_latest_sqlite)
+    schema.upgrade(
+        backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+    )
+    run_upgrade_test(schema)
+
+
+def run_upgrade_test(schema):
     assert schema.get_version() == get_schema_version()
-    assert in_memory_sqlite.has_table("connection_node")
+    session = schema.db.get_session()
+    sqlite_tables = get_sql_tables(session)
+    schema_tables = [model.__tablename__ for model in schema.declared_models]
+    assert set(schema_tables).issubset(set(sqlite_tables))
+    for table in schema_tables:
+        schema_cols = get_columns_from_schema(schema, table)
+        sqlite_cols = get_columns_from_sqlite(session, table)
+        assert set(schema_cols).issubset(set(sqlite_cols))
+    check_result = session.execute(
+        text("SELECT CheckSpatialIndex('connection_node', 'geom')")
+    ).scalar()
+    assert check_result == 1
 
 
 def test_upgrade_with_custom_epsg_code(in_memory_sqlite):
@@ -194,33 +244,6 @@ def test_set_custom_epsg_invalid_revision(
         )
     with pytest.raises(ValueError):
         schema._set_custom_epsg_code(custom_epsg_code=28992)
-
-
-def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
-    """Upgrade an empty database to the latest version"""
-    schema = ModelSchema(south_latest_sqlite)
-    schema.upgrade(
-        backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
-    )
-    assert schema.get_version() == get_schema_version()
-    assert south_latest_sqlite.has_table("connection_node")
-    # https://github.com/nens/threedi-schema/issues/10:
-    assert not south_latest_sqlite.has_table("v2_levee")
-
-
-def test_full_upgrade_oldest(oldest_sqlite):
-    """Upgrade a legacy database to the latest version"""
-    schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(backup=False, upgrade_spatialite_version=False)
-    assert schema.get_version() == get_schema_version()
-    assert oldest_sqlite.has_table("connection_node")
-    # https://github.com/nens/threedi-schema/issues/10:
-    assert not oldest_sqlite.has_table("v2_levee")
-    with oldest_sqlite.engine.connect() as connection:
-        check_result = connection.execute(
-            text("SELECT CheckSpatialIndex('connection_node', 'geom')")
-        ).scalar()
-    assert check_result == 1
 
 
 def test_upgrade_south_not_latest_errors(in_memory_sqlite):
