@@ -100,6 +100,17 @@ ADD_COLUMNS = [
 
 RETYPE_COLUMNS = {}
 
+GEOM_TYPES = {'channel': 'LINESTRING',
+              'orifice': 'LINESTRING',
+              'weir': 'LINESTRING',
+              'culvert': 'LINESTRING',
+              'pipe': 'LINESTRING',
+              'pump': 'POINT',
+              'pump_map': 'LINESTRING',
+              'connection_node': 'POINT',
+              'cross_section_location': 'POINT',
+              'windshielding_1d': 'POINT',
+              }
 
 def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
     # no checks for existence are done, this will fail if any column already exists
@@ -135,14 +146,6 @@ def remove_tables(tables: List[str]):
     for table in tables:
         drop_geo_table(op, table)
 
-
-def get_geom_type(table_name, geo_col_name):
-    connection = op.get_bind()
-    columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
-    for col in columns:
-        if col[1] == geo_col_name:
-            return col[2]
-
 def modify_table(old_table_name, new_table_name):
     # Create a new table named `new_table_name` by copying the
     # data from `old_table_name`.
@@ -157,7 +160,7 @@ def modify_table(old_table_name, new_table_name):
     col_names = [col[1] for col in columns]
     col_types = [col[2] for col in columns]
     # get type of the geometry column
-    geom_type = get_geom_type(old_table_name, 'the_geom')
+    geom_type = GEOM_TYPES[new_table_name]
     # create list of new columns and types for creating the new table
     # create list of old columns to copy to new table
     skip_cols = ['id', 'the_geom']
@@ -195,7 +198,7 @@ def fix_geometry_columns():
     tables = ['channel', 'connection_node', 'cross_section_location', 'culvert',
               'orifice', 'pipe', 'pump', 'pump_map', 'weir', 'windshielding_1d']
     for table in tables:
-        geom_type = get_geom_type(table, geo_col_name='geom')
+        geom_type = GEOM_TYPES[table]
         op.execute(sa.text(f"SELECT RecoverGeometryColumn('{table}', "
                            f"'geom', {4326}, '{geom_type}', 'XY')"))
         op.execute(sa.text(f"SELECT CreateSpatialIndex('{table}', 'geom')"))
