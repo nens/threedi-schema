@@ -1,7 +1,7 @@
 from unittest import mock
 
 import pytest
-from sqlalchemy import Column, Integer, MetaData, String, Table, text
+from sqlalchemy import Column, inspect, Integer, MetaData, String, Table, text
 
 from threedi_schema import ModelSchema
 from threedi_schema.application import errors
@@ -109,32 +109,141 @@ def test_validate_schema_too_high_migration(sqlite_latest, version):
             schema.validate_schema()
 
 
-def test_full_upgrade_empty(in_memory_sqlite):
-    """Upgrade an empty database to the latest version"""
-    schema = ModelSchema(in_memory_sqlite)
-    schema.upgrade(backup=False, upgrade_spatialite_version=False)
-    assert schema.get_version() == get_schema_version()
-    assert in_memory_sqlite.has_table("connection_node")
+def get_sql_tables(cursor):
+    return [
+        item[0]
+        for item in cursor.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table';")
+        ).fetchall()
+    ]
 
 
-def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
-    """Upgrade an empty database to the latest version"""
-    schema = ModelSchema(south_latest_sqlite)
-    schema.upgrade(backup=False, upgrade_spatialite_version=False)
-    assert schema.get_version() == get_schema_version()
-    assert south_latest_sqlite.has_table("connection_node")
-    # https://github.com/nens/threedi-schema/issues/10:
-    assert not south_latest_sqlite.has_table("v2_levee")
+def get_columns_from_schema(schema, table_name):
+    inspector = inspect(schema.db.get_engine())
+    return [column["name"] for column in inspector.get_columns(table_name)]
+
+
+def get_columns_from_sqlite(session, table_name):
+    res = session.execute(text(f"PRAGMA table_info({table_name})")).fetchall()
+    return [col_info[1] for col_info in res]
 
 
 def test_full_upgrade_oldest(oldest_sqlite):
     """Upgrade a legacy database to the latest version"""
     schema = ModelSchema(oldest_sqlite)
     schema.upgrade(backup=False, upgrade_spatialite_version=False)
+    run_upgrade_test(schema)
+
+
+def test_full_upgrade_empty(in_memory_sqlite):
+    """Upgrade an empty database to the latest version"""
+    schema = ModelSchema(in_memory_sqlite)
+    schema.upgrade(
+        backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+    )
+    run_upgrade_test(schema)
+
+
+def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
+    """Upgrade an empty database to the latest version"""
+    schema = ModelSchema(south_latest_sqlite)
+    schema.upgrade(
+        backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+    )
+    run_upgrade_test(schema)
+
+
+def run_upgrade_test(schema):
     assert schema.get_version() == get_schema_version()
-    assert oldest_sqlite.has_table("connection_node")
-    # https://github.com/nens/threedi-schema/issues/10:
-    assert not oldest_sqlite.has_table("v2_levee")
+    session = schema.db.get_session()
+    sqlite_tables = get_sql_tables(session)
+    schema_tables = [model.__tablename__ for model in schema.declared_models]
+    assert set(schema_tables).issubset(set(sqlite_tables))
+    for table in schema_tables:
+        schema_cols = get_columns_from_schema(schema, table)
+        sqlite_cols = get_columns_from_sqlite(session, table)
+        assert set(schema_cols).issubset(set(sqlite_cols))
+    check_result = session.execute(
+        text("SELECT CheckSpatialIndex('connection_node', 'geom')")
+    ).scalar()
+    assert check_result == 1
+
+
+def test_upgrade_with_custom_epsg_code(in_memory_sqlite):
+    """Upgrade an empty database to the latest version and set custom epsg"""
+    schema = ModelSchema(in_memory_sqlite)
+    schema.upgrade(
+        revision="0230",
+        backup=False,
+        upgrade_spatialite_version=False,
+        custom_epsg_code=28992,
+    )
+    with schema.db.get_session() as session:
+        srids = [
+            item[0]
+            for item in session.execute(
+                text(
+                    "SELECT srid FROM geometry_columns WHERE f_table_name NOT LIKE '_%'"
+                )
+            ).fetchall()
+        ]
+        assert all([srid == 28992 for srid in srids])
+
+
+def test_upgrade_with_custom_epsg_code_version_too_new(in_memory_sqlite):
+    """Set custom epsg code for schema version > 229"""
+    schema = ModelSchema(in_memory_sqlite)
+    schema.upgrade(
+        revision="0230",
+        backup=False,
+        upgrade_spatialite_version=False,
+        custom_epsg_code=28992,
+    )
+    with pytest.warns():
+        schema.upgrade(
+            backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+        )
+
+
+def test_upgrade_with_custom_epsg_code_revision_too_old(in_memory_sqlite):
+    """Set custom epsg code when upgrading to 228 or older"""
+    schema = ModelSchema(in_memory_sqlite)
+    with pytest.warns():
+        schema.upgrade(
+            revision="0228",
+            backup=False,
+            upgrade_spatialite_version=False,
+            custom_epsg_code=28992,
+        )
+
+
+def test_set_custom_epsg_valid(in_memory_sqlite):
+    schema = ModelSchema(in_memory_sqlite)
+    schema.upgrade(revision="0229", backup=False, upgrade_spatialite_version=False)
+    schema._set_custom_epsg_code(custom_epsg_code=28992)
+    with in_memory_sqlite.engine.connect() as connection:
+        check_result = connection.execute(
+            text("SELECT epsg_code FROM model_settings")
+        ).scalar()
+    assert check_result == 28992
+
+
+@pytest.mark.parametrize(
+    "start_revision, custom_epsg_code", [(None, None), ("0220", None), ("0230", 28992)]
+)
+def test_set_custom_epsg_invalid_revision(
+    in_memory_sqlite, start_revision, custom_epsg_code
+):
+    schema = ModelSchema(in_memory_sqlite)
+    if start_revision is not None:
+        schema.upgrade(
+            revision=start_revision,
+            backup=False,
+            upgrade_spatialite_version=False,
+            custom_epsg_code=custom_epsg_code,
+        )
+    with pytest.raises(ValueError):
+        schema._set_custom_epsg_code(custom_epsg_code=28992)
 
 
 def test_upgrade_south_not_latest_errors(in_memory_sqlite):
@@ -212,7 +321,7 @@ def test_set_spatial_indexes(in_memory_sqlite):
     engine = in_memory_sqlite.engine
 
     schema = ModelSchema(in_memory_sqlite)
-    schema.upgrade(backup=False)
+    schema.upgrade(backup=False, custom_epsg_code=28992)
 
     with engine.connect() as connection:
         with connection.begin():
@@ -229,3 +338,19 @@ def test_set_spatial_indexes(in_memory_sqlite):
         ).scalar()
 
     assert check_result == 1
+
+
+class TestGetEPSGData:
+    def test_no_epsg(self, in_memory_sqlite):
+        schema = ModelSchema(in_memory_sqlite)
+        schema.upgrade(
+            backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+        )
+        assert schema.epsg_code is None
+        assert schema.epsg_source == ""
+
+    def test_with_epsg(self, oldest_sqlite):
+        schema = ModelSchema(oldest_sqlite)
+        schema.upgrade(backup=False, upgrade_spatialite_version=False)
+        assert schema.epsg_code == 28992
+        assert schema.epsg_source == "boundary_condition_1d.geom"

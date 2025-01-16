@@ -1,5 +1,7 @@
 import warnings
+from functools import cached_property
 from pathlib import Path
+from typing import Tuple
 
 # This import is needed for alembic to recognize the geopackage dialect
 import geoalchemy2.alembic_helpers  # noqa: F401
@@ -8,6 +10,7 @@ from alembic.config import Config
 from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from geoalchemy2.functions import ST_SRID
 from osgeo import gdal
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
@@ -90,6 +93,30 @@ class ModelSchema:
         else:
             return self._get_version_old()
 
+    def _get_epsg_data(self) -> Tuple[int, str]:
+        """
+        Retrieve epsg code for schematisation loaded in session. This is done by
+        iterating over all geometries in the declared models and all raster files, and
+        stopping at the first geometry or raster file with data.
+
+        Returns the epsg code and the name (table.column) of the source.
+        """
+        session = self.db.get_session()
+        for model in self.declared_models:
+            if hasattr(model, "geom"):
+                srids = [item[0] for item in session.query(ST_SRID(model.geom)).all()]
+                if len(srids) > 0:
+                    return srids[0], f"{model.__tablename__}.geom"
+        return None, ""
+
+    @cached_property
+    def epsg_code(self):
+        return self._get_epsg_data()[0]
+
+    @cached_property
+    def epsg_source(self):
+        return self._get_epsg_data()[1]
+
     def upgrade(
         self,
         revision="head",
@@ -97,6 +124,7 @@ class ModelSchema:
         upgrade_spatialite_version=False,
         convert_to_geopackage=False,
         progress_func=None,
+        custom_epsg_code=None,
     ):
         """Upgrade the database to the latest version.
 
@@ -118,6 +146,9 @@ class ModelSchema:
 
         Specify a 'progress_func' to handle progress updates. `progress_func` should
         expect a single argument representing the fraction of progress
+
+        Specify a `custom_epsg_code` to set the model epsg_code before migration. This
+        should only be used for testing!
         """
         try:
             rev_nr = get_schema_version() if revision == "head" else int(revision)
@@ -137,19 +168,70 @@ class ModelSchema:
                 f"{constants.LATEST_SOUTH_MIGRATION_ID}. Please consult the "
                 f"3Di documentation on how to update legacy databases."
             )
-        if backup:
-            with self.db.file_transaction() as work_db:
+
+        def run_upgrade(_revision):
+            if backup:
+                with self.db.file_transaction() as work_db:
+                    _upgrade_database(
+                        work_db,
+                        revision=_revision,
+                        unsafe=True,
+                        progress_func=progress_func,
+                    )
+            else:
                 _upgrade_database(
-                    work_db, revision=revision, unsafe=True, progress_func=progress_func
+                    self.db,
+                    revision=_revision,
+                    unsafe=False,
+                    progress_func=progress_func,
                 )
-        else:
-            _upgrade_database(
-                self.db, revision=revision, unsafe=False, progress_func=progress_func
-            )
+
+        if custom_epsg_code is not None:
+            if self.get_version() is not None and self.get_version() > 229:
+                warnings.warn(
+                    "Cannot set custom_epsg_code when upgrading from 230 or newer"
+                )
+            elif rev_nr < 230:
+                warnings.warn(
+                    "Warning: cannot set custom_epgs_code when not upgrading to 229 or older."
+                )
+            else:
+                if self.get_version() is None or self.get_version() < 229:
+                    run_upgrade("0229")
+                self._set_custom_epsg_code(custom_epsg_code)
+                run_upgrade("0230")
+                self._remove_custom_epsg_code()
+        run_upgrade(revision)
         if upgrade_spatialite_version:
             self.upgrade_spatialite_version()
         elif convert_to_geopackage:
             self.convert_to_geopackage()
+
+    def _set_custom_epsg_code(self, custom_epsg_code: int):
+        if (
+            self.get_version() is None
+            or self.get_version() < 222
+            or self.get_version() > 229
+        ):
+            raise ValueError(f"Cannot set epsg code for revision {self.get_version()}")
+        # modify epsg_code
+        with self.db.get_session() as session:
+            session.execute(
+                text(
+                    f"INSERT INTO model_settings (id, epsg_code) VALUES (999999, {custom_epsg_code});"
+                )
+            )
+            session.commit()
+
+    def _remove_custom_epsg_code(self):
+        if self.get_version() != 230:
+            raise ValueError(
+                f"Removing the custom epsg code should only be done on revision = 230, not {self.get_version()}"
+            )
+        # Remove row added by upgrade with custom_epsg_code
+        with self.db.get_session() as session:
+            session.execute(text("DELETE FROM model_settings WHERE id = 999999;"))
+            session.commit()
 
     def validate_schema(self):
         """Very basic validation of 3Di schema.
@@ -201,9 +283,26 @@ class ModelSchema:
         lib_version, file_version = get_spatialite_version(self.db)
         if file_version == 3 and lib_version in (4, 5):
             self.validate_schema()
-
             with self.db.file_transaction(start_empty=True) as work_db:
-                _upgrade_database(work_db, revision="head", unsafe=True)
+                rev_nr = min(get_schema_version(), 229)
+                first_rev = f"{rev_nr:04d}"
+                _upgrade_database(work_db, revision=first_rev, unsafe=True)
+                with self.db.get_session() as session:
+                    srid = session.execute(
+                        text(
+                            "SELECT srid FROM geometry_columns WHERE f_geometry_column = 'geom' AND f_table_name NOT LIKE '_alembic%';"
+                        )
+                    ).fetchone()[0]
+                with work_db.get_session() as session:
+                    session.execute(
+                        text(f"INSERT INTO model_settings (epsg_code) VALUES ({srid});")
+                    )
+                    session.commit()
+                if get_schema_version() > 229:
+                    _upgrade_database(work_db, revision="head", unsafe=True)
+                with work_db.get_session() as session:
+                    session.execute(text("DELETE FROM model_settings;"))
+                    session.commit()
                 try:
                     copy_models(self.db, work_db, self.declared_models)
                 except IntegrityError as e:
