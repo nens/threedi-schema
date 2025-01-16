@@ -2,8 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-
-0.229.1 (unreleased)
+0.229.2 (unreleased)
 --------------------
 
 - Rename sqlite table "tags" to "tag"
@@ -14,6 +13,13 @@ Changelog of threedi-schema
 - Use custom types for comma separated and table text fields to strip extra white space
 - Correct direction of dwf and surface map
 - Remove v2 related views from sqlite
+
+
+0.229.1 (2025-01-15)
+--------------------
+
+- Fix setting of geometry columns for revision 223 and 228
+- Fix incorrect creation of geometry for dry weather flow and surface during migration
 
 
 0.229.0 (2025-01-08)
@@ -27,6 +33,13 @@ Changelog of threedi-schema
 - Use custom types for comma separated and table text fields to strip extra white space
 - Correct direction of dwf and surface map
 - Remove v2 related views from sqlite
+
+
+0.228.4 (2025-01-10)
+--------------------
+
+- Fix incorrectly setting of geometry for pipe, weir and orifice in migration
+- Fix issue where invalid geometries broke migration 228 for culverts
 
 
 0.228.3 (2024-12-10)

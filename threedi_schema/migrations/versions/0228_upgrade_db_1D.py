@@ -100,6 +100,17 @@ ADD_COLUMNS = [
 
 RETYPE_COLUMNS = {}
 
+GEOM_TYPES = {'channel': 'LINESTRING',
+              'orifice': 'LINESTRING',
+              'weir': 'LINESTRING',
+              'culvert': 'LINESTRING',
+              'pipe': 'LINESTRING',
+              'pump': 'POINT',
+              'pump_map': 'LINESTRING',
+              'connection_node': 'POINT',
+              'cross_section_location': 'POINT',
+              'windshielding_1d': 'POINT',
+              }
 
 def add_columns_to_tables(table_columns: List[Tuple[str, Column]]):
     # no checks for existence are done, this will fail if any column already exists
@@ -135,14 +146,6 @@ def remove_tables(tables: List[str]):
     for table in tables:
         drop_geo_table(op, table)
 
-
-def get_geom_type(table_name, geo_col_name):
-    connection = op.get_bind()
-    columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
-    for col in columns:
-        if col[1] == geo_col_name:
-            return col[2]
-
 def modify_table(old_table_name, new_table_name):
     # Create a new table named `new_table_name` by copying the
     # data from `old_table_name`.
@@ -157,7 +160,7 @@ def modify_table(old_table_name, new_table_name):
     col_names = [col[1] for col in columns]
     col_types = [col[2] for col in columns]
     # get type of the geometry column
-    geom_type = get_geom_type(old_table_name, 'the_geom')
+    geom_type = GEOM_TYPES[new_table_name]
     # create list of new columns and types for creating the new table
     # create list of old columns to copy to new table
     skip_cols = ['id', 'the_geom']
@@ -195,7 +198,7 @@ def fix_geometry_columns():
     tables = ['channel', 'connection_node', 'cross_section_location', 'culvert',
               'orifice', 'pipe', 'pump', 'pump_map', 'weir', 'windshielding_1d']
     for table in tables:
-        geom_type = get_geom_type(table, geo_col_name='geom')
+        geom_type = GEOM_TYPES[table]
         op.execute(sa.text(f"SELECT RecoverGeometryColumn('{table}', "
                            f"'geom', {4326}, '{geom_type}', 'XY')"))
         op.execute(sa.text(f"SELECT CreateSpatialIndex('{table}', 'geom')"))
@@ -336,19 +339,44 @@ def migrate_cross_section_definition_to_object(table_name: str):
 
 
 def set_geom_for_object(table_name: str, col_name: str = 'the_geom'):
-    # line from connection_node_start_id to connection_node_end_id
-    # SELECT load_extension('mod_spatialite');
     op.execute(sa.text(f"SELECT AddGeometryColumn('{table_name}', '{col_name}', 4326, 'LINESTRING', 'XY', 0);"))
     q = f"""
         UPDATE
-            {table_name}
-        SET the_geom = (
-            SELECT MakeLine(start_node.the_geom, end_node.the_geom) FROM {table_name} AS object 
-            JOIN v2_connection_nodes AS start_node ON object.connection_node_start_id = start_node.id
-            JOIN v2_connection_nodes AS end_node ON object.connection_node_end_id = end_node.id
-        )         
+            {table_name} AS object
+        SET 
+            {col_name} = (
+                SELECT 
+                    MakeLine(start_node.the_geom, end_node.the_geom) 
+                FROM 
+                    v2_connection_nodes AS start_node,
+                    v2_connection_nodes AS end_node 
+                WHERE 
+                    object.connection_node_start_id = start_node.id
+                    AND 
+                    object.connection_node_end_id = end_node.id
+            )         
     """
     op.execute(sa.text(q))
+
+
+def fix_geom_for_culvert():
+    new_table_name = f'_temp_228_fix_culvert_{uuid.uuid4().hex}'
+    old_table_name = 'v2_culvert'
+    connection = op.get_bind()
+    columns = connection.execute(sa.text(f"PRAGMA table_info('{old_table_name}')")).fetchall()
+    # get all column names and types
+    col_names = [col[1] for col in columns if col[1] not in ['id', 'the_geom']]
+    col_types = [col[2] for col in columns if col[1] in col_names]
+    # Create new table (temp), insert data, drop original and rename temp to table_name
+    new_col_str = ','.join(['id INTEGER PRIMARY KEY NOT NULL'] + [f'{cname} {ctype}' for cname, ctype in
+                                                                  zip(col_names, col_types)])
+    op.execute(sa.text(f"CREATE TABLE {new_table_name} ({new_col_str});"))
+    op.execute(sa.text(f"SELECT AddGeometryColumn('{new_table_name}', 'the_geom', 4326, 'LINESTRING', 'XY', 0);"))
+    # Copy data
+    op.execute(sa.text(f"INSERT INTO {new_table_name} (id, {','.join(col_names)}, the_geom) "
+                       f"SELECT id, {','.join(col_names)}, the_geom FROM {old_table_name}"))
+    op.execute(sa.text("DROP TABLE v2_culvert"))
+    op.execute(sa.text(f"ALTER TABLE {new_table_name} RENAME TO v2_culvert"))
 
 
 def set_geom_for_v2_pumpstation():
@@ -529,6 +557,8 @@ def upgrade():
         # Set geometry for tables without one
         if table_name != 'v2_culvert':
             set_geom_for_object(table_name)
+        else:
+            fix_geom_for_culvert()
     set_geom_for_v2_pumpstation()
     for old_table_name, new_table_name in RENAME_TABLES:
         modify_table(old_table_name, new_table_name)
