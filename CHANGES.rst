@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.229.2 (unreleased)
+0.229.2 (2025-01-16)
 --------------------
 
 - Rewrite geopackage conversion to use gdal.VectorTranslate instead of ogr2ogr 
