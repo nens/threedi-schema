@@ -1,5 +1,3 @@
-import re
-import subprocess
 import warnings
 from functools import cached_property
 from pathlib import Path
@@ -12,7 +10,7 @@ from alembic.config import Config
 from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from geoalchemy2.functions import ST_SRID
+from osgeo import gdal
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
@@ -50,6 +48,13 @@ def _upgrade_database(db, revision="head", unsafe=True, progress_func=None):
     if progress_func is not None:
         setup_logging(db.schema, revision, config, progress_func)
     alembic_command.upgrade(config, revision)
+
+
+class GdalErrorHandler:
+    def __call__(self, err_level, err_no, err_msg):
+        self.err_level = err_level
+        self.err_no = err_no
+        self.err_msg = err_msg
 
 
 class ModelSchema:
@@ -304,42 +309,22 @@ class ModelSchema:
 
     def convert_to_geopackage(self):
         """
-        Convert spatialite to geopackage using gdal's ogr2ogr.
+        Convert spatialite to geopackage using gdal.VectorTranslate.
 
         Does nothing if the current database is already a geopackage.
 
-        Raises UpgradeFailedError if the conversion of spatialite to geopackage with ogr2ogr fails.
+        Raises UpgradeFailedError if the conversion of spatialite to geopackage with VectorTranslate fails.
         """
+
+        handler = GdalErrorHandler()
+        gdal.PushErrorHandler(handler)
+        gdal.UseExceptions()
+
+        warnings_list = []
+
         if self.db.get_engine().dialect.name == "geopackage":
             return
-        # Check if ogr2ogr
-        result = subprocess.run(
-            "ogr2ogr --version",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        ## ogr2ogr is installed; make sure the version is high enough and return if not
-        if result.returncode == 0:
-            # get version
-            version = re.findall(r"\b(\d+\.\d+\.\d+)\b", result.stdout)[0]
-            # trim patch version and convert to float
-            float_version = float(version[0 : version.rfind(".")])
-            if float_version < 3.4:
-                warnings.warn(
-                    f"ogr2ogr 3.4 (part of GDAL) or newer is needed to convert spatialite to geopackage "
-                    f"but ogr2ogr {version} was found. {self.db.path} will not be converted"
-                    f"to geopackage."
-                )
-                return
-        # ogr2ogr is not (properly) installed; return
-        elif result.returncode != 0:
-            warnings.warn(
-                f"ogr2ogr (part of GDAL) is needed to convert spatialite to geopackage but no working"
-                f"working installation was found:\n{result.stderr}"
-            )
-            return
+
         # Ensure database is upgraded and views are recreated
         self.upgrade()
         self.validate_schema()
@@ -349,46 +334,70 @@ class ModelSchema:
             with work_db.get_session() as session:
                 session.execute(text("DROP TABLE IF EXISTS spatialite_history;"))
                 session.execute(text("DROP TABLE IF EXISTS views_geometry_columns;"))
-            cmd = [
-                "ogr2ogr",
-                "-skipfailures",
-                "-f",
-                "gpkg",
-                str(Path(self.db.path).with_suffix(".gpkg")),
-                str(work_db.path),
-                "-oo",
-                "LIST_ALL_TABLES=YES",
-            ]
-            try:
-                p = subprocess.Popen(
-                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=-1
+
+                all_tablenames = [model.__tablename__ for model in self.declared_models]
+                geometry_tablenames = (
+                    session.execute(text("SELECT f_table_name FROM geometry_columns;"))
+                    .scalars()
+                    .all()
                 )
-            except Exception as e:
-                raise UpgradeFailedError(f"ogr2ogr failed conversion:\n{e}")
-            _, out = p.communicate()
-        # Error handling
-        # convert bytes to utf and split lines
-        out_list = out.decode("utf-8").split("\n")
-        # collect only errors and remove 'ERROR #:'
-        errors = [
-            [idx, ": ".join(item.split(": ")[1:])]
-            for idx, item in enumerate(out_list)
-            if item.lower().startswith("error")
-        ]
-        # While creating the geopackage with ogr2ogr an error occurs
-        # because ogr2ogr tries to create a table `sqlite_sequence`, which
-        # is reserved for internal use. The resulting database seems fine,
-        # so this specific error is ignored
-        # convert error output to list
-        expected_error = 'sqlite3_exec(CREATE TABLE "sqlite_sequence" ( "rowid" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "name" TEXT, "seq" TEXT)) failed: object name reserved for internal use: sqlite_sequence'
-        unexpected_error_indices = [
-            idx for idx, error in errors if error.lower() != expected_error.lower()
-        ]
-        if len(unexpected_error_indices) > 0:
-            error_str = "\n".join(
-                [out_list[idx].decode("utf-8") for idx in unexpected_error_indices]
+                non_geometry_tablenames = list(
+                    set(all_tablenames) - set(geometry_tablenames)
+                )
+
+                if (
+                    session.execute(
+                        text(
+                            "SELECT count(*) FROM sqlite_master WHERE name='schema_version';"
+                        )
+                    ).scalar()
+                    > 0
+                ):
+                    non_geometry_tablenames.append("schema_version")
+
+            infile = str(work_db.path)
+            outfile = str(Path(self.db.path).with_suffix(".gpkg"))
+
+            conversion_list = []
+            conversion_list.append(
+                gdal.VectorTranslateOptions(
+                    format="gpkg",
+                    skipFailures=True,
+                )
             )
-            raise UpgradeFailedError(f"ogr2ogr didn't finish as expected:\n{error_str}")
+            for table in non_geometry_tablenames:
+                conversion_list.append(
+                    gdal.VectorTranslateOptions(
+                        format="gpkg",
+                        accessMode="update",
+                        SQLStatement=f"SELECT * FROM {table}",
+                        layerName=table,
+                    )
+                )
+            for conversion_options in conversion_list:
+                try:
+                    ds = gdal.VectorTranslate(
+                        destNameOrDestDS=outfile,
+                        srcDS=infile,
+                        options=conversion_options,
+                    )
+                    # dereference dataset before writing additional layers to ensure the data is written
+                    del ds
+                except RuntimeError as err:
+                    raise UpgradeFailedError from err
+                else:
+                    if (
+                        hasattr(handler, "err_level")
+                        and handler.err_level >= gdal.CE_Warning
+                    ):
+                        warnings_list.append(handler.err_msg)
+
+            if len(warnings_list) > 0:
+                warning_string = "\n".join(
+                    ["GeoPackage conversion didn't finish as expected:"] + warnings
+                )
+                warnings.warn(warning_string)
+
         # Correct path of current database
         self.db.path = Path(self.db.path).with_suffix(".gpkg")
         # Reset engine so new path is used on the next call of get_engine()

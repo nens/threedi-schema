@@ -9,6 +9,12 @@ Changelog of threedi-schema
 - Remove model_settings.epsg_code
 
 
+0.229.2 (2025-01-16)
+--------------------
+
+- Rewrite geopackage conversion to use gdal.VectorTranslate instead of ogr2ogr 
+
+
 0.229.1 (2025-01-15)
 --------------------
 
