@@ -5,14 +5,7 @@ Changelog of threedi-schema
 0.229.2 (unreleased)
 --------------------
 
-- Rename sqlite table "tags" to "tag"
-- Remove indices referring to removed tables in previous migrations
-- Make model_settings.use_2d_rain and model_settings.friction_averaging booleans
-- Remove columns referencing v2 in geometry_column
-- Ensure correct use_* values when matching tables have no data
-- Use custom types for comma separated and table text fields to strip extra white space
-- Correct direction of dwf and surface map
-- Remove v2 related views from sqlite
+- Rewrite geopackage conversion to use gdal.VectorTranslate instead of ogr2ogr 
 
 
 0.229.1 (2025-01-15)
