@@ -222,7 +222,7 @@ class ModelSchema:
         gdal.PushErrorHandler(handler)
         gdal.UseExceptions()
 
-        warnings = []
+        warnings_list = []
 
         if self.db.get_engine().dialect.name == "geopackage":
             return
@@ -292,11 +292,11 @@ class ModelSchema:
                         hasattr(handler, "err_level")
                         and handler.err_level >= gdal.CE_Warning
                     ):
-                        warnings.append(handler.err_msg)
+                        warnings_list.append(handler.err_msg)
 
-            if len(warnings) > 0:
+            if len(warnings_list) > 0:
                 warning_string = "\n".join(warnings)
-                raise UpgradeFailedError(
+                warnings.warn(
                     "GeoPackage conversion didn't finish as expected:\n", warning_string
                 )
 
