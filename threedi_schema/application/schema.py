@@ -243,7 +243,9 @@ class ModelSchema:
                     .scalars()
                     .all()
                 )
-                non_geometry_tablenames = list(set(all_tablenames)-set(geometry_tablenames))
+                non_geometry_tablenames = list(
+                    set(all_tablenames) - set(geometry_tablenames)
+                )
 
                 if (
                     session.execute(
