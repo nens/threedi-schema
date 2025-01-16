@@ -10,6 +10,7 @@ from alembic.config import Config
 from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from geoalchemy2.functions import ST_SRID
 from osgeo import gdal
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
