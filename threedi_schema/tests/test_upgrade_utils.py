@@ -48,9 +48,9 @@ def test_upgrade_with_progress_func(oldest_sqlite):
     schema = oldest_sqlite.schema
     progress_func = MagicMock()
     schema.upgrade(
+        revision="0201",
         backup=False,
         upgrade_spatialite_version=False,
         progress_func=progress_func,
-        revision="0201",
     )
     assert progress_func.call_args_list == [call(0.0), call(50.0)]

@@ -117,12 +117,33 @@ class ModelSchema:
     def epsg_source(self):
         return self._get_epsg_data()[1]
 
+    @property
+    def is_geopackage(self):
+        with self.db.get_session() as session:
+            return bool(
+                session.execute(
+                    text(
+                        "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='gpkg_contents';"
+                    )
+                ).scalar()
+            )
+
+    @property
+    def is_spatialite(self):
+        with self.db.get_session() as session:
+            return bool(
+                session.execute(
+                    text(
+                        "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='spatial_ref_sys';"
+                    )
+                ).scalar()
+            )
+
     def upgrade(
         self,
         revision="head",
         backup=True,
         upgrade_spatialite_version=False,
-        convert_to_geopackage=False,
         progress_func=None,
         custom_epsg_code=None,
     ):
@@ -156,17 +177,28 @@ class ModelSchema:
             raise ValueError(
                 f"Incorrect version format: {revision}. Expected 'head' or a numeric value."
             )
-        if convert_to_geopackage and rev_nr < 300:
-            raise UpgradeFailedError(
-                f"Cannot convert to geopackage for {revision=} because geopackage support is "
-                "enabled from revision 300",
-            )
         v = self.get_version()
         if v is not None and v < constants.LATEST_SOUTH_MIGRATION_ID:
             raise MigrationMissingError(
                 f"This tool cannot update versions below "
                 f"{constants.LATEST_SOUTH_MIGRATION_ID}. Please consult the "
                 f"3Di documentation on how to update legacy databases."
+            )
+        if (
+            v is not None
+            and v <= constants.LAST_SPTL_SCHEMA_VERSION
+            and not self.is_spatialite
+        ):
+            raise UpgradeFailedError(
+                f"Cannot upgrade from {revision=} because {self.db.path} is not a spatialite"
+            )
+        elif (
+            v is not None
+            and v > constants.LAST_SPTL_SCHEMA_VERSION
+            and not self.is_geopackage
+        ):
+            raise UpgradeFailedError(
+                f"Cannot upgrade from {revision=} because {self.db.path} is not a geopackage"
             )
 
         def run_upgrade(_revision):
@@ -201,11 +233,21 @@ class ModelSchema:
                 self._set_custom_epsg_code(custom_epsg_code)
                 run_upgrade("0230")
                 self._remove_custom_epsg_code()
-        run_upgrade(revision)
-        if upgrade_spatialite_version:
+        # First upgrade to LAST_SPTL_SCHEMA_VERSION.
+        # When the requested revision <= LAST_SPTL_SCHEMA_VERSION, this is the only upgrade step
+        rev_temp = (
+            revision
+            if rev_nr <= constants.LAST_SPTL_SCHEMA_VERSION
+            else f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}"
+        )
+        run_upgrade(rev_temp)
+        # only upgrade spatialite version is target revision is <= LAST_SPTL_SCHEMA_VERSION
+        if rev_nr <= constants.LAST_SPTL_SCHEMA_VERSION and upgrade_spatialite_version:
             self.upgrade_spatialite_version()
-        elif convert_to_geopackage:
+        # Finish upgrade if target revision > LAST_SPTL_SCHEMA_VERSION
+        elif rev_nr > constants.LAST_SPTL_SCHEMA_VERSION:
             self.convert_to_geopackage()
+            run_upgrade(revision)
 
     def _set_custom_epsg_code(self, custom_epsg_code: int):
         if (

@@ -282,14 +282,18 @@ def test_upgrade_without_backup(south_latest_sqlite):
     assert db is south_latest_sqlite
 
 
-def test_convert_to_geopackage_raise(oldest_sqlite):
-    if get_schema_version() >= 300:
-        pytest.skip("Warning not expected beyond schema 300")
-    schema = ModelSchema(oldest_sqlite)
-    with pytest.raises(errors.UpgradeFailedError):
-        schema.upgrade(
-            backup=False, upgrade_spatialite_version=False, convert_to_geopackage=True
-        )
+@pytest.mark.parametrize(
+    "is_var, version",
+    [("is_spatialite", constants.LAST_SPTL_SCHEMA_VERSION), ("is_geopackage", 300)],
+)
+def test_upgrade_incorrect_format(in_memory_sqlite, is_var, version):
+    schema = ModelSchema(in_memory_sqlite)
+    with mock.patch.object(
+        type(schema), is_var, new=mock.PropertyMock(return_value=False)
+    ):
+        with mock.patch.object(type(schema), "get_version", return_value=version):
+            with pytest.raises(errors.UpgradeFailedError):
+                schema.upgrade()
 
 
 def test_upgrade_revision_exception(oldest_sqlite):
@@ -354,3 +358,20 @@ class TestGetEPSGData:
         schema.upgrade(backup=False, upgrade_spatialite_version=False)
         assert schema.epsg_code == 28992
         assert schema.epsg_source == "boundary_condition_1d.geom"
+
+
+def test_is_spatialite(in_memory_sqlite):
+    schema = ModelSchema(in_memory_sqlite)
+    schema.upgrade(
+        backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+    )
+    assert schema.is_spatialite
+
+
+def test_is_geopackage(oldest_sqlite):
+    schema = ModelSchema(oldest_sqlite)
+    schema.upgrade(
+        backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+    )
+    schema.convert_to_geopackage()
+    assert schema.is_geopackage

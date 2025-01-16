@@ -1,6 +1,7 @@
 from enum import Enum
 
 LATEST_SOUTH_MIGRATION_ID = 160
+LAST_SPTL_SCHEMA_VERSION = 230
 VERSION_TABLE_NAME = "schema_version"
 
 
