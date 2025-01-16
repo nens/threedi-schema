@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.230.0 (unreleased)
+0.230.0 (2025-01-16)
 --------------------
 
 - Reproject all geometries to the srid in model_settings.epsg_code
