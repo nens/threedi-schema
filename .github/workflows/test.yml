@@ -44,23 +44,18 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install sqlite3 and spatialite
+      - name: Install GDAL, sqlite3 and spatialite
         run: |
           sudo apt update
-          sudo apt install --yes --no-install-recommends sqlite3 libsqlite3-mod-spatialite
+          sudo apt install --yes --no-install-recommends sqlite3 libsqlite3-mod-spatialite libgdal-dev
           sqlite3 --version
-
-      - name: Install gdal (for ogr2ogr)
-        run: |
-          sudo apt update          
-          sudo apt install --yes --no-install-recommends gdal-bin
-          ogr2ogr --version
 
       - name: Install python dependencies
         shell: bash
         run: |
           pip install --disable-pip-version-check --upgrade pip setuptools wheel
           pip install ${{ matrix.pins }} .[test,cli]
+          pip install GDAL==$(gdal-config --version)
           pip list
 
       - name: Run tests
