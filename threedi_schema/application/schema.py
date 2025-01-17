@@ -162,9 +162,6 @@ class ModelSchema:
         Specify 'upgrade_spatialite_version=True' to also upgrade the
         spatialite file version after the upgrade.
 
-        Specify 'convert_to_geopackage=True' to also convert from spatialite
-        to geopackage file version after the upgrade.
-
         Specify a 'progress_func' to handle progress updates. `progress_func` should
         expect a single argument representing the fraction of progress
 
@@ -235,12 +232,11 @@ class ModelSchema:
                 self._remove_custom_epsg_code()
         # First upgrade to LAST_SPTL_SCHEMA_VERSION.
         # When the requested revision <= LAST_SPTL_SCHEMA_VERSION, this is the only upgrade step
-        rev_temp = (
+        run_upgrade(
             revision
             if rev_nr <= constants.LAST_SPTL_SCHEMA_VERSION
             else f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}"
         )
-        run_upgrade(rev_temp)
         # only upgrade spatialite version is target revision is <= LAST_SPTL_SCHEMA_VERSION
         if rev_nr <= constants.LAST_SPTL_SCHEMA_VERSION and upgrade_spatialite_version:
             self.upgrade_spatialite_version()
