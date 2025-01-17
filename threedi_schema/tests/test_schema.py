@@ -307,7 +307,11 @@ def test_upgrade_spatialite_3(oldest_sqlite):
         pytest.skip("Nothing to test: spatialite library version equals file version")
 
     schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(backup=False, upgrade_spatialite_version=True)
+    schema.upgrade(
+        backup=False,
+        upgrade_spatialite_version=True,
+        revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
+    )
 
     _, file_version_after = get_spatialite_version(oldest_sqlite)
     assert file_version_after == 4
