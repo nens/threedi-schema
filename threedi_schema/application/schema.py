@@ -311,7 +311,7 @@ class ModelSchema:
                 f"{schema_version}. Current version: {version}."
             )
 
-        ensure_spatial_indexes(self.db, models.DECLARED_MODELS)
+        ensure_spatial_indexes(self.db.engine, models.DECLARED_MODELS)
 
     def upgrade_spatialite_version(self):
         """Upgrade the version of the spatialite file to the version of the
@@ -324,7 +324,11 @@ class ModelSchema:
         """
         lib_version, file_version = get_spatialite_version(self.db)
         if file_version == 3 and lib_version in (4, 5):
-            self.validate_schema()
+            if self.get_version() != constants.LAST_SPTL_SCHEMA_VERSION:
+                raise MigrationMissingError(
+                    f"This tool requires schema version "
+                    f"{constants.LAST_SPTL_SCHEMA_VERSION:}. Current version: {self.get_version()}."
+                )
             with self.db.file_transaction(start_empty=True) as work_db:
                 rev_nr = min(get_schema_version(), 229)
                 first_rev = f"{rev_nr:04d}"
@@ -369,8 +373,15 @@ class ModelSchema:
             return
 
         # Ensure database is upgraded and views are recreated
-        self.upgrade()
-        self.validate_schema()
+        revision = self.get_version()
+        if revision is None or revision <= constants.LAST_SPTL_SCHEMA_VERSION:
+            self.upgrade(
+                revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}", backup=False
+            )
+        elif revision > constants.LAST_SPTL_SCHEMA_VERSION:
+            UpgradeFailedError(
+                f"Cannot convert schema version {revision} to geopackage"
+            )
         # Make necessary modifications for conversion on temporary database
         with self.db.file_transaction(start_empty=False, copy_results=False) as work_db:
             # remove spatialite specific tables that break conversion
@@ -452,3 +463,4 @@ class ModelSchema:
                     "CREATE TABLE views_geometry_columns(view_name TEXT, view_geometry TEXT, view_rowid TEXT, f_table_name VARCHAR(256), f_geometry_column VARCHAR(256))"
                 )
             )
+        ensure_spatial_indexes(self.db.engine, models.DECLARED_MODELS)

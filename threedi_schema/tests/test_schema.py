@@ -7,6 +7,8 @@ from threedi_schema import ModelSchema
 from threedi_schema.application import errors
 from threedi_schema.application.schema import get_schema_version
 from threedi_schema.domain import constants
+from threedi_schema.domain.models import DECLARED_MODELS
+from threedi_schema.infrastructure.spatial_index import get_missing_spatial_indexes
 from threedi_schema.infrastructure.spatialite_versions import get_spatialite_version
 
 
@@ -135,9 +137,9 @@ def test_full_upgrade_oldest(oldest_sqlite):
     run_upgrade_test(schema)
 
 
-def test_full_upgrade_empty(in_memory_sqlite):
+def test_full_upgrade_empty(empty_sqlite_v4):
     """Upgrade an empty database to the latest version"""
-    schema = ModelSchema(in_memory_sqlite)
+    schema = ModelSchema(empty_sqlite_v4)
     schema.upgrade(
         backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
     )
@@ -163,10 +165,12 @@ def run_upgrade_test(schema):
         schema_cols = get_columns_from_schema(schema, table)
         sqlite_cols = get_columns_from_sqlite(session, table)
         assert set(schema_cols).issubset(set(sqlite_cols))
-    check_result = session.execute(
-        text("SELECT CheckSpatialIndex('connection_node', 'geom')")
-    ).scalar()
-    assert check_result == 1
+    assert get_missing_spatial_indexes(schema.db, DECLARED_MODELS) == []
+
+    # check_result = session.execute(
+    #     text("SELECT CheckSpatialIndex('connection_node', 'geom')")
+    # ).scalar()
+    # assert check_result == 1
 
 
 def test_upgrade_with_custom_epsg_code(in_memory_sqlite):
