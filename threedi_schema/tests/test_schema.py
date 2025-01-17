@@ -362,7 +362,10 @@ class TestGetEPSGData:
 def test_is_spatialite(in_memory_sqlite):
     schema = ModelSchema(in_memory_sqlite)
     schema.upgrade(
-        backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+        backup=False,
+        upgrade_spatialite_version=False,
+        custom_epsg_code=28992,
+        revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
     )
     assert schema.is_spatialite
 
@@ -370,7 +373,10 @@ def test_is_spatialite(in_memory_sqlite):
 def test_is_geopackage(oldest_sqlite):
     schema = ModelSchema(oldest_sqlite)
     schema.upgrade(
-        backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
+        backup=False,
+        upgrade_spatialite_version=False,
+        custom_epsg_code=28992,
+        revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
     )
     schema.convert_to_geopackage()
     assert schema.is_geopackage
