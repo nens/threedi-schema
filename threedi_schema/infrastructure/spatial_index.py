@@ -1,50 +1,47 @@
-from geoalchemy2.types import Geometry
-from sqlalchemy import func, text
+from sqlalchemy import func, inspect, text
 
 __all__ = ["ensure_spatial_indexes"]
 
 
-def _ensure_spatial_index(connection, column):
-    """Ensure presence of a spatial index for given geometry olumn"""
-    if (
-        connection.execute(
-            func.RecoverSpatialIndex(column.table.name, column.name)
-        ).scalar()
-        is not None
-    ):
-        return False
-
+def create_spatial_index(connection, column):
+    """
+    Create spatial index for given column.
+    Note that this will fail if the spatial index already exists!
+    """
     idx_name = f"{column.table.name}_{column.name}"
-    connection.execute(text(f"DROP TABLE IF EXISTS idx_{idx_name}"))
-    for prefix in {"gii_", "giu_", "gid_"}:
-        connection.execute(text(f"DROP TRIGGER IF EXISTS {prefix}{idx_name}"))
-    if (
-        connection.execute(
-            func.CreateSpatialIndex(column.table.name, column.name)
-        ).scalar()
-        != 1
-    ):
-        raise RuntimeError(f"Spatial index creation for {idx_name} failed")
-
+    try:
+        connection.execute(func.gpkgAddSpatialIndex(column.table.name, column.name))
+    except Exception as e:
+        raise RuntimeError(
+            f"Spatial index creation for {idx_name} failed with error {e}"
+        )
     return True
 
 
-def ensure_spatial_indexes(db, models):
+def get_missing_spatial_indexes(engine, models):
+    """
+    Collect all rtree tables that should exist
+    There can only be one geometry column per table and we assume any geometry column is named geom
+    """
+    inspector = inspect(engine)
+    table_names = inspector.get_table_names()
+    return [
+        model
+        for model in models
+        if "geom" in model.__table__.columns
+        and f"rtree_{model.__table__.name}_geom" not in table_names
+    ]
+
+
+def ensure_spatial_indexes(engine, models):
     """Ensure presence of spatial indexes for all geometry columns"""
     created = False
-    engine = db.engine
-
+    no_spatial_index_models = get_missing_spatial_indexes(engine, models)
     with engine.connect() as connection:
         with connection.begin():
-            for model in models:
-                geom_columns = [
-                    x for x in model.__table__.columns if isinstance(x.type, Geometry)
-                ]
-                if len(geom_columns) > 1:
-                    # Pragmatic fix: spatialindex breaks on multiple geometry columns per table
-                    geom_columns = [x for x in geom_columns if x.name == "the_geom"]
-                if geom_columns:
-                    created &= _ensure_spatial_index(connection, geom_columns[0])
-
+            for model in no_spatial_index_models:
+                created &= create_spatial_index(
+                    connection, model.__table__.columns["geom"]
+                )
             if created:
                 connection.execute(text("VACUUM"))
