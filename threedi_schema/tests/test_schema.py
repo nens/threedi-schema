@@ -165,12 +165,7 @@ def run_upgrade_test(schema):
         schema_cols = get_columns_from_schema(schema, table)
         sqlite_cols = get_columns_from_sqlite(session, table)
         assert set(schema_cols).issubset(set(sqlite_cols))
-    assert get_missing_spatial_indexes(schema.db, DECLARED_MODELS) == []
-
-    # check_result = session.execute(
-    #     text("SELECT CheckSpatialIndex('connection_node', 'geom')")
-    # ).scalar()
-    # assert check_result == 1
+    assert get_missing_spatial_indexes(schema.db.engine, DECLARED_MODELS) == []
 
 
 def test_upgrade_with_custom_epsg_code(in_memory_sqlite):
