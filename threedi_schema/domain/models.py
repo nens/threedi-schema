@@ -64,7 +64,7 @@ class MemoryControl(Base):
     id = Column(Integer, primary_key=True)
     upper_threshold = Column(Float)
     lower_threshold = Column(Float)
-    action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
+    action_type = Column(VarcharEnum(constants.TableControlActionTypes))
     action_value_1 = Column(Float)
     action_value_2 = Column(Float)
     target_type = Column(VarcharEnum(constants.StructureControlTypes))
@@ -81,7 +81,7 @@ class TableControl(Base):
     __tablename__ = "table_control"
     id = Column(Integer, primary_key=True)
     action_table = Column(CSVTable)
-    action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
+    action_type = Column(VarcharEnum(constants.TableControlActionTypes))
     measure_operator = Column(VarcharEnum(constants.MeasureOperators))
     target_type = Column(VarcharEnum(constants.StructureControlTypes))
     target_id = Column(Integer, nullable=False)
