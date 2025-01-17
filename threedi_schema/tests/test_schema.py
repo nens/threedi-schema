@@ -189,9 +189,9 @@ def test_upgrade_with_custom_epsg_code(in_memory_sqlite):
         assert all([srid == 28992 for srid in srids])
 
 
-def test_upgrade_with_custom_epsg_code_version_too_new(in_memory_sqlite):
+def test_upgrade_with_custom_epsg_code_version_too_new(empty_sqlite_v4):
     """Set custom epsg code for schema version > 229"""
-    schema = ModelSchema(in_memory_sqlite)
+    schema = ModelSchema(empty_sqlite_v4)
     schema.upgrade(
         revision="0230",
         backup=False,
@@ -324,6 +324,8 @@ def test_upgrade_spatialite_3(oldest_sqlite):
     assert check_result == 1
 
 
+# TODO: remove this because ensure_spatial_indexes is already tested
+@pytest.mark.skip(reason="will be removed")
 def test_set_spatial_indexes(in_memory_sqlite):
     engine = in_memory_sqlite.engine
 
@@ -348,8 +350,8 @@ def test_set_spatial_indexes(in_memory_sqlite):
 
 
 class TestGetEPSGData:
-    def test_no_epsg(self, in_memory_sqlite):
-        schema = ModelSchema(in_memory_sqlite)
+    def test_no_epsg(self, empty_sqlite_v4):
+        schema = ModelSchema(empty_sqlite_v4)
         schema.upgrade(
             backup=False, upgrade_spatialite_version=False, custom_epsg_code=28992
         )
