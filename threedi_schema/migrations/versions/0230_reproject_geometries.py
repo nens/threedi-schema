@@ -101,7 +101,6 @@ def transform_column(table_name, srid):
     op.execute(sa.text(f"CREATE TABLE {temp_table_name} ({col_str});"))
     # Add geometry column with new srid!
     geom_type = get_geom_type(table_name, 'geom')
-    print(table_name, geom_type)
     add_geometry_column(temp_table_name, 'geom', srid, geom_type)
     # Copy transformed geometry and other columns to temp table
     col_str = ','.join(['id'] + col_names)
