@@ -62,12 +62,22 @@ def get_model_srid() -> int:
 
 
 def get_geom_type(table_name, geo_col_name):
+    # map geometry numbers to names
+    geom_type_map = {
+        1: 'POINT',
+        2: 'LINESTRING',
+        3: 'POLYGON',
+        4: 'MULTIPOINT',
+        5: 'MULTILINESTRING',
+        6: 'MULTIPOLYGON',
+        7: 'GEOMETRYCOLLECTION',
+    }
     connection = op.get_bind()
-    columns = connection.execute(sa.text(f"PRAGMA table_info('{table_name}')")).fetchall()
-    for col in columns:
-        if col[1] == geo_col_name:
-            return col[2]
-
+    # use metadata to determine spatialite version because the geometry type column differs
+    spatial_ref_sys_cols = [item[0] for item in connection.execute(sa.text("select name from pragma_table_info('spatial_ref_sys')")).fetchall()]
+    geom_type_name = 'type' if "srs_wkt" in spatial_ref_sys_cols else 'geometry_type'
+    geom_type_num = connection.execute(sa.text(f"SELECT {geom_type_name} from geometry_columns where f_table_name='{table_name}'")).fetchone()[0]
+    return geom_type_map.get(geom_type_num, 'GEOMETRY')
 
 def add_geometry_column(table: str, name: str, srid: int, geometry_type: str):
     # Adding geometry columns via alembic doesn't work
@@ -91,6 +101,7 @@ def transform_column(table_name, srid):
     op.execute(sa.text(f"CREATE TABLE {temp_table_name} ({col_str});"))
     # Add geometry column with new srid!
     geom_type = get_geom_type(table_name, 'geom')
+    print(table_name, geom_type)
     add_geometry_column(temp_table_name, 'geom', srid, geom_type)
     # Copy transformed geometry and other columns to temp table
     col_str = ','.join(['id'] + col_names)
