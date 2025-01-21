@@ -74,8 +74,8 @@ def get_geom_type(table_name, geo_col_name):
     }
     connection = op.get_bind()
     # use metadata to determine spatialite version because the geometry type column differs
-    spatial_ref_sys_cols = [item[0] for item in connection.execute(sa.text("select name from pragma_table_info('spatial_ref_sys')")).fetchall()]
-    geom_type_name = 'type' if "srs_wkt" in spatial_ref_sys_cols else 'geometry_type'
+    srs_wkt_exists = connection.execute(sa.text("select count(name) from pragma_table_info('spatial_ref_sys') where name is 'srs_wkt'")).scalar() == 1
+    geom_type_name = 'type' if srs_wkt_exists else 'geometry_type'
     geom_type_num = connection.execute(sa.text(f"SELECT {geom_type_name} from geometry_columns where f_table_name='{table_name}'")).fetchone()[0]
     return geom_type_map.get(geom_type_num, 'GEOMETRY')
 
