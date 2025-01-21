@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.230.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix invalid geometry types for measure_map, memory_control and table_control
 
 
 0.230.0 (2025-01-16)
