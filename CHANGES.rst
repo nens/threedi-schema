@@ -5,7 +5,8 @@ Changelog of threedi-schema
 0.230.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix invalid setting of geometry types for spatialite v3
+- Fix invalid setting of geometry types for lateral_2d and boundary_condition_2d
 
 
 0.230.1 (2025-01-21)
