@@ -189,6 +189,7 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
         if entry['name'] in ["geom", "id"]:
             entry_string += f" NOT NULL"
         new_columns_list_sql_formatted.append(entry_string)
+
     temp_name = f'_temp_225_{uuid.uuid4().hex}'
     create_table_query = f"""CREATE TABLE {temp_name} ({', '.join(new_columns_list_sql_formatted)});"""
     op.execute(sa.text(create_table_query))
@@ -196,9 +197,8 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
     drop_geo_table(op, table_name)
     op.execute(sa.text(f"ALTER TABLE {temp_name} RENAME TO {table_name};"))
 
-    for entry in new_columns:
-        if entry["name"] == "geom":
-            op.execute(sa.text(f"""SELECT RecoverGeometryColumn('{table_name}', '{GEOMETRY_TYPES[table_name]}', 4326, '{entry["type"]}', 'XY')"""))
+    if table_name is not GEOMETRY_TYPES:
+        op.execute(sa.text(f"""SELECT RecoverGeometryColumn('{table_name}', 'geom', 4326, '{GEOMETRY_TYPES[table_name]}', 'XY')"""))
 
 
 
