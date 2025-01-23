@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.230.3 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix invalid setting of geometry types for lateral_2d and boundary_condition_2d
 
 
 0.230.2 (2025-01-23)
