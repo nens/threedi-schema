@@ -117,6 +117,11 @@ DEFAULT_VALUES = {
     },
 }
 
+GEOMETRY_TYPES = {"lateral_2d": "POINT",
+                  "lateral_1d": "POINT",
+                  "boundary_condition_1d": "POINT",
+                  "boundary_condition_2d": "LINESTRING"}
+
 
 def rename_tables(table_sets: List[Tuple[str, str]]):
     # no checks for existence are done, this will fail if a source table doesn't exist
@@ -166,7 +171,6 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
     columns_dict = dict(columns)
 
     old_columns_list = [entry["name"] for entry in old_columns]
-
     if not all(e in old_columns_list for e in columns_dict):
         raise ValueError(f"Cannot rename columns {columns_dict.keys()} in table {table_name}; table does not contain all these columns")
     new_columns = deepcopy(old_columns)
@@ -194,7 +198,7 @@ def rename_columns(table_name: str, columns: List[Tuple[str, str]]):
 
     for entry in new_columns:
         if entry["name"] == "geom":
-            op.execute(sa.text(f"""SELECT RecoverGeometryColumn('{table_name}', '{entry["name"]}', 4326, '{entry["type"]}', 'XY')"""))
+            op.execute(sa.text(f"""SELECT RecoverGeometryColumn('{table_name}', '{GEOMETRY_TYPES[table_name]}', 4326, '{entry["type"]}', 'XY')"""))
 
 
 
