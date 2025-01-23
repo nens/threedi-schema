@@ -8,6 +8,24 @@ Changelog of threedi-schema
 - Convert spatialite to geopackage during upgrade
 
 
+0.230.3 (2025-01-23)
+--------------------
+
+- Fix invalid setting of geometry types for lateral_2d and boundary_condition_2d
+
+
+0.230.2 (2025-01-23)
+--------------------
+
+- Modify model names such that sqlite table names match to model names
+
+
+0.230.1 (2025-01-21)
+--------------------
+
+- Fix invalid geometry types for measure_map, memory_control and table_control
+
+
 0.230.0 (2025-01-16)
 --------------------
 

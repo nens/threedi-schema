@@ -235,7 +235,7 @@ class StructureControlTypes(Enum):
             return f"v2_{self.value}"
 
 
-class ControlTableActionTypes(Enum):
+class TableControlActionTypes(Enum):
     set_discharge_coefficients = "set_discharge_coefficients"  # not pump
     set_crest_level = "set_crest_level"  # orifice, weir only
     set_pump_capacity = "set_pump_capacity"  # only pump, in API: set_pump_capacity
