@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.230.2 (unreleased)
+0.230.2 (2025-01-23)
 --------------------
 
 - Modify model names such that sqlite table names match to model names
