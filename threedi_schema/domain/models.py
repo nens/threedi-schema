@@ -35,7 +35,7 @@ class BoundaryConditions2D(Base):
     geom = Column(Geometry("LINESTRING"), nullable=False)
 
 
-class ControlMeasureLocation(Base):
+class MeasureLocation(Base):
     __tablename__ = "measure_location"
     id = Column(Integer, primary_key=True)
     connection_node_id = Column(Integer)
@@ -46,7 +46,7 @@ class ControlMeasureLocation(Base):
     tags = Column(CSVText)
 
 
-class ControlMeasureMap(Base):
+class MeasureMap(Base):
     __tablename__ = "measure_map"
     id = Column(Integer, primary_key=True)
     measure_location_id = Column(Integer)
@@ -59,12 +59,12 @@ class ControlMeasureMap(Base):
     tags = Column(CSVText)
 
 
-class ControlMemory(Base):
+class MemoryControl(Base):
     __tablename__ = "memory_control"
     id = Column(Integer, primary_key=True)
     upper_threshold = Column(Float)
     lower_threshold = Column(Float)
-    action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
+    action_type = Column(VarcharEnum(constants.TableControlActionTypes))
     action_value_1 = Column(Float)
     action_value_2 = Column(Float)
     target_type = Column(VarcharEnum(constants.StructureControlTypes))
@@ -77,11 +77,11 @@ class ControlMemory(Base):
     tags = Column(CSVText)
 
 
-class ControlTable(Base):
+class TableControl(Base):
     __tablename__ = "table_control"
     id = Column(Integer, primary_key=True)
     action_table = Column(CSVTable)
-    action_type = Column(VarcharEnum(constants.ControlTableActionTypes))
+    action_type = Column(VarcharEnum(constants.TableControlActionTypes))
     measure_operator = Column(VarcharEnum(constants.MeasureOperators))
     target_type = Column(VarcharEnum(constants.StructureControlTypes))
     target_id = Column(Integer, nullable=False)
@@ -120,7 +120,7 @@ class SimpleInfiltration(Base):
         return self.max_infiltration_volume_file
 
 
-class SurfaceParameter(Base):
+class SurfaceParameters(Base):
     __tablename__ = "surface_parameters"
     id = Column(Integer, primary_key=True)
     outflow_delay = Column(Float, nullable=False)
@@ -269,7 +269,7 @@ class ConnectionNode(Base):
     hydraulic_conductivity_out = Column(Float)
 
 
-class Lateral1d(Base):
+class Lateral1D(Base):
     __tablename__ = "lateral_1d"
     id = Column(Integer, primary_key=True)
     code = Column(Text)
@@ -317,7 +317,7 @@ class NumericalSettings(Base):
     flooding_threshold = Column(Float)
 
 
-class VegetationDrag(Base):
+class VegetationDrag2D(Base):
     __tablename__ = "vegetation_drag_2d"
     id = Column(Integer, primary_key=True)
 
@@ -471,7 +471,7 @@ class Channel(Base):
     hydraulic_conductivity_out = Column(Float)
 
 
-class Windshielding(Base):
+class Windshielding1D(Base):
     __tablename__ = "windshielding_1d"
     id = Column(Integer, primary_key=True)
     north = Column(Float)
@@ -702,10 +702,10 @@ DECLARED_MODELS = [
     BoundaryConditions2D,
     Channel,
     ConnectionNode,
-    ControlMeasureLocation,
-    ControlMeasureMap,
-    ControlMemory,
-    ControlTable,
+    MeasureLocation,
+    MeasureMap,
+    MemoryControl,
+    TableControl,
     CrossSectionLocation,
     Culvert,
     DemAverageArea,
@@ -719,7 +719,7 @@ DECLARED_MODELS = [
     InitialConditions,
     Interception,
     Interflow,
-    Lateral1d,
+    Lateral1D,
     Lateral2D,
     Material,
     ModelSettings,
@@ -735,10 +735,10 @@ DECLARED_MODELS = [
     SimulationTemplateSettings,
     Surface,
     SurfaceMap,
-    SurfaceParameter,
+    SurfaceParameters,
     Tags,
     TimeStepSettings,
-    VegetationDrag,
+    VegetationDrag2D,
     Weir,
-    Windshielding,
+    Windshielding1D,
 ]
