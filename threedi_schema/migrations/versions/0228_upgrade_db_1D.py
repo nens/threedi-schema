@@ -185,7 +185,6 @@ def modify_table(old_table_name, new_table_name):
     old_col_names.append('the_geom')
     new_col_names.append('geom')
     new_col_types.append(f'{geom_type} NOT NULL')
-    print(new_table_name, geom_type)
     # Create new table (temp), insert data, drop original and rename temp to table_name
     new_col_str = ','.join(['id INTEGER PRIMARY KEY NOT NULL'] + [f'{cname} {ctype}' for cname, ctype in
                                                                   zip(new_col_names, new_col_types)])
