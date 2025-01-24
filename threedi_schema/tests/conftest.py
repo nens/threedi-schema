@@ -56,8 +56,7 @@ def in_memory_sqlite():
 
 
 @pytest.fixture
-def sqlite_latest(in_memory_sqlite):
+def sqlite_latest(empty_sqlite_v4):
     """An in-memory database with the latest schema version"""
-    db = ThreediDatabase("")
-    in_memory_sqlite.schema.upgrade("head", backup=False, custom_epsg_code=28992)
-    return db
+    empty_sqlite_v4.schema.upgrade("head", backup=False, custom_epsg_code=28992)
+    return empty_sqlite_v4

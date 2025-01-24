@@ -117,12 +117,33 @@ class ModelSchema:
     def epsg_source(self):
         return self._get_epsg_data()[1]
 
+    @property
+    def is_geopackage(self):
+        with self.db.get_session() as session:
+            return bool(
+                session.execute(
+                    text(
+                        "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='gpkg_contents';"
+                    )
+                ).scalar()
+            )
+
+    @property
+    def is_spatialite(self):
+        with self.db.get_session() as session:
+            return bool(
+                session.execute(
+                    text(
+                        "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='spatial_ref_sys';"
+                    )
+                ).scalar()
+            )
+
     def upgrade(
         self,
         revision="head",
         backup=True,
         upgrade_spatialite_version=False,
-        convert_to_geopackage=False,
         progress_func=None,
         custom_epsg_code=None,
     ):
@@ -141,9 +162,6 @@ class ModelSchema:
         Specify 'upgrade_spatialite_version=True' to also upgrade the
         spatialite file version after the upgrade.
 
-        Specify 'convert_to_geopackage=True' to also convert from spatialite
-        to geopackage file version after the upgrade.
-
         Specify a 'progress_func' to handle progress updates. `progress_func` should
         expect a single argument representing the fraction of progress
 
@@ -156,17 +174,28 @@ class ModelSchema:
             raise ValueError(
                 f"Incorrect version format: {revision}. Expected 'head' or a numeric value."
             )
-        if convert_to_geopackage and rev_nr < 300:
-            raise UpgradeFailedError(
-                f"Cannot convert to geopackage for {revision=} because geopackage support is "
-                "enabled from revision 300",
-            )
         v = self.get_version()
         if v is not None and v < constants.LATEST_SOUTH_MIGRATION_ID:
             raise MigrationMissingError(
                 f"This tool cannot update versions below "
                 f"{constants.LATEST_SOUTH_MIGRATION_ID}. Please consult the "
                 f"3Di documentation on how to update legacy databases."
+            )
+        if (
+            v is not None
+            and v <= constants.LAST_SPTL_SCHEMA_VERSION
+            and not self.is_spatialite
+        ):
+            raise UpgradeFailedError(
+                f"Cannot upgrade from {revision=} because {self.db.path} is not a spatialite"
+            )
+        elif (
+            v is not None
+            and v > constants.LAST_SPTL_SCHEMA_VERSION
+            and not self.is_geopackage
+        ):
+            raise UpgradeFailedError(
+                f"Cannot upgrade from {revision=} because {self.db.path} is not a geopackage"
             )
 
         def run_upgrade(_revision):
@@ -201,11 +230,20 @@ class ModelSchema:
                 self._set_custom_epsg_code(custom_epsg_code)
                 run_upgrade("0230")
                 self._remove_custom_epsg_code()
-        run_upgrade(revision)
-        if upgrade_spatialite_version:
+        # First upgrade to LAST_SPTL_SCHEMA_VERSION.
+        # When the requested revision <= LAST_SPTL_SCHEMA_VERSION, this is the only upgrade step
+        run_upgrade(
+            revision
+            if rev_nr <= constants.LAST_SPTL_SCHEMA_VERSION
+            else f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}"
+        )
+        # only upgrade spatialite version is target revision is <= LAST_SPTL_SCHEMA_VERSION
+        if rev_nr <= constants.LAST_SPTL_SCHEMA_VERSION and upgrade_spatialite_version:
             self.upgrade_spatialite_version()
-        elif convert_to_geopackage:
+        # Finish upgrade if target revision > LAST_SPTL_SCHEMA_VERSION
+        elif rev_nr > constants.LAST_SPTL_SCHEMA_VERSION:
             self.convert_to_geopackage()
+            run_upgrade(revision)
 
     def _set_custom_epsg_code(self, custom_epsg_code: int):
         if (
@@ -269,7 +307,7 @@ class ModelSchema:
                 f"{schema_version}. Current version: {version}."
             )
 
-        ensure_spatial_indexes(self.db, models.DECLARED_MODELS)
+        ensure_spatial_indexes(self.db.engine, models.DECLARED_MODELS)
 
     def upgrade_spatialite_version(self):
         """Upgrade the version of the spatialite file to the version of the
@@ -282,7 +320,11 @@ class ModelSchema:
         """
         lib_version, file_version = get_spatialite_version(self.db)
         if file_version == 3 and lib_version in (4, 5):
-            self.validate_schema()
+            if self.get_version() != constants.LAST_SPTL_SCHEMA_VERSION:
+                raise MigrationMissingError(
+                    f"This tool requires schema version "
+                    f"{constants.LAST_SPTL_SCHEMA_VERSION:}. Current version: {self.get_version()}."
+                )
             with self.db.file_transaction(start_empty=True) as work_db:
                 rev_nr = min(get_schema_version(), 229)
                 first_rev = f"{rev_nr:04d}"
@@ -327,8 +369,15 @@ class ModelSchema:
             return
 
         # Ensure database is upgraded and views are recreated
-        self.upgrade()
-        self.validate_schema()
+        revision = self.get_version()
+        if revision is None or revision <= constants.LAST_SPTL_SCHEMA_VERSION:
+            self.upgrade(
+                revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}", backup=False
+            )
+        elif revision > constants.LAST_SPTL_SCHEMA_VERSION:
+            UpgradeFailedError(
+                f"Cannot convert schema version {revision} to geopackage"
+            )
         # Make necessary modifications for conversion on temporary database
         with self.db.file_transaction(start_empty=False, copy_results=False) as work_db:
             # remove spatialite specific tables that break conversion
@@ -410,3 +459,4 @@ class ModelSchema:
                     "CREATE TABLE views_geometry_columns(view_name TEXT, view_geometry TEXT, view_rowid TEXT, f_table_name VARCHAR(256), f_geometry_column VARCHAR(256))"
                 )
             )
+        ensure_spatial_indexes(self.db.engine, models.DECLARED_MODELS)

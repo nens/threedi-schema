@@ -21,7 +21,7 @@ def test_check_valid_crs(in_memory_sqlite, epsg_code):
 
 def test_migration(tmp_path_factory, oldest_sqlite):
     schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(backup=False)
+    schema.upgrade(backup=False, revision="0230")
     cursor = sqlite3.connect(schema.db.path).cursor()
     query = cursor.execute("SELECT srid FROM geometry_columns where f_table_name = 'geom'")
     epsg_matches = [int(item[0])==28992 for item in query.fetchall()]

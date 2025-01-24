@@ -42,7 +42,6 @@ def migrate(
         revision=revision,
         backup=backup,
         upgrade_spatialite_version=upgrade_spatialite_version,
-        convert_to_geopackage=convert_to_geopackage,
     )
     click.echo("The migrated schema revision is: %s" % schema.get_version())
 
