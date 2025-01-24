@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300 (unreleased)
+0.300.0 (2025-01-24)
 --------------------
 
 - Convert spatialite to geopackage during upgrade
