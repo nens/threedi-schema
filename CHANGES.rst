@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.1 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix incorrect naming of table Tags as tag instead of tags in migration 223
 
 
 0.300.0 (2025-01-24)
