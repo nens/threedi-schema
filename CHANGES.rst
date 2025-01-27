@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Set default visualisation of connection_node to -1
 
 
 0.300.1 (2025-01-24)

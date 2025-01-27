@@ -436,7 +436,19 @@ def create_connection_node():
     query = """
             CREATE TABLE connection_node (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
-            code VARCHAR(100),tags TEXT,display_name TEXT,storage_area FLOAT,initial_water_level FLOAT,visualisation INTEGER,manhole_surface_level FLOAT,bottom_level FLOAT,exchange_level FLOAT,exchange_type INTEGER,exchange_thickness FLOAT,hydraulic_conductivity_in FLOAT,hydraulic_conductivity_out FLOAT,
+            code VARCHAR(100),
+            tags TEXT,
+            display_name TEXT,
+            storage_area FLOAT,
+            initial_water_level FLOAT,
+            visualisation INTEGER DEFAULT -1,
+            manhole_surface_level FLOAT,
+            bottom_level FLOAT,
+            exchange_level FLOAT,
+            exchange_type INTEGER,
+            exchange_thickness FLOAT,
+            hydraulic_conductivity_in FLOAT,
+            hydraulic_conductivity_out FLOAT,
             geom POINT NOT NULL
         );    
     """
