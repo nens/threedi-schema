@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.2 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix geom for pump in migration 228
 
 
 0.300.1 (2025-01-24)
