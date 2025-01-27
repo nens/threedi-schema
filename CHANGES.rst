@@ -6,6 +6,7 @@ Changelog of threedi-schema
 --------------------
 
 - Set default visualisation of connection_node to -1
+- Fix geom for pump in migration 228
 
 
 0.300.1 (2025-01-24)
