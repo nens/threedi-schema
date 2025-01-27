@@ -381,13 +381,13 @@ def fix_geom_for_culvert():
 
 def set_geom_for_v2_pumpstation():
     op.execute(sa.text(f"SELECT AddGeometryColumn('v2_pumpstation', 'the_geom', 4326, 'POINT', 'XY', 0);"))
-    q = f"""
+    q = """
         UPDATE
-            v2_pumpstation
+            v2_pumpstation as p
         SET the_geom = (
-            SELECT node.the_geom FROM v2_pumpstation AS object 
-            JOIN v2_connection_nodes AS node ON object.connection_node_start_id = node.id
-        )         
+            SELECT node.the_geom FROM v2_connection_nodes AS node 
+            WHERE p.connection_node_start_id = node.id
+        )   
     """
     op.execute(sa.text(q))
 
@@ -436,7 +436,19 @@ def create_connection_node():
     query = """
             CREATE TABLE connection_node (
             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
-            code VARCHAR(100),tags TEXT,display_name TEXT,storage_area FLOAT,initial_water_level FLOAT,visualisation INTEGER,manhole_surface_level FLOAT,bottom_level FLOAT,exchange_level FLOAT,exchange_type INTEGER,exchange_thickness FLOAT,hydraulic_conductivity_in FLOAT,hydraulic_conductivity_out FLOAT,
+            code VARCHAR(100),
+            tags TEXT,
+            display_name TEXT,
+            storage_area FLOAT,
+            initial_water_level FLOAT,
+            visualisation INTEGER DEFAULT -1,
+            manhole_surface_level FLOAT,
+            bottom_level FLOAT,
+            exchange_level FLOAT,
+            exchange_type INTEGER,
+            exchange_thickness FLOAT,
+            hydraulic_conductivity_in FLOAT,
+            hydraulic_conductivity_out FLOAT,
             geom POINT NOT NULL
         );    
     """
