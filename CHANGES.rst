@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.2 (unreleased)
+0.300.2 (2025-01-27)
 --------------------
 
 - Fix typo in warning handling on convert to geopackge
