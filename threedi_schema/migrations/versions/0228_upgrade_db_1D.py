@@ -381,13 +381,13 @@ def fix_geom_for_culvert():
 
 def set_geom_for_v2_pumpstation():
     op.execute(sa.text(f"SELECT AddGeometryColumn('v2_pumpstation', 'the_geom', 4326, 'POINT', 'XY', 0);"))
-    q = f"""
+    q = """
         UPDATE
-            v2_pumpstation
+            v2_pumpstation as p
         SET the_geom = (
-            SELECT node.the_geom FROM v2_pumpstation AS object 
-            JOIN v2_connection_nodes AS node ON object.connection_node_start_id = node.id
-        )         
+            SELECT node.the_geom FROM v2_connection_nodes AS node 
+            WHERE p.connection_node_start_id = node.id
+        )   
     """
     op.execute(sa.text(q))
 
