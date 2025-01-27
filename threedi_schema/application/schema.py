@@ -444,7 +444,7 @@ class ModelSchema:
 
             if len(warnings_list) > 0:
                 warning_string = "\n".join(
-                    ["GeoPackage conversion didn't finish as expected:"] + warnings
+                    ["GeoPackage conversion didn't finish as expected:"] + warnings_list
                 )
                 warnings.warn(warning_string)
 
