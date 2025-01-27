@@ -5,6 +5,7 @@ Changelog of threedi-schema
 0.300.2 (unreleased)
 --------------------
 
+- Fix typo in warning handling on convert to geopackge
 - Set default visualisation of connection_node to -1
 - Fix geom for pump in migration 228
 
