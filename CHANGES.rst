@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.3 (unreleased)
+0.300.3 (2025-01-28)
 --------------------
 
 - Fix setting surface_parameters_id
