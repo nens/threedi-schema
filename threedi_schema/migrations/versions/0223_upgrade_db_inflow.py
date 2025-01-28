@@ -5,6 +5,7 @@ Revises:
 Create Date: 2024-05-27 10:35
 
 """
+import csv
 import json
 import uuid
 import warnings
@@ -453,11 +454,10 @@ def update_use_0d_inflow():
 
 def set_surface_parameters_id():
     # Make sure not to call this on an empty database
-    with open(data_dir.joinpath('0223_surface_parameters_map.json'), 'r') as f:
-        parameter_map = json.load(f)
+    with open(data_dir.joinpath('0223_surface_parameters_id.csv'), 'r') as f:
+        parameter_map = list(csv.reader(f))
     conn = op.get_bind()
-    for name, surface_parameters_id in parameter_map.items():
-        surface_class, surface_inclination = name.split(' - ')
+    for surface_class, surface_inclination, surface_parameters_id in parameter_map:
         res = conn.execute(sa.text(f"""
             SELECT id FROM v2_impervious_surface
             WHERE surface_class = '{surface_class}'
