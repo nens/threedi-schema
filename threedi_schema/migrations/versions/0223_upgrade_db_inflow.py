@@ -5,6 +5,7 @@ Revises:
 Create Date: 2024-05-27 10:35
 
 """
+import csv
 import json
 import uuid
 import warnings
@@ -453,16 +454,18 @@ def update_use_0d_inflow():
 
 def set_surface_parameters_id():
     # Make sure not to call this on an empty database
-    with open(data_dir.joinpath('0223_surface_parameters_map.json'), 'r') as f:
-        parameter_map = json.load(f)
+    with open(data_dir.joinpath('0223_surface_parameters_id.csv'), 'r') as f:
+        parameter_map = list(csv.reader(f))
     conn = op.get_bind()
-    res = conn.execute(
-        sa.text("SELECT surface_class, surface_inclination FROM v2_impervious_surface")).fetchone()
-    if res is None:
-        return
-    surface_class, surface_inclination = res
-    parameter_id = parameter_map[f'{surface_class} - {surface_inclination}']
-    op.execute(f'UPDATE surface SET surface_parameters_id = {parameter_id}')
+    for surface_class, surface_inclination, surface_parameters_id in parameter_map:
+        res = conn.execute(sa.text(f"""
+            SELECT id FROM v2_impervious_surface
+            WHERE surface_class = '{surface_class}'
+            AND surface_inclination = '{surface_inclination}'""")).fetchall()
+        if len(res) == 0:
+            continue
+        id_list = ','.join([str(item[0]) for item in res])
+        op.execute(f'UPDATE surface SET surface_parameters_id = {surface_parameters_id} where id IN ({id_list})')
 
 
 def populate_surface_parameters():
