@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.4 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix migration starting from geopackage
 
 
 0.300.3 (2025-01-28)
