@@ -9,7 +9,7 @@ Base = declarative_base()  # automap_base()
 
 class Lateral2D(Base):
     __tablename__ = "lateral_2d"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(Text)
     display_name = Column(Text)
     type = Column(IntegerEnum(constants.Later2dType))
@@ -24,7 +24,7 @@ class Lateral2D(Base):
 
 class BoundaryConditions2D(Base):
     __tablename__ = "boundary_condition_2d"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(Text)
     display_name = Column(Text)
     type = Column(IntegerEnum(constants.BoundaryType))
@@ -37,7 +37,7 @@ class BoundaryConditions2D(Base):
 
 class MeasureLocation(Base):
     __tablename__ = "measure_location"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     connection_node_id = Column(Integer)
     measure_variable = Column(VarcharEnum(constants.MeasureVariables))
     display_name = Column(Text)
@@ -48,7 +48,7 @@ class MeasureLocation(Base):
 
 class MeasureMap(Base):
     __tablename__ = "measure_map"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     measure_location_id = Column(Integer)
     control_type = Column(VarcharEnum(constants.ControlType), nullable=False)
     control_id = Column(Integer)
@@ -61,7 +61,7 @@ class MeasureMap(Base):
 
 class MemoryControl(Base):
     __tablename__ = "memory_control"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     upper_threshold = Column(Float)
     lower_threshold = Column(Float)
     action_type = Column(VarcharEnum(constants.TableControlActionTypes))
@@ -79,7 +79,7 @@ class MemoryControl(Base):
 
 class TableControl(Base):
     __tablename__ = "table_control"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     action_table = Column(CSVTable)
     action_type = Column(VarcharEnum(constants.TableControlActionTypes))
     measure_operator = Column(VarcharEnum(constants.MeasureOperators))
@@ -93,7 +93,7 @@ class TableControl(Base):
 
 class Interflow(Base):
     __tablename__ = "interflow"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     interflow_type = Column(IntegerEnum(constants.InterflowType))
     porosity = Column(Float)
     porosity_file = Column(String(255))
@@ -105,7 +105,7 @@ class Interflow(Base):
 
 class SimpleInfiltration(Base):
     __tablename__ = "simple_infiltration"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     infiltration_rate = Column(Float)
     infiltration_rate_file = Column(String(255))
     infiltration_surface_option = Column(
@@ -122,7 +122,7 @@ class SimpleInfiltration(Base):
 
 class SurfaceParameters(Base):
     __tablename__ = "surface_parameters"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     outflow_delay = Column(Float, nullable=False)
     surface_layer_thickness = Column(Float, nullable=False)
     infiltration = Column(Boolean, nullable=False)
@@ -136,7 +136,7 @@ class SurfaceParameters(Base):
 
 class Surface(Base):
     __tablename__ = "surface"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(100))
     display_name = Column(String(255))
     area = Column(Float)
@@ -150,7 +150,7 @@ class Surface(Base):
 
 class DryWeatherFlow(Base):
     __tablename__ = "dry_weather_flow"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     multiplier = Column(Float)
     dry_weather_flow_distribution_id = Column(Integer)
     daily_total = Column(Float)
@@ -166,7 +166,7 @@ class DryWeatherFlow(Base):
 
 class DryWeatherFlowMap(Base):
     __tablename__ = "dry_weather_flow_map"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     connection_node_id = Column(Integer)
     dry_weather_flow_id = Column(Integer)
     display_name = Column(String(255))
@@ -181,7 +181,7 @@ class DryWeatherFlowMap(Base):
 
 class DryWeatherFlowDistribution(Base):
     __tablename__ = "dry_weather_flow_distribution"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(Text)
     tags = Column(CSVText)
     distribution = Column(CSVText)
@@ -189,7 +189,7 @@ class DryWeatherFlowDistribution(Base):
 
 class GroundWater(Base):
     __tablename__ = "groundwater"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
 
     groundwater_impervious_layer_level = Column(Float)
     groundwater_impervious_layer_level_file = Column(String(255))
@@ -232,7 +232,7 @@ class GroundWater(Base):
 
 class GridRefinementLine(Base):
     __tablename__ = "grid_refinement_line"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     display_name = Column(String(255))
     grid_level = Column(Integer)
     geom = Column(Geometry("LINESTRING"), nullable=False)
@@ -242,7 +242,7 @@ class GridRefinementLine(Base):
 
 class GridRefinementArea(Base):
     __tablename__ = "grid_refinement_area"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     display_name = Column(String(255))
     grid_level = Column(Integer)
     code = Column(String(100))
@@ -252,7 +252,7 @@ class GridRefinementArea(Base):
 
 class ConnectionNode(Base):
     __tablename__ = "connection_node"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     geom = Column(Geometry("POINT"), nullable=False)
     code = Column(String(100))
     tags = Column(CSVText)
@@ -271,7 +271,7 @@ class ConnectionNode(Base):
 
 class Lateral1D(Base):
     __tablename__ = "lateral_1d"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(Text)
     display_name = Column(Text)
     timeseries = Column(CSVText)
@@ -287,7 +287,7 @@ class Lateral1D(Base):
 
 class NumericalSettings(Base):
     __tablename__ = "numerical_settings"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     cfl_strictness_factor_1d = Column(Float)
     cfl_strictness_factor_2d = Column(Float)
     convergence_cg = Column(Float)
@@ -319,7 +319,7 @@ class NumericalSettings(Base):
 
 class VegetationDrag2D(Base):
     __tablename__ = "vegetation_drag_2d"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
 
     vegetation_height = Column(Float)
     vegetation_height_file = Column(String(255))
@@ -336,7 +336,7 @@ class VegetationDrag2D(Base):
 
 class ModelSettings(Base):
     __tablename__ = "model_settings"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     use_2d_flow = Column(Boolean)
     use_1d_flow = Column(Boolean)
     manhole_aboveground_storage_area = Column(Float)
@@ -370,7 +370,7 @@ class ModelSettings(Base):
 
 class InitialConditions(Base):
     __tablename__ = "initial_conditions"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     initial_groundwater_level = Column(Float)
     initial_groundwater_level_file = Column(String(255))
     initial_groundwater_level_aggregation = Column(
@@ -388,7 +388,7 @@ class InitialConditions(Base):
 
 class Interception(Base):
     __tablename__ = "interception"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     interception = Column(Float)
     interception_file = Column(String(255))
 
@@ -396,7 +396,7 @@ class Interception(Base):
 # class PhysicalSettings
 class AggregationSettings(Base):
     __tablename__ = "aggregation_settings"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     flow_variable = Column(VarcharEnum(constants.FlowVariable))
     aggregation_method = Column(VarcharEnum(constants.AggregationMethod))
     interval = Column(Integer)
@@ -404,14 +404,14 @@ class AggregationSettings(Base):
 
 class PhysicalSettings(Base):
     __tablename__ = "physical_settings"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     use_advection_1d = Column(IntegerEnum(constants.AdvectionTypes1D))
     use_advection_2d = Column(Boolean)
 
 
 class SimulationTemplateSettings(Base):
     __tablename__ = "simulation_template_settings"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(128))
     use_0d_inflow = Column(IntegerEnum(constants.InflowType))
     use_structure_control = Column(Boolean)
@@ -419,7 +419,7 @@ class SimulationTemplateSettings(Base):
 
 class TimeStepSettings(Base):
     __tablename__ = "time_step_settings"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     time_step = Column(Float)
     min_time_step = Column(Float)
     max_time_step = Column(Float)
@@ -430,7 +430,7 @@ class TimeStepSettings(Base):
 class BoundaryCondition1D(Base):
     __tablename__ = "boundary_condition_1d"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(Text)
     display_name = Column(Text)
     type = Column(IntegerEnum(constants.BoundaryType))
@@ -445,7 +445,7 @@ class BoundaryCondition1D(Base):
 
 class SurfaceMap(Base):
     __tablename__ = "surface_map"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     surface_id = Column(Integer, nullable=False)
     connection_node_id = Column(Integer)
     percentage = Column(Float)
@@ -457,7 +457,7 @@ class SurfaceMap(Base):
 
 class Channel(Base):
     __tablename__ = "channel"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     display_name = Column(String(255))
     code = Column(String(100))
     tags = Column(CSVText)
@@ -473,7 +473,7 @@ class Channel(Base):
 
 class Windshielding1D(Base):
     __tablename__ = "windshielding_1d"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     north = Column(Float)
     northeast = Column(Float)
     east = Column(Float)
@@ -489,7 +489,7 @@ class Windshielding1D(Base):
 
 class CrossSectionLocation(Base):
     __tablename__ = "cross_section_location"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(100))
     tags = Column(CSVText)
     reference_level = Column(Float)
@@ -512,7 +512,7 @@ class CrossSectionLocation(Base):
 
 class Pipe(Base):
     __tablename__ = "pipe"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     display_name = Column(String(255))
     code = Column(String(100))
     tags = Column(CSVText)
@@ -538,7 +538,7 @@ class Pipe(Base):
 
 class Culvert(Base):
     __tablename__ = "culvert"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     display_name = Column(String(255))
     code = Column(String(100))
     tags = Column(CSVText)
@@ -562,7 +562,7 @@ class Culvert(Base):
 
 class DemAverageArea(Base):
     __tablename__ = "dem_average_area"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     geom = Column(Geometry("POLYGON"), nullable=False)
     display_name = Column(Text)
     code = Column(Text)
@@ -571,7 +571,7 @@ class DemAverageArea(Base):
 
 class Weir(Base):
     __tablename__ = "weir"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(100))
     display_name = Column(String(255))
     geom = Column(Geometry("LINESTRING"), nullable=False)
@@ -595,7 +595,7 @@ class Weir(Base):
 
 class Orifice(Base):
     __tablename__ = "orifice"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(100))
     display_name = Column(String(255))
     tags = Column(CSVText)
@@ -618,7 +618,7 @@ class Orifice(Base):
 
 class Pump(Base):
     __tablename__ = "pump"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(100))
     display_name = Column(String(255))
     start_level = Column(Float)
@@ -636,7 +636,7 @@ class Pump(Base):
 
 class PumpMap(Base):
     __tablename__ = "pump_map"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     pump_id = Column(Integer)
     connection_node_id_end = Column(Integer)
     geom = Column(Geometry("LINESTRING"), nullable=False)
@@ -647,7 +647,7 @@ class PumpMap(Base):
 
 class Obstacle(Base):
     __tablename__ = "obstacle"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(100))
     crest_level = Column(Float)
     geom = Column(Geometry("LINESTRING"), nullable=False)
@@ -660,7 +660,7 @@ class Obstacle(Base):
 
 class PotentialBreach(Base):
     __tablename__ = "potential_breach"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(100))
     display_name = Column(String(255))
     tags = Column(CSVText)
@@ -673,7 +673,7 @@ class PotentialBreach(Base):
 
 class ExchangeLine(Base):
     __tablename__ = "exchange_line"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     geom = Column(Geometry("LINESTRING"), nullable=False)
     channel_id = Column(Integer)
     exchange_level = Column(Float)
@@ -684,13 +684,13 @@ class ExchangeLine(Base):
 
 class Tags(Base):
     __tablename__ = "tags"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(Text)
 
 
 class Material(Base):
     __tablename__ = "material"
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(Text)
     friction_type = Column(IntegerEnum(constants.FrictionType))
     friction_coefficient = Column(Float)

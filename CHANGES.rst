@@ -6,6 +6,7 @@ Changelog of threedi-schema
 --------------------
 
 - Fix migration starting from geopackage
+- Set autoincrement for primary keys in models
 
 
 0.300.3 (2025-01-28)
