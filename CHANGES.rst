@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.5 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fix bug in upgrading logic that causes upgrading with gpkg to fail
 
 
 0.300.4 (2025-01-30)
