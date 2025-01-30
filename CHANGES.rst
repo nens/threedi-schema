@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.4 (unreleased)
+0.300.4 (2025-01-30)
 --------------------
 
 - Set autoincrement for primary keys in models
