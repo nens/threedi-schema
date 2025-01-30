@@ -175,6 +175,7 @@ class ModelSchema:
                 f"Incorrect version format: {revision}. Expected 'head' or a numeric value."
             )
         v = self.get_version()
+
         if v is not None and v < constants.LATEST_SOUTH_MIGRATION_ID:
             raise MigrationMissingError(
                 f"This tool cannot update versions below "
@@ -365,12 +366,12 @@ class ModelSchema:
 
         warnings_list = []
 
-        if self.db.get_engine().dialect.name == "geopackage":
+        if self.is_geopackage:
             return
 
         # Ensure database is upgraded and views are recreated
         revision = self.get_version()
-        if revision is None or revision <= constants.LAST_SPTL_SCHEMA_VERSION:
+        if revision is None or revision < constants.LAST_SPTL_SCHEMA_VERSION:
             self.upgrade(
                 revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}", backup=False
             )
