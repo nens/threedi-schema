@@ -10,6 +10,7 @@ from alembic.config import Config
 from alembic.environment import EnvironmentContext
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
+from geoalchemy2.admin.dialects.geopackage import create_spatial_ref_sys_view
 from geoalchemy2.functions import ST_SRID
 from osgeo import gdal
 from sqlalchemy import Column, Integer, MetaData, Table, text
@@ -460,4 +461,7 @@ class ModelSchema:
                     "CREATE TABLE views_geometry_columns(view_name TEXT, view_geometry TEXT, view_rowid TEXT, f_table_name VARCHAR(256), f_geometry_column VARCHAR(256))"
                 )
             )
+            create_spatial_ref_sys_view(session)
         ensure_spatial_indexes(self.db.engine, models.DECLARED_MODELS)
+
+        #
