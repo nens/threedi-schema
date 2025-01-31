@@ -21,7 +21,9 @@ def test_convert_to_geopackage(oldest_sqlite, upgrade_spatialite):
     with oldest_sqlite.get_session() as session:
         assert (
             session.execute(
-                text("select count(*) from sqlite_master where name='spatial_ref_sys';")
+                text(
+                    "SELECT count(*) FROM sqlite_master WHERE type='view' AND name='spatial_ref_sys'"
+                )
             ).scalar()
             == 1
         )
