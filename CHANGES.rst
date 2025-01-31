@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.6 (unreleased)
+0.300.6 (2025-01-31)
 --------------------
 
 - Add spatial_ref_sys view to geopackage so ST_Transform can be used
