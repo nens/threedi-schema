@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy import text
 
 from threedi_schema.domain import constants
 
@@ -16,3 +17,11 @@ def test_convert_to_geopackage(oldest_sqlite, upgrade_spatialite):
     assert oldest_sqlite.path.suffix == ".gpkg"
     assert not oldest_sqlite.schema.is_spatialite
     assert oldest_sqlite.schema.is_geopackage
+
+    with oldest_sqlite.get_session() as session:
+        assert (
+            session.execute(
+                text("select count(*) from sqlite_master where name='spatial_ref_sys';")
+            ).scalar()
+            == 1
+        )
