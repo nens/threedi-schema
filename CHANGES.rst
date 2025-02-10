@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.7 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Add total discharge boundary types (TOTAL_DISCHARGE_2D, GROUNDWATER_TOTAL_DISCHARGE_2D)
 
 
 0.300.6 (2025-01-31)
