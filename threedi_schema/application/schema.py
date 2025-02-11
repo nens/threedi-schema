@@ -423,8 +423,8 @@ class ModelSchema:
                         format="gpkg",
                         accessMode="update",
                         layers=[table],
-                        preserveFID=True,
                         layerName=table,
+                        options=["-preserve_fid"],
                     )
                 )
             for conversion_options in conversion_list:
