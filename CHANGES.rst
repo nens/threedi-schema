@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.8 (unreleased)
+0.300.8 (2025-02-11)
 --------------------
 
 - Preserve ID column in non-geometry tables
