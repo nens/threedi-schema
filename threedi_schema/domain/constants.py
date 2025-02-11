@@ -13,6 +13,8 @@ class BoundaryType(Enum):
     SOMMERFELD = 5
     GROUNDWATERLEVEL = 6
     GROUNDWATERDISCHARGE = 7
+    TOTAL_DISCHARGE_2D = 8
+    GROUNDWATER_TOTAL_DISCHARGE_2D = 9
 
 
 class Later2dType(Enum):
