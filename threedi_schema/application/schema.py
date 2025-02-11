@@ -422,7 +422,8 @@ class ModelSchema:
                     gdal.VectorTranslateOptions(
                         format="gpkg",
                         accessMode="update",
-                        SQLStatement=f"SELECT * FROM {table}",
+                        layers=[table],
+                        preserveFID=True,
                         layerName=table,
                     )
                 )
@@ -441,6 +442,7 @@ class ModelSchema:
                     if (
                         hasattr(handler, "err_level")
                         and handler.err_level >= gdal.CE_Warning
+                        and handler.err_msg != "Feature id 0 not preserved"
                     ):
                         warnings_list.append(handler.err_msg)
 
@@ -463,5 +465,3 @@ class ModelSchema:
             )
             create_spatial_ref_sys_view(session)
         ensure_spatial_indexes(self.db.engine, models.DECLARED_MODELS)
-
-        #
