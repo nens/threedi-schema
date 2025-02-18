@@ -5,8 +5,8 @@ Changelog of threedi-schema
 0.300.9 (unreleased)
 --------------------
 
-- Nothing changed yet.
-
+- Make schema.epsg_code work for all migrations.
+  Raises threedi_schema.migrations.exceptions.InvalidSRIDException if the epsg_code is unusable or not set.
 
 0.300.8 (2025-02-11)
 --------------------
@@ -93,7 +93,7 @@ Changelog of threedi-schema
 0.229.2 (2025-01-16)
 --------------------
 
-- Rewrite geopackage conversion to use gdal.VectorTranslate instead of ogr2ogr 
+- Rewrite geopackage conversion to use gdal.VectorTranslate instead of ogr2ogr
 
 
 0.229.1 (2025-01-15)
