@@ -1,5 +1,4 @@
 import warnings
-from functools import cached_property
 from pathlib import Path
 from typing import Tuple
 
@@ -16,9 +15,12 @@ from osgeo import gdal
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
+from threedi_schema.migrations.exceptions import InvalidSRIDException
+
 from ..domain import constants, models
 from ..infrastructure.spatial_index import ensure_spatial_indexes
 from ..infrastructure.spatialite_versions import copy_models, get_spatialite_version
+from ..migrations.utils import get_model_srid
 from .errors import MigrationMissingError, UpgradeFailedError
 from .upgrade_utils import setup_logging
 
@@ -103,19 +105,36 @@ class ModelSchema:
         Returns the epsg code and the name (table.column) of the source.
         """
         session = self.db.get_session()
+        version = self.get_version()
+
+        if version is not None and version < 230:
+            epsg_code = get_model_srid(version < 222, session=session)
+            return (
+                epsg_code,
+                "v2_global_settings.epsg_code"
+                if version < 222
+                else "model_settings.epsg_code",
+            )
+
         for model in self.declared_models:
             if hasattr(model, "geom"):
                 srids = [item[0] for item in session.query(ST_SRID(model.geom)).all()]
                 if len(srids) > 0:
                     return srids[0], f"{model.__tablename__}.geom"
-        return None, ""
+        raise InvalidSRIDException(None, "No geometries found in the database")
 
-    @cached_property
+    @property
     def epsg_code(self):
+        """
+        Raises threedi_schema.migrations.exceptions.InvalidSRIDException if the epsg_code count not be determined or is invalid.
+        """
         return self._get_epsg_data()[0]
 
-    @cached_property
+    @property
     def epsg_source(self):
+        """
+        Raises threedi_schema.migrations.exceptions.InvalidSRIDException if the epsg_code count not be determined or is invalid.
+        """
         return self._get_epsg_data()[1]
 
     @property
@@ -146,7 +165,7 @@ class ModelSchema:
         backup=True,
         upgrade_spatialite_version=False,
         progress_func=None,
-        custom_epsg_code=None,
+        epsg_code_override=None,
     ):
         """Upgrade the database to the latest version.
 
@@ -166,8 +185,8 @@ class ModelSchema:
         Specify a 'progress_func' to handle progress updates. `progress_func` should
         expect a single argument representing the fraction of progress
 
-        Specify a `custom_epsg_code` to set the model epsg_code before migration. This
-        should only be used for testing!
+        Specify a `epsg_code_override` to set the model epsg_code before migration.
+        This can be used for testing and for setting the DEM epsg_code when self.epsg_code is None.
         """
         try:
             rev_nr = get_schema_version() if revision == "head" else int(revision)
@@ -217,19 +236,19 @@ class ModelSchema:
                     progress_func=progress_func,
                 )
 
-        if custom_epsg_code is not None:
+        if epsg_code_override is not None:
             if self.get_version() is not None and self.get_version() > 229:
                 warnings.warn(
-                    "Cannot set custom_epsg_code when upgrading from 230 or newer"
+                    "Cannot set epsg_code_override when upgrading from 230 or newer"
                 )
             elif rev_nr < 230:
                 warnings.warn(
-                    "Warning: cannot set custom_epgs_code when not upgrading to 229 or older."
+                    "Warning: cannot set epsg_code_override when not upgrading to 229 or older."
                 )
             else:
                 if self.get_version() is None or self.get_version() < 229:
                     run_upgrade("0229")
-                self._set_custom_epsg_code(custom_epsg_code)
+                self._set_custom_epsg_code(epsg_code_override)
                 run_upgrade("0230")
                 self._remove_custom_epsg_code()
         # First upgrade to LAST_SPTL_SCHEMA_VERSION.
