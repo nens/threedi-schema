@@ -11,7 +11,13 @@ import uuid
 import sqlalchemy as sa
 from alembic import op
 
+from pathlib import Path
+
+from osgeo import gdal, osr
+
 from threedi_schema.migrations.exceptions import InvalidSRIDException
+
+gdal.UseExceptions()
 
 # revision identifiers, used by Alembic.
 revision = "0230"
@@ -43,16 +49,34 @@ def get_crs_info(srid):
     return unit, is_projected
 
 
+def get_dem_srid(filepath: str) -> int:
+    try:
+        d = gdal.Open(filepath)
+    except RuntimeError as e:
+        raise FileNotFoundError(f"Cannot open filepath {filepath}") from e
+    proj = osr.SpatialReference(wkt=d.GetProjection())
+    return int(proj.GetAttrValue('AUTHORITY',1))
+
+
 def get_model_srid() -> int:
     # Note: this will not work for models which are allowed to have no CRS (no geometries)
     conn = op.get_bind()
     srid_str = conn.execute(sa.text("SELECT epsg_code FROM model_settings")).fetchone()
     if srid_str is None or srid_str[0] is None:
-        raise InvalidSRIDException(None, "no epsg_code is defined")
-    try:
-        srid = int(srid_str[0])
-    except TypeError:
-        raise InvalidSRIDException(srid_str[0], "the epsg_code must be an integer")
+        raster_path = conn.execute(sa.text("SELECT dem_file FROM model_settings")).fetchone()
+        if raster_path is None or raster_path[0] is None:
+            raise InvalidSRIDException(None, "no epsg_code is defined in the model settings, and no DEM is provided")
+        else:
+            raster_path = str("rasters" / Path(raster_path[0]))
+            try:
+                srid = get_dem_srid(raster_path)
+            except Exception as e:
+                raise InvalidSRIDException(None, "cannot extract EPSG code from DEM") from e
+    else:
+        try:
+            srid = int(srid_str[0])
+        except TypeError:
+            raise InvalidSRIDException(srid_str[0], "the epsg_code must be an integer")
     unit, is_projected = get_crs_info(srid)
     if unit != "metre":
         raise InvalidSRIDException(srid, f"the CRS must be in metres, not {unit}")
