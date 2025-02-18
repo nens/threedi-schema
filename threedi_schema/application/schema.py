@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from typing import Tuple
+from typing import Optional, Tuple
 
 # This import is needed for alembic to recognize the geopackage dialect
 import geoalchemy2.alembic_helpers  # noqa: F401
@@ -96,7 +96,7 @@ class ModelSchema:
         else:
             return self._get_version_old()
 
-    def _get_epsg_data(self) -> Tuple[int | None, str]:
+    def _get_epsg_data(self) -> Tuple[Optional[int], str]:
         """
         Retrieve epsg code for schematisation loaded in session. This is done by
         iterating over all geometries in the declared models and all raster files, and
