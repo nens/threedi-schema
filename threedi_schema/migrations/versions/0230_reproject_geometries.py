@@ -9,6 +9,7 @@ import uuid
 
 import sqlalchemy as sa
 from alembic import op
+
 from threedi_schema.migrations.utils import get_model_srid
 
 # revision identifiers, used by Alembic.

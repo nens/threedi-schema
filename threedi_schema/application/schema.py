@@ -1,5 +1,4 @@
 import warnings
-from functools import cached_property
 from pathlib import Path
 from typing import Tuple
 
@@ -19,9 +18,9 @@ from sqlalchemy.exc import IntegrityError
 from ..domain import constants, models
 from ..infrastructure.spatial_index import ensure_spatial_indexes
 from ..infrastructure.spatialite_versions import copy_models, get_spatialite_version
+from ..migrations.utils import get_model_srid
 from .errors import MigrationMissingError, UpgradeFailedError
 from .upgrade_utils import setup_logging
-from ..migrations.utils import get_model_srid
 
 __all__ = ["ModelSchema"]
 
@@ -107,8 +106,13 @@ class ModelSchema:
         version = self.get_version()
 
         if version is not None and version < 230:
-            epsg_code = get_model_srid(version <  222, session=session)
-            return epsg_code, "v2_global_settings.epsg_code" if version < 222 else "model_settings.epsg_code"
+            epsg_code = get_model_srid(version < 222, session=session)
+            return (
+                epsg_code,
+                "v2_global_settings.epsg_code"
+                if version < 222
+                else "model_settings.epsg_code",
+            )
 
         for model in self.declared_models:
             if hasattr(model, "geom"):

@@ -228,7 +228,8 @@ def test_set_custom_epsg_valid(in_memory_sqlite):
 
 
 @pytest.mark.parametrize(
-    "start_revision, epsg_code_override", [(None, None), ("0220", None), ("0230", 28992)]
+    "start_revision, epsg_code_override",
+    [(None, None), ("0220", None), ("0230", 28992)],
 )
 def test_set_custom_epsg_invalid_revision(
     in_memory_sqlite, start_revision, epsg_code_override
@@ -390,24 +391,16 @@ def test_is_geopackage(oldest_sqlite):
 
 def test_epsg_code(oldest_sqlite):
     schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(
-        revision="0221",
-        backup=False
-    )
+    schema.upgrade(revision="0221", backup=False)
     assert schema.epsg_code == 28992
     assert schema.epsg_source == "v2_global_settings.epsg_code"
 
-    schema.upgrade(
-        revision="0229",
-        backup=False
-    )
+    schema.upgrade(revision="0229", backup=False)
     assert schema.get_version() == 229
     assert schema.epsg_code == 28992
     assert schema.epsg_source == "model_settings.epsg_code"
 
-    schema.upgrade(
-        revision="0230",
-        backup=False)
+    schema.upgrade(revision="0230", backup=False)
     assert schema.get_version() == 230
     assert schema.epsg_code == 28992
     assert schema.epsg_source == "boundary_condition_1d.geom"

@@ -1,8 +1,7 @@
+import sqlite3
 from typing import List
 
 import sqlalchemy as sa
-import sqlite3
-
 from alembic import op
 
 from threedi_schema.migrations.exceptions import InvalidSRIDException
