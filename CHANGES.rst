@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.9 (unreleased)
 --------------------
 
-- Make schema.epsg_code work for all migrations.
+- Make schema.epsg_code work for all migration versions.
   Raises threedi_schema.migrations.exceptions.InvalidSRIDException if the epsg_code is unusable or not set.
 
 0.300.8 (2025-02-11)

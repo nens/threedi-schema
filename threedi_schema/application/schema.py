@@ -15,6 +15,8 @@ from osgeo import gdal
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
+from threedi_schema.migrations.exceptions import InvalidSRIDException
+
 from ..domain import constants, models
 from ..infrastructure.spatial_index import ensure_spatial_indexes
 from ..infrastructure.spatialite_versions import copy_models, get_spatialite_version
@@ -119,14 +121,20 @@ class ModelSchema:
                 srids = [item[0] for item in session.query(ST_SRID(model.geom)).all()]
                 if len(srids) > 0:
                     return srids[0], f"{model.__tablename__}.geom"
-        return None, ""
+        raise InvalidSRIDException(None, "No geometries found in the database")
 
     @property
     def epsg_code(self):
+        """
+        Raises threedi_schema.migrations.exceptions.InvalidSRIDException if the epsg_code count not be determined or is invalid.
+        """
         return self._get_epsg_data()[0]
 
     @property
     def epsg_source(self):
+        """
+        Raises threedi_schema.migrations.exceptions.InvalidSRIDException if the epsg_code count not be determined or is invalid.
+        """
         return self._get_epsg_data()[1]
 
     @property
