@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.9 (unreleased)
+0.300.9 (2025-02-18)
 --------------------
 
 - Make schema.epsg_code work for all migration versions.
