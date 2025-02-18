@@ -5,13 +5,13 @@ Changelog of threedi-schema
 0.300.9 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Fetch EPSG from DEM if it is not set in model_settings in migration 230
 
 
 0.300.8 (2025-02-11)
 --------------------
 
-- Preserve ID column in non-geometry tables
+- Preserve ID column in non-geometry tables during geopackage migration
 
 
 0.300.7 (2025-02-11)
