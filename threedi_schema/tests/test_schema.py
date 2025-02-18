@@ -10,6 +10,7 @@ from threedi_schema.domain import constants
 from threedi_schema.domain.models import DECLARED_MODELS
 from threedi_schema.infrastructure.spatial_index import get_missing_spatial_indexes
 from threedi_schema.infrastructure.spatialite_versions import get_spatialite_version
+from threedi_schema.migrations.exceptions import InvalidSRIDException
 
 
 @pytest.fixture
@@ -356,8 +357,8 @@ class TestGetEPSGData:
         schema.upgrade(
             backup=False, upgrade_spatialite_version=False, epsg_code_override=28992
         )
-        assert schema.epsg_code is None
-        assert schema.epsg_source == ""
+        with pytest.raises(InvalidSRIDException):
+            schema.epsg_code
 
     def test_with_epsg(self, oldest_sqlite):
         schema = ModelSchema(oldest_sqlite)
