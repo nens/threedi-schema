@@ -7,12 +7,10 @@ Create Date: 2024-11-12 12:30
 """
 import sqlite3
 import uuid
+from pathlib import Path
 
 import sqlalchemy as sa
 from alembic import op
-
-from pathlib import Path
-
 from osgeo import gdal, osr
 
 from threedi_schema.migrations.exceptions import InvalidSRIDException
