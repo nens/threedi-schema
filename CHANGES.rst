@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.10 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- schema.epsg_code returns None if EPSG code could not be determined from database
 
 
 0.300.9 (2025-02-18)

@@ -96,7 +96,7 @@ class ModelSchema:
         else:
             return self._get_version_old()
 
-    def _get_epsg_data(self) -> Tuple[int, str]:
+    def _get_epsg_data(self) -> Tuple[int | None, str]:
         """
         Retrieve epsg code for schematisation loaded in session. This is done by
         iterating over all geometries in the declared models and all raster files, and
@@ -108,7 +108,11 @@ class ModelSchema:
         version = self.get_version()
 
         if version is not None and version < 230:
-            epsg_code = get_model_srid(version < 222, session=session)
+            try:
+                epsg_code = get_model_srid(version < 222, session=session)
+            except InvalidSRIDException:
+                return None, ""
+
             return (
                 epsg_code,
                 "v2_global_settings.epsg_code"
@@ -121,7 +125,7 @@ class ModelSchema:
                 srids = [item[0] for item in session.query(ST_SRID(model.geom)).all()]
                 if len(srids) > 0:
                     return srids[0], f"{model.__tablename__}.geom"
-        raise InvalidSRIDException(None, "No geometries found in the database")
+        return None, ""
 
     @property
     def epsg_code(self):
