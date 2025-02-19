@@ -247,14 +247,13 @@ class ModelSchema:
                 )
             elif rev_nr < 230:
                 warnings.warn(
-                    "Warning: cannot set epsg_code_override when not upgrading to 229 or older."
+                    "Warning: cannot set epsg_code_override when upgrading to 229 or older."
                 )
             else:
                 if self.get_version() is None or self.get_version() < 229:
                     run_upgrade("0229")
                 self._set_custom_epsg_code(epsg_code_override)
                 run_upgrade("0230")
-                self._remove_custom_epsg_code()
         # First upgrade to LAST_SPTL_SCHEMA_VERSION.
         # When the requested revision <= LAST_SPTL_SCHEMA_VERSION, this is the only upgrade step
         run_upgrade(
@@ -281,20 +280,11 @@ class ModelSchema:
         with self.db.get_session() as session:
             session.execute(
                 text(
-                    f"INSERT INTO model_settings (id, epsg_code) VALUES (999999, {custom_epsg_code});"
+                    f"UPDATE model_settings SET epsg_code = {custom_epsg_code};"
                 )
             )
             session.commit()
 
-    def _remove_custom_epsg_code(self):
-        if self.get_version() != 230:
-            raise ValueError(
-                f"Removing the custom epsg code should only be done on revision = 230, not {self.get_version()}"
-            )
-        # Remove row added by upgrade with custom_epsg_code
-        with self.db.get_session() as session:
-            session.execute(text("DELETE FROM model_settings WHERE id = 999999;"))
-            session.commit()
 
     def validate_schema(self):
         """Very basic validation of 3Di schema.
