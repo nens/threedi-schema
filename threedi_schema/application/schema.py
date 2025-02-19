@@ -279,9 +279,7 @@ class ModelSchema:
         # modify epsg_code
         with self.db.get_session() as session:
             session.execute(
-                text(
-                    f"UPDATE model_settings SET epsg_code = {custom_epsg_code};"
-                )
+                text(f"UPDATE model_settings SET epsg_code = {custom_epsg_code};")
             )
             session.commit()
 
