@@ -283,7 +283,6 @@ class ModelSchema:
             )
             session.commit()
 
-
     def validate_schema(self):
         """Very basic validation of 3Di schema.
 
