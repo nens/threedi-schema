@@ -247,14 +247,13 @@ class ModelSchema:
                 )
             elif rev_nr < 230:
                 warnings.warn(
-                    "Warning: cannot set epsg_code_override when not upgrading to 229 or older."
+                    "Warning: cannot set epsg_code_override when upgrading to 229 or older."
                 )
             else:
                 if self.get_version() is None or self.get_version() < 229:
                     run_upgrade("0229")
                 self._set_custom_epsg_code(epsg_code_override)
                 run_upgrade("0230")
-                self._remove_custom_epsg_code()
         # First upgrade to LAST_SPTL_SCHEMA_VERSION.
         # When the requested revision <= LAST_SPTL_SCHEMA_VERSION, this is the only upgrade step
         run_upgrade(
@@ -279,21 +278,20 @@ class ModelSchema:
             raise ValueError(f"Cannot set epsg code for revision {self.get_version()}")
         # modify epsg_code
         with self.db.get_session() as session:
-            session.execute(
-                text(
-                    f"INSERT INTO model_settings (id, epsg_code) VALUES (999999, {custom_epsg_code});"
+            settings_row_count = session.execute(
+                text("SELECT COUNT(id) FROM model_settings;")
+            ).scalar()
+            # to update empty databases, they must have model_settings.epsg_code set
+            if settings_row_count == 0:
+                session.execute(
+                    text(
+                        f"INSERT INTO model_settings (id, epsg_code) VALUES (1, {custom_epsg_code});"
+                    )
                 )
-            )
-            session.commit()
-
-    def _remove_custom_epsg_code(self):
-        if self.get_version() != 230:
-            raise ValueError(
-                f"Removing the custom epsg code should only be done on revision = 230, not {self.get_version()}"
-            )
-        # Remove row added by upgrade with custom_epsg_code
-        with self.db.get_session() as session:
-            session.execute(text("DELETE FROM model_settings WHERE id = 999999;"))
+            else:
+                session.execute(
+                    text(f"UPDATE model_settings SET epsg_code = {custom_epsg_code};")
+                )
             session.commit()
 
     def validate_schema(self):

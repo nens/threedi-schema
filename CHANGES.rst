@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.11 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Fix EPSG code setting on empty databases
 
 
 0.300.10 (2025-02-18)
