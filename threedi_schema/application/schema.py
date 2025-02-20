@@ -278,9 +278,16 @@ class ModelSchema:
             raise ValueError(f"Cannot set epsg code for revision {self.get_version()}")
         # modify epsg_code
         with self.db.get_session() as session:
-            session.execute(
-                text(f"UPDATE model_settings SET epsg_code = {custom_epsg_code};")
-            )
+            settings_row_count = session.execute(text("SELECT COUNT(id) FROM model_settings;")).scalar()
+            # to update empty databases, they must have model_settings.epsg_code set
+            if settings_row_count == 0:
+                session.execute(
+                    text(f"INSERT INTO model_settings (id, epsg_code) VALUES (1, {custom_epsg_code});")
+                )
+            else:
+                session.execute(
+                    text(f"UPDATE model_settings SET epsg_code = {custom_epsg_code};")
+                )
             session.commit()
 
     def validate_schema(self):
