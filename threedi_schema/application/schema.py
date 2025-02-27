@@ -254,6 +254,7 @@ class ModelSchema:
                     run_upgrade("0229")
                 self._set_custom_epsg_code(epsg_code_override)
                 run_upgrade("0230")
+                self._remove_temporary_model_settings()
         # First upgrade to LAST_SPTL_SCHEMA_VERSION.
         # When the requested revision <= LAST_SPTL_SCHEMA_VERSION, this is the only upgrade step
         run_upgrade(
@@ -270,6 +271,7 @@ class ModelSchema:
             run_upgrade(revision)
 
     def _set_custom_epsg_code(self, custom_epsg_code: int):
+        """Temporarily set epsg code in model settings for migration 230"""
         if (
             self.get_version() is None
             or self.get_version() < 222
@@ -285,13 +287,23 @@ class ModelSchema:
             if settings_row_count == 0:
                 session.execute(
                     text(
-                        f"INSERT INTO model_settings (id, epsg_code) VALUES (1, {custom_epsg_code});"
+                        f"INSERT INTO model_settings (id, epsg_code) VALUES (99999, {custom_epsg_code});"
                     )
                 )
             else:
                 session.execute(
                     text(f"UPDATE model_settings SET epsg_code = {custom_epsg_code};")
                 )
+            session.commit()
+
+    def _remove_temporary_model_settings(self):
+        """Remove temporary model settings entry introduced for the epsg code"""
+        with self.db.get_session() as session:
+            session.execute(
+                text(
+                    f"DELETE FROM model_settings WHERE id = 99999;"
+                )
+            )
             session.commit()
 
     def validate_schema(self):
