@@ -299,11 +299,7 @@ class ModelSchema:
     def _remove_temporary_model_settings(self):
         """Remove temporary model settings entry introduced for the epsg code"""
         with self.db.get_session() as session:
-            session.execute(
-                text(
-                    f"DELETE FROM model_settings WHERE id = 99999;"
-                )
-            )
+            session.execute(text("DELETE FROM model_settings WHERE id = 99999;"))
             session.commit()
 
     def validate_schema(self):
