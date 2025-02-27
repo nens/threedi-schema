@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.12 (unreleased)
+0.300.12 (2025-02-27)
 ---------------------
 
 - Delete temporary model settings row after it is set for the EPSG code
