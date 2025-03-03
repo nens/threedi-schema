@@ -11,7 +11,7 @@ from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from geoalchemy2.admin.dialects.geopackage import create_spatial_ref_sys_view
 from geoalchemy2.functions import ST_SRID
-from osgeo import gdal
+from osgeo import gdal, osr
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
@@ -23,6 +23,8 @@ from ..infrastructure.spatialite_versions import copy_models, get_spatialite_ver
 from ..migrations.utils import get_model_srid
 from .errors import MigrationMissingError, UpgradeFailedError
 from .upgrade_utils import setup_logging
+
+gdal.UseExceptions()
 
 __all__ = ["ModelSchema"]
 
@@ -126,6 +128,26 @@ class ModelSchema:
                 if len(srids) > 0:
                     return srids[0], f"{model.__tablename__}.geom"
         return None, ""
+
+    def get_dem_epsg(self, raster_path=None) -> int:
+        if not raster_path:
+            with self.db.get_session() as session:
+                raster_path = session.execute(
+                    text("SELECT dem_file FROM model_settings;")
+                ).scalar()
+            if raster_path is None:
+                raise InvalidSRIDException(None, "no DEM is provided")
+        # old dem paths include rasters/ but new ones do not
+        # to work around this, we remove "rasters/" if present and then add it again
+        raster_path = raster_path.split("rasters/")[-1]
+        directory = self.db.path.parent
+        raster_path = str(directory / "rasters" / Path(raster_path))
+        try:
+            d = gdal.Open(raster_path)
+        except RuntimeError as e:
+            raise InvalidSRIDException(f"Cannot open filepath {raster_path}") from e
+        proj = osr.SpatialReference(wkt=d.GetProjection())
+        return int(proj.GetAttrValue("AUTHORITY", 1))
 
     @property
     def epsg_code(self):
