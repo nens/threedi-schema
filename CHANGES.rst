@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.13 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Add ModelSchema.get_dem_epsg() to fetch EPSG from DEM.
 
 
 0.300.12 (2025-02-27)
