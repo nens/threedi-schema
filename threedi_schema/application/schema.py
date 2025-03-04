@@ -129,7 +129,8 @@ class ModelSchema:
                     return srids[0], f"{model.__tablename__}.geom"
         return None, ""
 
-    def get_dem_epsg(self, raster_path=None) -> int:
+    def _get_dem_epsg(self, raster_path=None) -> int:
+        "Extract EPSG code from DEM"
         if not raster_path:
             with self.db.get_session() as session:
                 raster_path = session.execute(
@@ -143,11 +144,11 @@ class ModelSchema:
         directory = self.db.path.parent
         raster_path = str(directory / "rasters" / Path(raster_path))
         try:
-            d = gdal.Open(raster_path)
+            dataset = gdal.Open(raster_path)
         except RuntimeError as e:
             raise InvalidSRIDException(f"Cannot open filepath {raster_path}") from e
-        proj = osr.SpatialReference(wkt=d.GetProjection())
-        return int(proj.GetAttrValue("AUTHORITY", 1))
+        proj = osr.SpatialReference(wkt=dataset.GetProjection())
+        return int(proj.GetAuthorityCode("PROJCS"))
 
     @property
     def epsg_code(self):
