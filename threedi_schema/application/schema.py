@@ -132,7 +132,7 @@ class ModelSchema:
     def _get_dem_epsg(self, raster_path=None) -> int:
         """
         Extract EPSG code from DEM.
-        
+
         Only works in local filesystem. The raster path references do not resolve correctly in the object store.
         """
         if not raster_path:
