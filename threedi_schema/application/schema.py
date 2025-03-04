@@ -137,8 +137,13 @@ class ModelSchema:
         """
         if not raster_path:
             with self.db.get_session() as session:
+                settings_table = (
+                    "v2_global_settings"
+                    if self.get_version() < 222
+                    else "model_settings"
+                )
                 raster_path = session.execute(
-                    text("SELECT dem_file FROM model_settings;")
+                    text(f"SELECT dem_file FROM {settings_table};")
                 ).scalar()
             if raster_path is None:
                 raise InvalidSRIDException(None, "no DEM is provided")
