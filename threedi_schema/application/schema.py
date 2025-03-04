@@ -129,7 +129,7 @@ class ModelSchema:
                     return srids[0], f"{model.__tablename__}.geom"
         return None, ""
 
-    def _get_dem_epsg(self, raster_path=None) -> int:
+    def _get_dem_epsg(self, raster_path: str=None) -> int:
         """
         Extract EPSG code from DEM.
 
