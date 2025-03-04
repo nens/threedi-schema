@@ -149,7 +149,7 @@ class ModelSchema:
                 raise InvalidSRIDException(None, "no DEM is provided")
         # old dem paths include rasters/ but new ones do not
         # to work around this, we remove "rasters/" if present and then add it again
-        raster_path = raster_path.split("rasters/")[-1]
+        raster_path = raster_path.replace("\\", "/").split("/")[-1]
         directory = self.db.path.parent
         raster_path = str(directory / "rasters" / Path(raster_path))
         try:
