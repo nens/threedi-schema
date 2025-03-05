@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.14 (unreleased)
+0.300.14 (2025-03-05)
 ---------------------
 
 - Ensure linestrings are valid (length > 0) after crs transformation
