@@ -150,7 +150,7 @@ class ModelSchema:
         # old dem paths include rasters/ but new ones do not
         # to work around this, we remove "rasters/" if present and then add it again
         raster_path = raster_path.replace("\\", "/").split("/")[-1]
-        directory = self.db.path.parent
+        directory = Path(self.db.path).parent
         raster_path = str(directory / "rasters" / Path(raster_path))
         try:
             dataset = gdal.Open(raster_path)
