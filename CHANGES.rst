@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.17 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Fix progress handler for upgrades with 0 steps
 
 
 0.300.16 (2025-03-11)
