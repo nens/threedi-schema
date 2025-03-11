@@ -1,4 +1,4 @@
-"""Reproject geometries to model CRS
+"""Convert to geopackage
 
 Revision ID: 0230
 Revises:

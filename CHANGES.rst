@@ -6,6 +6,7 @@ Changelog of threedi-schema
 ---------------------
 
 - Fix incorrect geometry in measure_location table in migration 0224
+- Correct names of several migrations
 
 
 0.300.14 (2025-03-05)

@@ -1,4 +1,4 @@
-"""Upgrade settings in schema
+"""Upgrade structure control
 
 Revision ID: 0224
 Revises:
