@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.16 (unreleased)
+0.300.16 (2025-03-11)
 ---------------------
 
 - Move InvalidSRIDException to application.errors
