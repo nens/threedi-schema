@@ -7,6 +7,7 @@ Changelog of threedi-schema
 
 - Fix incorrect geometry in measure_location table in migration 0224
 - Correct names of several migrations
+- Convert ModelSchema.db.path to pathlib.Path in ModelSchema._get_dem_epsg()
 
 
 0.300.14 (2025-03-05)
