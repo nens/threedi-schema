@@ -11,7 +11,7 @@ from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from geoalchemy2.admin.dialects.geopackage import create_spatial_ref_sys_view
 from geoalchemy2.functions import ST_SRID
-from osgeo import gdal, osr
+from osgeo import gdal, ogr, osr
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
@@ -107,6 +107,7 @@ class ModelSchema:
         session = self.db.get_session()
         version = self.get_version()
 
+        # for revision < 230 read explicit epsg from schematisation
         if version is not None and version < 230:
             try:
                 epsg_code = get_model_srid(version < 222, session=session)
@@ -119,13 +120,22 @@ class ModelSchema:
                 if version < 222
                 else "model_settings.epsg_code",
             )
-
-        for model in self.declared_models:
-            if hasattr(model, "geom"):
-                srids = [item[0] for item in session.query(ST_SRID(model.geom)).all()]
-                if len(srids) > 0:
-                    return srids[0], f"{model.__tablename__}.geom"
-        return None, ""
+        # for version 230 (implicit crs in spatialite) get epsg from first geometry object found in the model
+        elif version == 230:
+            for model in self.declared_models:
+                if hasattr(model, "geom"):
+                    srids = [
+                        item[0] for item in session.query(ST_SRID(model.geom)).all()
+                    ]
+                    if len(srids) > 0:
+                        return srids[0], f"{model.__tablename__}.geom"
+            return None, ""
+        # for version >= 300 (implicit crs in geopackage) get epsg from connection_node table in geopackage
+        else:
+            datasource = ogr.Open(str(self.db.path))
+            layer = datasource.GetLayerByName("connection_node")
+            srs = layer.GetSpatialRef()
+            return srs.GetAuthorityCode(None), ""
 
     def _get_dem_epsg(self, raster_path: str = None) -> int:
         """
