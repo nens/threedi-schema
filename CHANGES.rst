@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.15 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Convert ModelSchema.db.path to pathlib.Path in ModelSchema._get_dem_epsg()
 
 
 0.300.14 (2025-03-05)
