@@ -11,7 +11,7 @@ import uuid
 import sqlalchemy as sa
 from alembic import op
 
-from threedi_schema.migrations.exceptions import InvalidSRIDException
+from threedi_schema.application.errors import InvalidSRIDException
 
 # revision identifiers, used by Alembic.
 revision = "0300"

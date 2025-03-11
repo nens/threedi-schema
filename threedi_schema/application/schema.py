@@ -15,13 +15,11 @@ from osgeo import gdal, osr
 from sqlalchemy import Column, Integer, MetaData, Table, text
 from sqlalchemy.exc import IntegrityError
 
-from threedi_schema.migrations.exceptions import InvalidSRIDException
-
 from ..domain import constants, models
 from ..infrastructure.spatial_index import ensure_spatial_indexes
 from ..infrastructure.spatialite_versions import copy_models, get_spatialite_version
 from ..migrations.utils import get_model_srid
-from .errors import MigrationMissingError, UpgradeFailedError
+from .errors import InvalidSRIDException, MigrationMissingError, UpgradeFailedError
 from .upgrade_utils import setup_logging
 
 gdal.UseExceptions()
