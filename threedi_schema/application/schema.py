@@ -138,7 +138,7 @@ class ModelSchema:
             try:
                 epsg = int(epsg)
             except TypeError:
-                epsg = None
+                raise InvalidSRIDException(epsg, "the epsg_code must be an integer")
             return epsg, ""
 
     def _get_dem_epsg(self, raster_path: str = None) -> int:

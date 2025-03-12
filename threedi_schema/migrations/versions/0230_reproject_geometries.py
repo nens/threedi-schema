@@ -10,7 +10,8 @@ import uuid
 import sqlalchemy as sa
 from alembic import op
 
-from threedi_schema.migrations.utils import get_model_srid
+from threedi_schema.application.errors import InvalidSRIDException
+from threedi_schema.migrations.utils import get_crs_info, get_model_srid
 
 # revision identifiers, used by Alembic.
 revision = "0230"
@@ -114,6 +115,11 @@ def upgrade():
     # retrieve srid from model settings
     # raise exception if there is no srid, or if the srid is not valid
     srid = get_model_srid()
+    unit, is_projected = get_crs_info(srid)
+    if unit != "metre":
+        raise InvalidSRIDException(srid, f"the CRS must be in metres, not {unit}")
+    if not is_projected:
+        raise InvalidSRIDException(srid, "the CRS must be in projected")
     if srid is not None:
         # prepare spatialite databases
         prep_spatialite(srid)
