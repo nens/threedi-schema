@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.18 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Read EPSG code for geopackage schematisations using gdal ogr (this also works on empy schematisations)
 
 
 0.300.17 (2025-03-11)
