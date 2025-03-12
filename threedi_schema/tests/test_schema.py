@@ -373,6 +373,7 @@ def test_is_geopackage(oldest_sqlite):
     assert schema.is_geopackage
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     "revision, expected_epsg_code", [("0229", None), ("0230", None), ("head", 28992)]
 )
