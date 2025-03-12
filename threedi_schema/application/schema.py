@@ -134,8 +134,12 @@ class ModelSchema:
         else:
             datasource = ogr.Open(str(self.db.path))
             layer = datasource.GetLayerByName("connection_node")
-            srs = layer.GetSpatialRef()
-            return srs.GetAuthorityCode(None), ""
+            epsg = layer.GetSpatialRef().GetAuthorityCode(None)
+            try:
+                epsg = int(epsg)
+            except TypeError:
+                epsg = None
+            return epsg, ""
 
     def _get_dem_epsg(self, raster_path: str = None) -> int:
         """

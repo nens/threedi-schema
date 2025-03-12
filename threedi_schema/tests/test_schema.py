@@ -350,20 +350,37 @@ def test_set_spatial_indexes(in_memory_sqlite):
     assert check_result == 1
 
 
-class TestGetEPSGData:
-    def test_no_epsg(self, empty_sqlite_v4):
-        schema = ModelSchema(empty_sqlite_v4)
-        schema.upgrade(
-            backup=False, upgrade_spatialite_version=False, epsg_code_override=28992
-        )
+@pytest.mark.parametrize(
+    "revision, expected_epsg_code", [("0229", None), ("0230", None), ("head", 28992)]
+)
+def test_get_epsg_data_empty(empty_sqlite_v4, revision, expected_epsg_code):
+    schema = ModelSchema(empty_sqlite_v4)
+    schema.upgrade(
+        backup=False,
+        revision=revision,
+        upgrade_spatialite_version=False,
+        epsg_code_override=28992,
+    )
+    if expected_epsg_code is None:
         assert schema.epsg_code is None
-        assert schema.epsg_source == ""
+    else:
+        assert schema.epsg_code == expected_epsg_code
+    assert schema.epsg_source == ""
 
-    def test_with_epsg(self, oldest_sqlite):
-        schema = ModelSchema(oldest_sqlite)
-        schema.upgrade(backup=False, upgrade_spatialite_version=False)
-        assert schema.epsg_code == 28992
-        assert schema.epsg_source == "boundary_condition_1d.geom"
+
+@pytest.mark.parametrize(
+    "revision, expected_epsg_source",
+    [
+        ("0229", "model_settings.epsg_code"),
+        ("0230", "boundary_condition_1d.geom"),
+        ("head", ""),
+    ],
+)
+def test_get_epsg_data(oldest_sqlite, revision, expected_epsg_source):
+    schema = ModelSchema(oldest_sqlite)
+    schema.upgrade(backup=False, upgrade_spatialite_version=False, revision=revision)
+    assert schema.epsg_code == 28992
+    assert schema.epsg_source == expected_epsg_source
 
 
 def test_is_spatialite(in_memory_sqlite):
