@@ -2,7 +2,6 @@ import sqlite3
 from typing import List
 
 import sqlalchemy as sa
-from alembic import op
 
 from threedi_schema.application.errors import InvalidSRIDException
 
@@ -53,15 +52,3 @@ def get_crs_info(srid):
     return unit, is_projected
 
 
-def get_model_srid(v2_global_settings: bool = False, session=None) -> int:
-    # Note: this will not work for models which are allowed to hav
-    conn = session or op.get_bind()
-    table = "v2_global_settings" if v2_global_settings else "model_settings"
-    srid_str = conn.execute(sa.text(f"SELECT epsg_code FROM {table}")).fetchone()
-    if srid_str is None or srid_str[0] is None:
-        raise InvalidSRIDException(None, "no epsg_code is defined")
-    try:
-        srid = int(srid_str[0])
-    except TypeError:
-        raise InvalidSRIDException(srid_str[0], "the epsg_code must be an integer")
-    return srid

@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 
 # This import is needed for alembic to recognize the geopackage dialect
 import geoalchemy2.alembic_helpers  # noqa: F401
+import sqlalchemy as sa
 from alembic import command as alembic_command
 from alembic.config import Config
 from alembic.environment import EnvironmentContext
@@ -18,7 +19,6 @@ from sqlalchemy.exc import IntegrityError
 from ..domain import constants, models
 from ..infrastructure.spatial_index import ensure_spatial_indexes
 from ..infrastructure.spatialite_versions import copy_models, get_spatialite_version
-from ..migrations.utils import get_model_srid
 from .errors import InvalidSRIDException, MigrationMissingError, UpgradeFailedError
 from .upgrade_utils import setup_logging
 
@@ -110,7 +110,9 @@ class ModelSchema:
         # for revision < 230 read explicit epsg from schematisation
         if version is not None and version < 230:
             try:
-                epsg_code = get_model_srid(version < 222, session=session)
+                epsg_code = get_model_srid(
+                    connection=session, v2_global_settings=version < 222
+                )
             except InvalidSRIDException:
                 return None, ""
 
@@ -538,3 +540,15 @@ class ModelSchema:
             )
             create_spatial_ref_sys_view(session)
         ensure_spatial_indexes(self.db.engine, models.DECLARED_MODELS)
+
+
+def get_model_srid(connection, v2_global_settings: bool = False) -> int:
+    table = "v2_global_settings" if v2_global_settings else "model_settings"
+    srid_str = connection.execute(sa.text(f"SELECT epsg_code FROM {table}")).fetchone()
+    if srid_str is None or srid_str[0] is None:
+        raise InvalidSRIDException(None, "no epsg_code is defined")
+    try:
+        srid = int(srid_str[0])
+    except TypeError:
+        raise InvalidSRIDException(srid_str[0], "the epsg_code must be an integer")
+    return srid
