@@ -5,7 +5,8 @@ Changelog of threedi-schema
 0.300.19 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Add display_name to CrossSectionLocation
+- Add display_name and code to Windshielding1D
 
 
 0.300.18 (2025-03-12)
