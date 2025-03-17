@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.19 (unreleased)
+0.300.19 (2025-03-17)
 ---------------------
 
 - Add display_name to CrossSectionLocation
