@@ -268,6 +268,11 @@ class ModelSchema:
                 f"Cannot upgrade from {revision=} because {self.db.path} is not a geopackage"
             )
 
+        config = None
+        if progress_func is not None:
+            config = get_alembic_config(self.db.engine, unsafe=backup)
+            setup_logging(self.db.schema, revision, config, progress_func)
+
         def run_upgrade(_revision):
             if backup:
                 with self.db.file_transaction() as work_db:
@@ -275,17 +280,15 @@ class ModelSchema:
                         work_db,
                         revision=_revision,
                         unsafe=True,
+                        config=config,
                     )
             else:
                 _upgrade_database(
                     self.db,
                     revision=_revision,
                     unsafe=False,
+                    config=config,
                 )
-
-        if progress_func is not None:
-            config = get_alembic_config(self.db.engine, unsafe=backup)
-            setup_logging(self.db.schema, revision, config, progress_func)
 
         if epsg_code_override is not None:
             if self.get_version() is not None and self.get_version() > 229:
