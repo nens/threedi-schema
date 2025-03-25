@@ -45,12 +45,15 @@ def get_schema_version():
         return int(env.get_head_revision())
 
 
-def _upgrade_database(db, revision="head", unsafe=True, progress_func=None):
+def _upgrade_database(
+    db, revision="head", unsafe=True, progress_func=None, config=None
+):
     """Upgrade ThreediDatabase instance"""
     engine = db.engine
-    config = get_alembic_config(engine, unsafe=unsafe)
-    if progress_func is not None:
-        setup_logging(db.schema, revision, config, progress_func)
+    if config is None:
+        config = get_alembic_config(engine, unsafe=unsafe)
+    # if progress_func is not None:
+    #     setup_logging(db.schema, revision, config, progress_func)
     alembic_command.upgrade(config, revision)
 
 
@@ -276,15 +279,19 @@ class ModelSchema:
                         work_db,
                         revision=_revision,
                         unsafe=True,
-                        progress_func=progress_func,
+                        # progress_func=progress_func,
                     )
             else:
                 _upgrade_database(
                     self.db,
                     revision=_revision,
                     unsafe=False,
-                    progress_func=progress_func,
+                    # progress_func=progress_func,
                 )
+
+        if progress_func is not None:
+            config = get_alembic_config(self.db.engine, unsafe=backup)
+            setup_logging(self.db.schema, revision, config, progress_func)
 
         if epsg_code_override is not None:
             if self.get_version() is not None and self.get_version() > 229:

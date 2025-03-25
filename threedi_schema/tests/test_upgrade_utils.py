@@ -64,3 +64,18 @@ def test_upgrade_with_progress_func(oldest_sqlite):
         progress_func=progress_func,
     )
     assert progress_func.call_args_list == [call(0.0), call(50.0)]
+
+
+def test_upgrade_with_progress_func_latest(oldest_sqlite):
+    schema = oldest_sqlite.schema
+    progress_func = MagicMock()
+    schema.upgrade(
+        backup=False,
+        upgrade_spatialite_version=False,
+        progress_func=progress_func,
+        revision="0300",
+    )
+    progress = [call.args[0] for call in progress_func.call_args_list]
+    # ensure that the reported upgrade is increasing
+    # non-increasing progress indicates multiple initializations
+    assert all(x < y for x, y in zip(progress, progress[1:]))
