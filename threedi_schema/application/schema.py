@@ -232,7 +232,7 @@ class ModelSchema:
         spatialite file version after the upgrade.
 
         Specify a 'progress_func' to handle progress updates. `progress_func` should
-        expect a single argument representing the fraction of progress
+        expect two arguments: the percentage of progress and a string describing the migration step
 
         Specify a `epsg_code_override` to set the model epsg_code before migration.
         This can be used for testing and for setting the DEM epsg_code when self.epsg_code is None.
