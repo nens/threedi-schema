@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.21 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Add migration step description to upgrade progress tracking
 
 
 0.300.20 (2025-03-25)

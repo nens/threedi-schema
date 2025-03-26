@@ -21,9 +21,9 @@ class ProgressHandler(logging.Handler):
         msg = record.getMessage()
         if msg.startswith("Running upgrade"):
             if self.total_steps > 0:
-                self.progress_func(100 * self.current_step / self.total_steps)
+                self.progress_func(100 * self.current_step / self.total_steps, msg)
             else:
-                self.progress_func(100)  # Assume 100% if total steps are zero
+                self.progress_func(100, msg)  # Assume 100% if total steps are zero
             self.current_step += 1
 
 
