@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.22 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Delete spatialite after conversion to geopackage
 
 
 0.300.21 (2025-03-26)
