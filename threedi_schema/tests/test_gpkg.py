@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from sqlalchemy import text
 
@@ -11,10 +13,11 @@ def test_convert_to_geopackage(oldest_sqlite, upgrade_spatialite):
         upgrade_spatialite_version=upgrade_spatialite,
         revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
     )
-
+    old_path = Path(oldest_sqlite.path)
     oldest_sqlite.schema.convert_to_geopackage()
     # Ensure that after the conversion the geopackage is used
     assert oldest_sqlite.path.suffix == ".gpkg"
+    assert not old_path.exists()
     assert not oldest_sqlite.schema.is_spatialite
     assert oldest_sqlite.schema.is_geopackage
 

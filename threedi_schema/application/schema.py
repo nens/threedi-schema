@@ -1,3 +1,4 @@
+import errno
 import warnings
 from pathlib import Path
 from typing import Optional, Tuple
@@ -532,6 +533,19 @@ class ModelSchema:
                 warnings.warn(warning_string)
 
         # Correct path of current database
+        old_path = Path(self.db.path)
+        try:
+            # Try to remove the file and do not worry if it was already removed
+            old_path.unlink(missing_ok=True)
+        except PermissionError as e:
+            warnings.warn(f"Permission denied removing {old_path}: {e}", UserWarning)
+        except OSError as e:
+            if e.errno == errno.EROFS:
+                warnings.warn(
+                    "Attempting to remove file on read-only filesystem.", UserWarning
+                )
+            else:
+                warnings.warn(f"Unable to remove old file {old_path}: {e}", UserWarning)
         self.db.path = Path(self.db.path).with_suffix(".gpkg")
         # Reset engine so new path is used on the next call of get_engine()
         self.db._engine = None
