@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.22 (unreleased)
+0.300.22 (2025-03-27)
 ---------------------
 
 - Fix upgrade progress tracking
