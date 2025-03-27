@@ -11,16 +11,15 @@ else:
 
 
 class ProgressHandler(logging.Handler):
-    def __init__(self, progress_func, total_steps, init_step=0):
+    def __init__(self, progress_func, total_steps):
         super().__init__()
         self.progress_func = progress_func
-        self.total_steps = total_steps + init_step
-        self.current_step = init_step
+        self.total_steps = total_steps
+        self.current_step = 0
 
     def emit(self, record):
         msg = record.getMessage()
         if msg.startswith("Running upgrade"):
-            print(f"{self.total_steps=}; {self.current_step=}")
             if self.total_steps > 0:
                 self.progress_func(100 * self.current_step / self.total_steps, msg)
             else:
@@ -63,9 +62,7 @@ def get_upgrade_steps_count(
     return len(list(revisions)) + offset
 
 
-def setup_logging(
-    progress_func: Callable[[float, str], None], n_steps: int, init_step: int
-):
+def setup_logging(progress_func: Callable[[float, str], None], n_steps: int):
     """
     Set up logging for schematisation upgrade
 
@@ -77,11 +74,6 @@ def setup_logging(
     """
     logger = logging.getLogger("alembic.runtime.migration")
     logger.setLevel(logging.INFO)
-    handler = ProgressHandler(progress_func, total_steps=n_steps, init_step=init_step)
+    handler = ProgressHandler(progress_func, total_steps=n_steps)
     logger.addHandler(handler)
     return handler
-
-
-def remove_logger(handler: ProgressHandler):
-    logger = logging.getLogger("alembic.runtime.migration")
-    logger.removeHandler(handler)

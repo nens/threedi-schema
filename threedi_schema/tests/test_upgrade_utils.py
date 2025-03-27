@@ -22,23 +22,6 @@ def test_progress_handler():
     assert progress_func.call_args_list == expected_calls
 
 
-def test_progress_handler_non_zero_init():
-    progress_func = MagicMock()
-    init_step = 2
-    expected_calls = [
-        call(100 * (i + init_step) / (5 + init_step), "Running upgrade")
-        for i in range(5)
-    ]
-    mock_record = MagicMock(levelno=logging.INFO, percent=10)
-    mock_record.getMessage.return_value = "Running upgrade"
-    handler = upgrade_utils.ProgressHandler(
-        progress_func, total_steps=5, init_step=init_step
-    )
-    for _ in range(5):
-        handler.handle(mock_record)
-    assert progress_func.call_args_list == expected_calls
-
-
 def test_progress_handler_zero_steps():
     progress_func = MagicMock()
     mock_record = MagicMock(levelno=logging.INFO, percent=40)

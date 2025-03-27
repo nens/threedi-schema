@@ -20,7 +20,7 @@ from ..domain import constants, models
 from ..infrastructure.spatial_index import ensure_spatial_indexes
 from ..infrastructure.spatialite_versions import copy_models, get_spatialite_version
 from .errors import InvalidSRIDException, MigrationMissingError, UpgradeFailedError
-from .upgrade_utils import get_upgrade_steps_count, remove_logger, setup_logging
+from .upgrade_utils import get_upgrade_steps_count, setup_logging
 
 gdal.UseExceptions()
 
@@ -45,19 +45,11 @@ def get_schema_version():
         return int(env.get_head_revision())
 
 
-def _upgrade_database(
-    db, revision="head", unsafe=True, progress_func=None, init_step=0
-):
+def _upgrade_database(db, revision="head", unsafe=True):
     """Upgrade ThreediDatabase instance"""
     engine = db.engine
     config = get_alembic_config(engine, unsafe=unsafe)
-    n_steps = get_upgrade_steps_count(config, db.schema.get_version(), revision)
-    if progress_func is not None:
-        handler = setup_logging(progress_func, n_steps, init_step=init_step)
     alembic_command.upgrade(config, revision)
-    if progress_func is not None:
-        remove_logger(handler)
-    return n_steps + init_step
 
 
 class GdalErrorHandler:
@@ -275,26 +267,20 @@ class ModelSchema:
                 f"Cannot upgrade from {revision=} because {self.db.path} is not a geopackage"
             )
 
-        def run_upgrade(_revision, init_step=0):
+        if progress_func is not None:
+            config = get_alembic_config(self.db.engine, unsafe=backup)
+            n_steps = get_upgrade_steps_count(
+                config, self.db.schema.get_version(), revision
+            )
+            setup_logging(progress_func, n_steps)
+
+        def run_upgrade(_revision):
             if backup:
                 with self.db.file_transaction() as work_db:
-                    return _upgrade_database(
-                        work_db,
-                        revision=_revision,
-                        unsafe=True,
-                        progress_func=progress_func,
-                        init_step=init_step,
-                    )
+                    _upgrade_database(work_db, revision=_revision, unsafe=True)
             else:
-                return _upgrade_database(
-                    self.db,
-                    revision=_revision,
-                    unsafe=False,
-                    progress_func=progress_func,
-                    init_step=init_step,
-                )
+                _upgrade_database(self.db, revision=_revision, unsafe=False)
 
-        init_step = 0
         if epsg_code_override is not None:
             if self.get_version() is not None and self.get_version() > 229:
                 warnings.warn(
@@ -306,17 +292,16 @@ class ModelSchema:
                 )
             else:
                 if self.get_version() is None or self.get_version() < 229:
-                    init_step = run_upgrade("0229", init_step=init_step)
+                    run_upgrade("0229")
                 self._set_custom_epsg_code(epsg_code_override)
-                init_step = run_upgrade("0230", init_step=init_step)
+                run_upgrade("0230")
                 self._remove_temporary_model_settings()
         # First upgrade to LAST_SPTL_SCHEMA_VERSION.
         # When the requested revision <= LAST_SPTL_SCHEMA_VERSION, this is the only upgrade step
-        init_step = run_upgrade(
+        run_upgrade(
             revision
             if rev_nr <= constants.LAST_SPTL_SCHEMA_VERSION
-            else f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
-            init_step=init_step,
+            else f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}"
         )
         # only upgrade spatialite version is target revision is <= LAST_SPTL_SCHEMA_VERSION
         if rev_nr <= constants.LAST_SPTL_SCHEMA_VERSION and upgrade_spatialite_version:
@@ -324,7 +309,7 @@ class ModelSchema:
         # Finish upgrade if target revision > LAST_SPTL_SCHEMA_VERSION
         elif rev_nr > constants.LAST_SPTL_SCHEMA_VERSION:
             self.convert_to_geopackage()
-            run_upgrade(revision, init_step=init_step)
+            run_upgrade(revision)
 
     def _set_custom_epsg_code(self, custom_epsg_code: int):
         """Temporarily set epsg code in model settings for migration 230"""
