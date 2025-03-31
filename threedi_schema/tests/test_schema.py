@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -254,6 +255,16 @@ def test_upgrade_south_not_latest_errors(in_memory_sqlite):
     ):
         with pytest.raises(errors.MigrationMissingError):
             schema.upgrade(backup=False, upgrade_spatialite_version=False)
+
+
+@pytest.mark.parametrize("keep_spatialite", [True, False])
+def test_upgrade_keep_sqlite(south_latest_sqlite, keep_spatialite):
+    old_path = Path(south_latest_sqlite.path)
+    schema = ModelSchema(south_latest_sqlite)
+    schema.upgrade(
+        keep_spatialite=keep_spatialite, revision="0300", epsg_code_override=28992
+    )
+    assert old_path.exists() is keep_spatialite
 
 
 def test_upgrade_with_backup(south_latest_sqlite):
