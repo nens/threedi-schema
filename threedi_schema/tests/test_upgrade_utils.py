@@ -56,7 +56,6 @@ def test_get_upgrade_steps_count_pre_200(oldest_sqlite):
     assert nsteps == 27
 
 
-@pytest.mark.skip(reason="This test fails due to issue 221")
 def test_upgrade_with_progress_func(oldest_sqlite):
     schema = oldest_sqlite.schema
     progress_func = MagicMock()
@@ -78,7 +77,6 @@ def test_upgrade_with_progress_func(oldest_sqlite):
     ]
 
 
-@pytest.mark.skip(reason="This test fails due to issue 221")
 def test_upgrade_with_progress_func_latest(oldest_sqlite):
     schema = oldest_sqlite.schema
     progress_func = MagicMock()

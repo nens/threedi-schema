@@ -215,6 +215,7 @@ class ModelSchema:
         upgrade_spatialite_version=False,
         progress_func=None,
         epsg_code_override=None,
+        keep_spatialite=False,
     ):
         """Upgrade the database to the latest version.
 
@@ -309,7 +310,7 @@ class ModelSchema:
             self.upgrade_spatialite_version()
         # Finish upgrade if target revision > LAST_SPTL_SCHEMA_VERSION
         elif rev_nr > constants.LAST_SPTL_SCHEMA_VERSION:
-            self.convert_to_geopackage()
+            self.convert_to_geopackage(delete_spatialite=not keep_spatialite)
             run_upgrade(revision)
 
     def _set_custom_epsg_code(self, custom_epsg_code: int):
@@ -423,7 +424,7 @@ class ModelSchema:
                 except IntegrityError as e:
                     raise UpgradeFailedError(e.orig.args[0])
 
-    def convert_to_geopackage(self):
+    def convert_to_geopackage(self, delete_spatialite=True):
         """
         Convert spatialite to geopackage using gdal.VectorTranslate.
 
@@ -523,20 +524,7 @@ class ModelSchema:
                 )
                 warnings.warn(warning_string)
 
-        # Correct path of current database
-        old_path = Path(self.db.path)
-        try:
-            # Try to remove the file and do not worry if it was already removed
-            old_path.unlink(missing_ok=True)
-        except PermissionError as e:
-            warnings.warn(f"Permission denied removing {old_path}: {e}", UserWarning)
-        except OSError as e:
-            if e.errno == errno.EROFS:
-                warnings.warn(
-                    "Attempting to remove file on read-only filesystem.", UserWarning
-                )
-            else:
-                warnings.warn(f"Unable to remove old file {old_path}: {e}", UserWarning)
+                # Correct path of current database
         self.db.path = Path(self.db.path).with_suffix(".gpkg")
         # Reset engine so new path is used on the next call of get_engine()
         self.db._engine = None
@@ -549,6 +537,37 @@ class ModelSchema:
             )
             create_spatial_ref_sys_view(session)
         ensure_spatial_indexes(self.db.engine, models.DECLARED_MODELS)
+        # delete spatialite after none of the steps raised an error
+        if delete_spatialite:
+            self._delete_spatialite()
+
+    def _delete_spatialite(self):
+        """
+        Delete spatialite only when the schematisation is a geopackage and handle errors while deleting.
+        """
+        if self.is_spatialite:
+            warnings.warn(
+                "Skipped deleting spatialite because this is a spatialite schematisation!"
+            )
+        if self.is_geopackage:
+            sptl_path = Path(self.db.path).with_suffix(".sqlite")
+            try:
+                # Try to remove the file and do not worry if it was already removed
+                sptl_path.unlink(missing_ok=True)
+            except PermissionError as e:
+                warnings.warn(
+                    f"Permission denied removing {sptl_path}: {e}", UserWarning
+                )
+            except OSError as e:
+                if e.errno == errno.EROFS:
+                    warnings.warn(
+                        "Attempting to remove file on read-only filesystem.",
+                        UserWarning,
+                    )
+                else:
+                    warnings.warn(
+                        f"Unable to remove old file {sptl_path}: {e}", UserWarning
+                    )
 
 
 def get_model_srid(connection, v2_global_settings: bool = False) -> int:
