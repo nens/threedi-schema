@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.23 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- set SewerageType to be Integer instead of IntegerEnum
 
 
 0.300.22 (2025-03-27)

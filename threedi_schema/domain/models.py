@@ -520,7 +520,7 @@ class Pipe(Base):
     code = Column(String(100))
     tags = Column(CSVText)
     geom = Column(Geometry("LINESTRING"), nullable=False)
-    sewerage_type = Column(IntegerEnum(constants.SewerageType))
+    sewerage_type = Column(Integer)
     exchange_type = Column(IntegerEnum(constants.PipeCalculationType))
     invert_level_start = Column(Float)
     invert_level_end = Column(Float)

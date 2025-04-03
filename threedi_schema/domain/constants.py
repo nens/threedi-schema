@@ -163,17 +163,6 @@ class PipeCalculationType(Enum):
     SHORT_CRESTED = 4
 
 
-class SewerageType(Enum):
-    MIXED = 0
-    RAIN_WATER = 1
-    DRY_WEATHER_FLOW = 2
-    TRANSPORT = 3
-    SPILLWAY = 4
-    ZINKER = 5
-    STORAGE = 6
-    STORAGE_TANK = 7
-
-
 class PumpType(Enum):
     SUCTION_SIDE = 1
     DELIVERY_SIDE = 2
