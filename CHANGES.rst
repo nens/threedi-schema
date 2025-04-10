@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.26 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Fix pyproject.toml.
 
 
 0.300.25 (2025-04-10)
