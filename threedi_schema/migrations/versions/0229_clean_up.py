@@ -60,8 +60,8 @@ def find_tables_by_pattern(pattern: str) -> List[str]:
 
 
 def remove_old_tables():
-    remaining_v2_idx_tables = find_tables_by_pattern('idx_v2_%_the_geom%')
-    remaining_alembic = find_tables_by_pattern('%_alembic_%_the_geom%')
+    remaining_v2_idx_tables = find_tables_by_pattern('idx_v2_%_the_geom')
+    remaining_alembic = find_tables_by_pattern('%_alembic_%_the_geom')
     remove_tables(set(remaining_v2_idx_tables + remaining_alembic))
 
 
