@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.25 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Fix mistake in pattern matching for old index tables to be deleted.
 
 
 0.300.24 (2025-04-09)

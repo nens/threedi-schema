@@ -27,6 +27,9 @@ cli = ["click"]
 [project.scripts]
 threedi_schema = "threedi_schema.scripts:main"
 
+[tool.setuptools]
+packages = ["threedi_schema"]
+
 [tool.setuptools.dynamic]
 version = {attr = "threedi_schema.__version__"}
 readme = {file = ["README.rst", "CHANGES.rst"]}
