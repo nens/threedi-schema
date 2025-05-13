@@ -473,7 +473,11 @@ def populate_surface_parameters():
     with open(data_dir.joinpath('0223_surface_parameters_contents.json'), 'r') as f:
         data_to_insert = json.load(f)
     keys_str = "(" + ",".join(data_to_insert[0].keys()) + ")"
+    conn = op.get_bind()
     for row in data_to_insert:
+        # skip if row with matching id is already present
+        if conn.execute(sa.text(f"SELECT 1 FROM surface_parameters WHERE id = {row['id']}")).fetchone():
+            continue
         val_str = "(" + ",".join([repr(item) for item in row.values()]) + ")"
         sql_query = f"INSERT INTO surface_parameters {keys_str} VALUES {val_str}"
         op.execute(sa.text(sql_query))
