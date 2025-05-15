@@ -441,6 +441,7 @@ def populate_surface_and_dry_weather_flow():
     populate_surface_parameters()
     update_use_0d_inflow()
 
+
 def update_use_0d_inflow():
     op.execute(sa.text("""
     UPDATE simulation_template_settings
@@ -473,10 +474,33 @@ def populate_surface_parameters():
     with open(data_dir.joinpath('0223_surface_parameters_contents.json'), 'r') as f:
         data_to_insert = json.load(f)
     keys_str = "(" + ",".join(data_to_insert[0].keys()) + ")"
+    conn = op.get_bind()
     for row in data_to_insert:
-        val_str = "(" + ",".join([repr(item) for item in row.values()]) + ")"
-        sql_query = f"INSERT INTO surface_parameters {keys_str} VALUES {val_str}"
-        op.execute(sa.text(sql_query))
+        # Build conditions for checking content match (excluding ID)
+        content_conditions = " AND ".join([f"{key} = {repr(value)}" for key, value in row.items() if key != 'id'])
+        content_match = conn.execute(sa.text(f"SELECT id FROM surface_parameters WHERE {content_conditions}")).fetchone()
+        id_match = conn.execute(sa.text(f"SELECT 1 FROM surface_parameters WHERE id = {row['id']}")).fetchone()
+        # Skip if row is already present with correct id
+        if content_match and content_match[0] == row['id']:
+            continue
+        elif content_match or id_match:
+            if content_match:
+                existing_id = content_match[0]
+                # Change ID to match the one in CSV and update surface table
+                new_id = row['id']
+            elif id_match:
+                existing_id = row['id']
+                # Change ID to unique value
+                new_id = conn.execute(sa.text("SELECT MAX(id) FROM surface_parameters")).scalar() + 1
+            # Update the existing row with new ID and update surface table
+            op.execute(sa.text(f"UPDATE surface SET surface_parameters_id = {new_id} "
+                               f"WHERE surface_parameters_id = {existing_id}"))
+            op.execute(sa.text(f"UPDATE surface_parameters SET id = {new_id} "
+                               f"WHERE id = {existing_id}"))
+        if not content_match:
+            val_str = "(" + ",".join([repr(item) for item in row.values()]) + ")"
+            sql_query = f"INSERT INTO surface_parameters {keys_str} VALUES {val_str}"
+            op.execute(sa.text(sql_query))
 
 
 def populate_dry_weather_flow_distribution():
