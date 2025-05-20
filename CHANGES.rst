@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.27 (unreleased)
+0.300.27 (2025-05-20)
 ---------------------
 
 - Fix migration (223) for schematisations where id 101-115 is already present in v2_surface_parameters (#229)
