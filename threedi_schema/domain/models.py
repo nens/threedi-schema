@@ -502,7 +502,6 @@ class CrossSectionLocation(Base):
     cross_section_width = Column(Float)
     cross_section_height = Column(Float)
     cross_section_friction_values = Column(CSVText)
-    cross_section_friction_values = Column(CSVText)
     cross_section_vegetation_table = Column(CSVTable)
     cross_section_table = Column(CSVTable)
     vegetation_stem_density = Column(Float)
