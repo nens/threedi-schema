@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.300.28 (unreleased)
+0.300.28 (2025-07-25)
 ---------------------
 
 - Add fix to migration 300 to fix setting of use_0d_inflow > 1 in migration 223 (#234)
