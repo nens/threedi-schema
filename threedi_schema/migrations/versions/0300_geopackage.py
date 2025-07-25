@@ -20,9 +20,13 @@ branch_labels = None
 depends_on = None
 
 
+def fix_use_0d_inflow():
+    # fix setting use_0d_inflow to be only 0 or 1 (also see migration 223)
+    op.execute(sa.text("""UPDATE simulation_template_settings SET use_0d_inflow = 1 WHERE use_0d_inflow > 0 """))
+
+
 def upgrade():
-    # this upgrade only changes the model version
-    pass
+    fix_use_0d_inflow()
 
 
 def downgrade():
