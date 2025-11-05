@@ -37,6 +37,7 @@ jobs:
           - python: "3.12"
             os: ubuntu-latest
             pins: "sqlalchemy==2.0.* alembic==1.13.* geoalchemy2==0.18.0"
+            pytestargs: "-Werror"
     steps:
       - uses: actions/checkout@v4
         with:
