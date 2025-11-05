@@ -1,8 +1,7 @@
 import pytest
 from sqlalchemy import Column, create_engine, func, Integer
 from sqlalchemy.event import listen
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from threedi_schema.application.threedi_database import load_spatialite
 from threedi_schema.domain.custom_types import (
