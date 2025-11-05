@@ -5,7 +5,7 @@ Changelog of threedi-schema
 0.300.29 (unreleased)
 ---------------------
 
-- Nothing changed yet.
+- Remove usage of `ST_` prefix in `from_text` argument in geoalchemy2 Geometry (#237)
 
 
 0.300.28 (2025-07-25)
