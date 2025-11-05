@@ -31,10 +31,12 @@ jobs:
           # 2024
           - python: "3.12"
             os: ubuntu-latest
-            pins: "sqlalchemy==2.0.* alembic==1.13.* geoalchemy2==0.14.*"
+            pins: "sqlalchemy==2.0.* alembic==1.13.* geoalchemy2==0.15.*"
             pytestargs: "-Werror"
-          # TODO: add test with latest sqlalchemy and geoalchemy
-    steps:
+          # 2024 - geoalchemy2 0.18.0
+          - python: "3.12"
+            os: ubuntu-latest
+            pins: "sqlalchemy==2.0.* alembic==1.13.* geoalchemy2==0.18.0"
       - uses: actions/checkout@v4
         with:
           lfs: true
