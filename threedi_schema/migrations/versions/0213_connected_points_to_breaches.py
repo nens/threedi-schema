@@ -79,7 +79,7 @@ class PotentialBreach(Base):
     maximum_breach_depth = Column(Float)
     levee_material = Column(Integer)
     the_geom = Column(
-        Geometry("LINESTRING", from_text="ST_GeomFromEWKB"),
+        Geometry("LINESTRING", from_text="GeomFromEWKB"),
         nullable=False
     )
     channel_id = Column(Integer, nullable=False)

@@ -1,6 +1,15 @@
 import pytest
+from sqlalchemy import Column, create_engine, func, Integer
+from sqlalchemy.event import listen
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-from threedi_schema.domain.custom_types import clean_csv_string, clean_csv_table
+from threedi_schema.application.threedi_database import load_spatialite
+from threedi_schema.domain.custom_types import (
+    clean_csv_string,
+    clean_csv_table,
+    Geometry,
+)
 
 
 @pytest.mark.parametrize(
@@ -48,3 +57,33 @@ def test_clean_csv_table(value):
 )
 def test_clean_csv_table_no_fail(value):
     clean_csv_table(value)
+
+
+@pytest.mark.parametrize("from_text", [None, "GeomFromEWKB"])
+def test_geometry_type_from_text(from_text):
+    # Esnure that the "from_text" values that are use to
+    # create a Geometry do not break downstream
+    Base = declarative_base()
+
+    engine = create_engine("sqlite:///:memory:")
+    listen(engine, "connect", load_spatialite)
+
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    session.execute(func.gpkgCreateBaseTables())
+
+    class Location(Base):
+        __tablename__ = "locations"
+        id = Column(Integer, primary_key=True)
+        geom = Column(Geometry("POINT", from_text=from_text))  # Invalid from_text
+
+    Base.metadata.create_all(engine)
+
+    try:
+        # Create a test point using WKT format
+        test_location = Location()
+        session.add(test_location)
+        session.commit()
+    finally:
+        session.close()
