@@ -8,7 +8,7 @@ from sqlalchemy.types import Integer, Text, TypeDecorator, VARCHAR
 class Geometry(geoalchemy2.types.Geometry):
     cache_ok = False
 
-    def __init__(self, geometry_type, from_text="ST_GeomFromEWKT"):
+    def __init__(self, geometry_type, from_text="GeomFromEWKT"):
         kwargs = {
             "geometry_type": geometry_type,
             "srid": 4326,
