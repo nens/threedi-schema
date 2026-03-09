@@ -948,6 +948,7 @@ def upgrade():
         sa.Column("zoom_category", sa.Integer(), nullable=True),
         sa.Column("crest_type", sa.Integer(), nullable=True),
         sa.Column("crest_level", sa.Float(), nullable=True),
+        sa.Column("discharge_capacity", sa.Float(), nullable=True),
         sa.Column("friction_value", sa.Float(), nullable=True),
         sa.Column("friction_type", sa.Integer(), nullable=True),
         sa.Column("discharge_coefficient_positive", sa.Float(), nullable=True),

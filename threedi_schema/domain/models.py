@@ -605,6 +605,7 @@ class Orifice(Base):
     geom = Column(Geometry("LINESTRING"), nullable=False)
     crest_type = Column(IntegerEnum(constants.CrestType))
     crest_level = Column(Float)
+    discharge_capacity = Column(Float)
     material_id = Column(Integer)
     friction_value = Column(Float)
     friction_type = Column(IntegerEnum(constants.FrictionType))
