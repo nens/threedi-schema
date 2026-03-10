@@ -232,7 +232,6 @@ class TableControlActionTypes(Enum):
     set_pump_capacity = "set_pump_capacity"  # only pump, in API: set_pump_capacity
     set_capacity = "set_capacity"  # old form, mapped to set_pump_capacity
     set_gate_level = "set_gate_level"
-    set_discharge_capacity = "set_discharge_capacity"  # orifice only
 
 
 class MeasureVariables(Enum):
