@@ -38,11 +38,7 @@ def migrate(
     schema = ctx.obj["db"].schema
     click.echo("The current schema revision is: %s" % schema.get_version())
     click.echo("Running alembic upgrade script...")
-    schema.upgrade(
-        revision=revision,
-        backup=backup,
-        upgrade_spatialite_version=upgrade_spatialite_version,
-    )
+    schema.upgrade(revision=revision, backup=backup)
     click.echo("The migrated schema revision is: %s" % schema.get_version())
 
 
