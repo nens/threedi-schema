@@ -6,9 +6,7 @@ from sqlalchemy import text
 from threedi_schema.domain import constants
 
 
-@pytest.mark.parametrize(
-    "delete_spatialite", [True, False]
-)
+@pytest.mark.parametrize("delete_spatialite", [True, False])
 def test_convert_to_geopackage(oldest_sqlite, delete_spatialite):
     oldest_sqlite.schema.upgrade(revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}")
     old_path = Path(oldest_sqlite.path)

@@ -206,7 +206,14 @@ class ModelSchema:
                 ).scalar()
             )
 
-    def upgrade(self, revision="head", backup=True, progress_func=None, epsg_code_override=None, keep_spatialite=False):
+    def upgrade(
+        self,
+        revision="head",
+        backup=True,
+        progress_func=None,
+        epsg_code_override=None,
+        keep_spatialite=False,
+    ):
         """Upgrade the database to the latest version.
 
         This requires either a completely empty database or a database with its
@@ -388,7 +395,9 @@ class ModelSchema:
         # Ensure database is upgraded and views are recreated
         revision = self.get_version()
         if revision is None or revision < constants.LAST_SPTL_SCHEMA_VERSION:
-            self.upgrade(revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}", backup=False)
+            self.upgrade(
+                revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}", backup=False
+            )
         elif revision > constants.LAST_SPTL_SCHEMA_VERSION:
             UpgradeFailedError(
                 f"Cannot convert schema version {revision} to geopackage"

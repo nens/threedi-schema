@@ -215,7 +215,9 @@ def test_set_custom_epsg_invalid_revision(
 ):
     schema = ModelSchema(in_memory_sqlite)
     if start_revision is not None:
-        schema.upgrade(revision=start_revision, backup=False, epsg_code_override=epsg_code_override)
+        schema.upgrade(
+            revision=start_revision, backup=False, epsg_code_override=epsg_code_override
+        )
     with pytest.raises(ValueError):
         schema._set_custom_epsg_code(custom_epsg_code=28992)
 
@@ -234,7 +236,9 @@ def test_upgrade_south_not_latest_errors(in_memory_sqlite):
 def test_upgrade_keep_sqlite(south_latest_sqlite, keep_spatialite):
     old_path = Path(south_latest_sqlite.path)
     schema = ModelSchema(south_latest_sqlite)
-    schema.upgrade(revision="0300", epsg_code_override=28992, keep_spatialite=keep_spatialite)
+    schema.upgrade(
+        revision="0300", epsg_code_override=28992, keep_spatialite=keep_spatialite
+    )
     assert old_path.exists() is keep_spatialite
 
 
@@ -311,13 +315,21 @@ def test_set_spatial_indexes(in_memory_sqlite):
 
 def test_is_spatialite(in_memory_sqlite):
     schema = ModelSchema(in_memory_sqlite)
-    schema.upgrade(revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}", backup=False, epsg_code_override=28992)
+    schema.upgrade(
+        revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
+        backup=False,
+        epsg_code_override=28992,
+    )
     assert schema.is_spatialite
 
 
 def test_is_geopackage(oldest_sqlite):
     schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}", backup=False, epsg_code_override=28992)
+    schema.upgrade(
+        revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
+        backup=False,
+        epsg_code_override=28992,
+    )
     schema.convert_to_geopackage()
     assert schema.is_geopackage
 
