@@ -1,4 +1,4 @@
-"""add breach and exchange properties
+"""add discharge capacity for orifice
 
 Revision ID: 0301
 Revises: 0300
