@@ -15,11 +15,9 @@ from geoalchemy2.admin.dialects.geopackage import create_spatial_ref_sys_view
 from geoalchemy2.functions import ST_SRID
 from osgeo import gdal, ogr, osr
 from sqlalchemy import Column, Integer, MetaData, Table, text
-from sqlalchemy.exc import IntegrityError
 
 from ..domain import constants, models
 from ..infrastructure.spatial_index import ensure_spatial_indexes
-from ..infrastructure.spatialite_versions import copy_models, get_spatialite_version
 from .errors import InvalidSRIDException, MigrationMissingError, UpgradeFailedError
 from .upgrade_utils import get_upgrade_steps_count, setup_logging
 
@@ -212,7 +210,6 @@ class ModelSchema:
         self,
         revision="head",
         backup=True,
-        upgrade_spatialite_version=False,
         progress_func=None,
         epsg_code_override=None,
         keep_spatialite=False,
@@ -228,9 +225,6 @@ class ModelSchema:
         database file does not become corrupt, enable the "backup" parameter.
         If the database is temporary already (or if it is PostGIS), disable
         it.
-
-        Specify 'upgrade_spatialite_version=True' to also upgrade the
-        spatialite file version after the upgrade.
 
         Specify a 'progress_func' to handle progress updates. `progress_func` should
         expect two arguments: the percentage of progress and a string describing the migration step
@@ -305,11 +299,8 @@ class ModelSchema:
             if rev_nr <= constants.LAST_SPTL_SCHEMA_VERSION
             else f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}"
         )
-        # only upgrade spatialite version is target revision is <= LAST_SPTL_SCHEMA_VERSION
-        if rev_nr <= constants.LAST_SPTL_SCHEMA_VERSION and upgrade_spatialite_version:
-            self.upgrade_spatialite_version()
         # Finish upgrade if target revision > LAST_SPTL_SCHEMA_VERSION
-        elif rev_nr > constants.LAST_SPTL_SCHEMA_VERSION:
+        if rev_nr > constants.LAST_SPTL_SCHEMA_VERSION:
             self.convert_to_geopackage(delete_spatialite=not keep_spatialite)
             run_upgrade(revision)
 
@@ -382,47 +373,6 @@ class ModelSchema:
             )
 
         ensure_spatial_indexes(self.db.engine, models.DECLARED_MODELS)
-
-    def upgrade_spatialite_version(self):
-        """Upgrade the version of the spatialite file to the version of the
-        current spatialite library.
-
-        Does nothing if the current file version > 3 or if the current library
-        version is not 4 or 5.
-
-        Raises UpgradeFailedError if there are any SQL constraints violated.
-        """
-        lib_version, file_version = get_spatialite_version(self.db)
-        if file_version == 3 and lib_version in (4, 5):
-            if self.get_version() != constants.LAST_SPTL_SCHEMA_VERSION:
-                raise MigrationMissingError(
-                    f"This tool requires schema version "
-                    f"{constants.LAST_SPTL_SCHEMA_VERSION:}. Current version: {self.get_version()}."
-                )
-            with self.db.file_transaction(start_empty=True) as work_db:
-                rev_nr = min(get_schema_version(), 229)
-                first_rev = f"{rev_nr:04d}"
-                _upgrade_database(work_db, revision=first_rev, unsafe=True)
-                with self.db.get_session() as session:
-                    srid = session.execute(
-                        text(
-                            "SELECT srid FROM geometry_columns WHERE f_geometry_column = 'geom' AND f_table_name NOT LIKE '_alembic%';"
-                        )
-                    ).fetchone()[0]
-                with work_db.get_session() as session:
-                    session.execute(
-                        text(f"INSERT INTO model_settings (epsg_code) VALUES ({srid});")
-                    )
-                    session.commit()
-                if get_schema_version() > 229:
-                    _upgrade_database(work_db, revision="head", unsafe=True)
-                with work_db.get_session() as session:
-                    session.execute(text("DELETE FROM model_settings;"))
-                    session.commit()
-                try:
-                    copy_models(self.db, work_db, self.declared_models)
-                except IntegrityError as e:
-                    raise UpgradeFailedError(e.orig.args[0])
 
     def convert_to_geopackage(self, delete_spatialite=True):
         """
