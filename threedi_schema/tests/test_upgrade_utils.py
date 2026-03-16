@@ -59,12 +59,7 @@ def test_get_upgrade_steps_count_pre_200(oldest_sqlite):
 def test_upgrade_with_progress_func(oldest_sqlite):
     schema = oldest_sqlite.schema
     progress_func = MagicMock()
-    schema.upgrade(
-        revision="0201",
-        backup=False,
-        upgrade_spatialite_version=False,
-        progress_func=progress_func,
-    )
+    schema.upgrade(revision="0201", backup=False, progress_func=progress_func)
     assert progress_func.call_args_list == [
         call(
             0.0,
@@ -80,12 +75,7 @@ def test_upgrade_with_progress_func(oldest_sqlite):
 def test_upgrade_with_progress_func_latest(oldest_sqlite):
     schema = oldest_sqlite.schema
     progress_func = MagicMock()
-    schema.upgrade(
-        backup=False,
-        upgrade_spatialite_version=False,
-        progress_func=progress_func,
-        revision="0300",
-    )
+    schema.upgrade(revision="0300", backup=False, progress_func=progress_func)
     progress = [_call.args[0] for _call in progress_func.call_args_list]
     # ensure that the reported upgrade is increasing
     # non-increasing progress indicates multiple initializations

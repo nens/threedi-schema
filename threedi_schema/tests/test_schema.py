@@ -10,7 +10,6 @@ from threedi_schema.application.schema import get_schema_version
 from threedi_schema.domain import constants
 from threedi_schema.domain.models import DECLARED_MODELS
 from threedi_schema.infrastructure.spatial_index import get_missing_spatial_indexes
-from threedi_schema.infrastructure.spatialite_versions import get_spatialite_version
 
 
 @pytest.fixture
@@ -134,25 +133,21 @@ def get_columns_from_sqlite(session, table_name):
 def test_full_upgrade_oldest(oldest_sqlite):
     """Upgrade a legacy database to the latest version"""
     schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(backup=False, upgrade_spatialite_version=False)
+    schema.upgrade(backup=False)
     run_upgrade_test(schema)
 
 
 def test_full_upgrade_empty(empty_sqlite_v4):
     """Upgrade an empty database to the latest version"""
     schema = ModelSchema(empty_sqlite_v4)
-    schema.upgrade(
-        backup=False, upgrade_spatialite_version=False, epsg_code_override=28992
-    )
+    schema.upgrade(backup=False, epsg_code_override=28992)
     run_upgrade_test(schema)
 
 
 def test_full_upgrade_with_preexisting_version(south_latest_sqlite):
     """Upgrade an empty database to the latest version"""
     schema = ModelSchema(south_latest_sqlite)
-    schema.upgrade(
-        backup=False, upgrade_spatialite_version=False, epsg_code_override=28992
-    )
+    schema.upgrade(backup=False, epsg_code_override=28992)
     run_upgrade_test(schema)
 
 
@@ -172,12 +167,7 @@ def run_upgrade_test(schema):
 def test_upgrade_with_epsg_code_override(in_memory_sqlite):
     """Upgrade an empty database to the latest version and set custom epsg"""
     schema = ModelSchema(in_memory_sqlite)
-    schema.upgrade(
-        revision="0230",
-        backup=False,
-        upgrade_spatialite_version=False,
-        epsg_code_override=28992,
-    )
+    schema.upgrade(revision="0230", backup=False, epsg_code_override=28992)
     with schema.db.get_session() as session:
         srids = [
             item[0]
@@ -193,33 +183,21 @@ def test_upgrade_with_epsg_code_override(in_memory_sqlite):
 def test_upgrade_with_epsg_code_override_version_too_new(empty_sqlite_v4):
     """Set custom epsg code for schema version > 229"""
     schema = ModelSchema(empty_sqlite_v4)
-    schema.upgrade(
-        revision="0230",
-        backup=False,
-        upgrade_spatialite_version=False,
-        epsg_code_override=28992,
-    )
+    schema.upgrade(revision="0230", backup=False, epsg_code_override=28992)
     with pytest.warns():
-        schema.upgrade(
-            backup=False, upgrade_spatialite_version=False, epsg_code_override=28992
-        )
+        schema.upgrade(backup=False, epsg_code_override=28992)
 
 
 def test_upgrade_with_epsg_code_override_revision_too_old(in_memory_sqlite):
     """Set custom epsg code when upgrading to 228 or older"""
     schema = ModelSchema(in_memory_sqlite)
     with pytest.warns():
-        schema.upgrade(
-            revision="0228",
-            backup=False,
-            upgrade_spatialite_version=False,
-            epsg_code_override=28992,
-        )
+        schema.upgrade(revision="0228", backup=False, epsg_code_override=28992)
 
 
 def test_set_custom_epsg_valid(in_memory_sqlite):
     schema = ModelSchema(in_memory_sqlite)
-    schema.upgrade(revision="0229", backup=False, upgrade_spatialite_version=False)
+    schema.upgrade(revision="0229", backup=False)
     schema._set_custom_epsg_code(custom_epsg_code=28992)
     with in_memory_sqlite.engine.connect() as connection:
         check_result = connection.execute(
@@ -237,12 +215,7 @@ def test_set_custom_epsg_invalid_revision(
 ):
     schema = ModelSchema(in_memory_sqlite)
     if start_revision is not None:
-        schema.upgrade(
-            revision=start_revision,
-            backup=False,
-            upgrade_spatialite_version=False,
-            epsg_code_override=epsg_code_override,
-        )
+        schema.upgrade(revision=start_revision, backup=False, epsg_code_override=epsg_code_override)
     with pytest.raises(ValueError):
         schema._set_custom_epsg_code(custom_epsg_code=28992)
 
@@ -254,16 +227,14 @@ def test_upgrade_south_not_latest_errors(in_memory_sqlite):
         schema, "get_version", return_value=constants.LATEST_SOUTH_MIGRATION_ID - 1
     ):
         with pytest.raises(errors.MigrationMissingError):
-            schema.upgrade(backup=False, upgrade_spatialite_version=False)
+            schema.upgrade(backup=False)
 
 
 @pytest.mark.parametrize("keep_spatialite", [True, False])
 def test_upgrade_keep_sqlite(south_latest_sqlite, keep_spatialite):
     old_path = Path(south_latest_sqlite.path)
     schema = ModelSchema(south_latest_sqlite)
-    schema.upgrade(
-        keep_spatialite=keep_spatialite, revision="0300", epsg_code_override=28992
-    )
+    schema.upgrade(revision="0300", epsg_code_override=28992, keep_spatialite=keep_spatialite)
     assert old_path.exists() is keep_spatialite
 
 
@@ -274,7 +245,7 @@ def test_upgrade_with_backup(south_latest_sqlite):
         "threedi_schema.application.schema._upgrade_database", side_effect=RuntimeError
     ) as upgrade, mock.patch.object(schema, "get_version", return_value=199):
         with pytest.raises(RuntimeError):
-            schema.upgrade(backup=True, upgrade_spatialite_version=False)
+            schema.upgrade(backup=True)
 
     (db,), kwargs = upgrade.call_args
     assert db is not south_latest_sqlite
@@ -287,7 +258,7 @@ def test_upgrade_without_backup(south_latest_sqlite):
         "threedi_schema.application.schema._upgrade_database", side_effect=RuntimeError
     ) as upgrade, mock.patch.object(schema, "get_version", return_value=199):
         with pytest.raises(RuntimeError):
-            schema.upgrade(backup=False, upgrade_spatialite_version=False)
+            schema.upgrade(backup=False)
 
     (db,), kwargs = upgrade.call_args
     assert db is south_latest_sqlite
@@ -311,29 +282,6 @@ def test_upgrade_revision_exception(oldest_sqlite):
     schema = ModelSchema(oldest_sqlite)
     with pytest.raises(ValueError):
         schema.upgrade(revision="foo")
-
-
-def test_upgrade_spatialite_3(oldest_sqlite):
-    lib_version, file_version_before = get_spatialite_version(oldest_sqlite)
-    if lib_version == file_version_before:
-        pytest.skip("Nothing to test: spatialite library version equals file version")
-
-    schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(
-        backup=False,
-        upgrade_spatialite_version=True,
-        revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
-    )
-
-    _, file_version_after = get_spatialite_version(oldest_sqlite)
-    assert file_version_after == 4
-
-    # the spatial indexes are there
-    with oldest_sqlite.engine.connect() as connection:
-        check_result = connection.execute(
-            text("SELECT CheckSpatialIndex('connection_node', 'geom')")
-        ).scalar()
-    assert check_result == 1
 
 
 # TODO: remove this because ensure_spatial_indexes is already tested
@@ -363,23 +311,13 @@ def test_set_spatial_indexes(in_memory_sqlite):
 
 def test_is_spatialite(in_memory_sqlite):
     schema = ModelSchema(in_memory_sqlite)
-    schema.upgrade(
-        backup=False,
-        upgrade_spatialite_version=False,
-        epsg_code_override=28992,
-        revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
-    )
+    schema.upgrade(revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}", backup=False, epsg_code_override=28992)
     assert schema.is_spatialite
 
 
 def test_is_geopackage(oldest_sqlite):
     schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(
-        backup=False,
-        upgrade_spatialite_version=False,
-        epsg_code_override=28992,
-        revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
-    )
+    schema.upgrade(revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}", backup=False, epsg_code_override=28992)
     schema.convert_to_geopackage()
     assert schema.is_geopackage
 
@@ -390,12 +328,7 @@ def test_is_geopackage(oldest_sqlite):
 )
 def test_get_epsg_data_empty(empty_sqlite_v4, revision, expected_epsg_code):
     schema = ModelSchema(empty_sqlite_v4)
-    schema.upgrade(
-        backup=False,
-        revision=revision,
-        upgrade_spatialite_version=False,
-        epsg_code_override=28992,
-    )
+    schema.upgrade(revision=revision, backup=False, epsg_code_override=28992)
     if expected_epsg_code is None:
         assert schema.epsg_code is None
     else:
@@ -414,7 +347,7 @@ def test_get_epsg_data_empty(empty_sqlite_v4, revision, expected_epsg_code):
 )
 def test_get_epsg_data(oldest_sqlite, revision, expected_epsg_source):
     schema = ModelSchema(oldest_sqlite)
-    schema.upgrade(backup=False, upgrade_spatialite_version=False, revision=revision)
+    schema.upgrade(revision=revision, backup=False)
     assert schema.epsg_code == 28992
     assert schema.epsg_source == expected_epsg_source
 

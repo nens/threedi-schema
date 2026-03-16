@@ -7,14 +7,10 @@ from threedi_schema.domain import constants
 
 
 @pytest.mark.parametrize(
-    "upgrade_spatialite, delete_spatialite", [[True, True], [False, False]]
+    "delete_spatialite", [True, False]
 )
-def test_convert_to_geopackage(oldest_sqlite, upgrade_spatialite, delete_spatialite):
-    # if upgrade_spatialite:
-    oldest_sqlite.schema.upgrade(
-        upgrade_spatialite_version=upgrade_spatialite,
-        revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}",
-    )
+def test_convert_to_geopackage(oldest_sqlite, delete_spatialite):
+    oldest_sqlite.schema.upgrade(revision=f"{constants.LAST_SPTL_SCHEMA_VERSION:04d}")
     old_path = Path(oldest_sqlite.path)
     oldest_sqlite.schema.convert_to_geopackage(delete_spatialite=delete_spatialite)
     # Ensure that after the conversion the geopackage is used
