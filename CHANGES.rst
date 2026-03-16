@@ -6,6 +6,7 @@ Changelog of threedi-schema
 ---------------------
 
 - Remove option to upgrade spatialite because this is no longer needed with geopackage (#241)
+- Add a new column, discharge capacity, to Orifice table (#240)
 
 
 0.300.29 (2025-11-05)
