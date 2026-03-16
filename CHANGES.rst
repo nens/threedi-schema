@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.301.00 (unreleased)
+0.301.00 (2026-03-16)
 ---------------------
 
 - Remove option to upgrade spatialite because this is no longer needed with geopackage (#241)
