@@ -1,0 +1,3 @@
+id,description,friction_type,friction_coefficient
+11,GFRP,2,0.011
+12,Relined pipes,2,0.011
