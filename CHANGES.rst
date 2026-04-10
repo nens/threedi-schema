@@ -2,10 +2,10 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.301.1 (unreleased)
+0.302.0 (unreleased)
 --------------------
 
-- Nothing changed yet.
+- Extend materials table with GFRP and Relined pipes (rana/#3929)
 
 
 0.301.00 (2026-03-16)
