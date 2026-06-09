@@ -30,13 +30,13 @@ class SchemaStructureError(Exception):
         if missing_tables:
             parts.append(f"\nMissing tables ({len(missing_tables)}):")
             for table in sorted(missing_tables):
-                parts.append(f"\n  - {table}")
+                parts.append(f"\n\t- {table}")
 
         if missing_columns:
             parts.append(f"\nMissing columns in {len(missing_columns)} table(s):")
             for table in sorted(missing_columns.keys()):
                 cols = sorted(missing_columns[table])
-                parts.append(f"\n  - {table}: {', '.join(cols)}")
+                parts.append(f"\n\t- {table}: {', '.join(cols)}")
 
         parts.append("\nThe database may need to be upgraded or repaired.")
 

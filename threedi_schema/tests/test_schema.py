@@ -391,9 +391,9 @@ class TestSchemaStructureValidation:
         schema = ModelSchema(sqlite_latest)
         with sqlite_latest.get_session() as session:
             session.execute(text("DROP TABLE connection_node"))
-            session.execute(text(
-                "CREATE TABLE connection_node (id INTEGER PRIMARY KEY, code TEXT)"
-            ))
+            session.execute(
+                text("CREATE TABLE connection_node (id INTEGER PRIMARY KEY, code TEXT)")
+            )
             session.commit()
         with pytest.raises(errors.SchemaStructureError) as exc_info:
             schema.validate_schema()
