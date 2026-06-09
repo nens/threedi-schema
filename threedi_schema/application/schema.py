@@ -365,6 +365,7 @@ class ModelSchema:
                 f"({version} > {schema_version}). This may lead to unexpected "
                 f"results. "
             )
+            return True
 
         inspector = inspect(self.db.engine)
         existing_tables = set(inspector.get_table_names())

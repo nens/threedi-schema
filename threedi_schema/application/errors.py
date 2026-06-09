@@ -17,12 +17,7 @@ class InvalidSRIDException(Exception):
 
 
 class SchemaStructureError(Exception):
-    """Raised when expected tables or columns are missing from the database.
-
-    Attributes:
-        missing_tables: List of table names that are missing from the database.
-        missing_columns: Dict mapping table name to list of missing column names.
-    """
+    """Raised when expected tables or columns are missing from the database."""
 
     def __init__(self, missing_tables=None, missing_columns=None):
         parts = ["Database schema structure is incomplete."]
