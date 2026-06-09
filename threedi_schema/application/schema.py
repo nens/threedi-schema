@@ -14,11 +14,16 @@ from alembic.script import ScriptDirectory
 from geoalchemy2.admin.dialects.geopackage import create_spatial_ref_sys_view
 from geoalchemy2.functions import ST_SRID
 from osgeo import gdal, ogr, osr
-from sqlalchemy import Column, Integer, MetaData, Table, text
+from sqlalchemy import Column, inspect, Integer, MetaData, Table, text
 
 from ..domain import constants, models
 from ..infrastructure.spatial_index import ensure_spatial_indexes
-from .errors import InvalidSRIDException, MigrationMissingError, UpgradeFailedError
+from .errors import (
+    InvalidSRIDException,
+    MigrationMissingError,
+    SchemaStructureError,
+    UpgradeFailedError,
+)
 from .upgrade_utils import get_upgrade_steps_count, setup_logging
 
 gdal.UseExceptions()
@@ -337,14 +342,14 @@ class ModelSchema:
             session.commit()
 
     def validate_schema(self):
-        """Very basic validation of 3Di schema.
+        """Validate 3Di schema version and structure.
 
-        Check that the database has the latest migration applied. If the
-        latest migrations is applied, we assume the database also contains all
-        tables and columns defined in threedi_model.models.py.
+        Check that the database has the latest migration applied and that all
+        expected tables and columns are present.
 
-        :return: True if the threedi_db schema is valid, raises an error otherwise.
-        :raise MigrationMissingError, MigrationTooHighError
+        :return: True if the schema is valid.
+        :raise MigrationMissingError: if the migration version is too low.
+        :raise SchemaStructureError: if expected tables or columns are missing.
         """
         version = self.get_version()
         schema_version = get_schema_version()
@@ -360,6 +365,29 @@ class ModelSchema:
                 f"({version} > {schema_version}). This may lead to unexpected "
                 f"results. "
             )
+
+        inspector = inspect(self.db.engine)
+        existing_tables = set(inspector.get_table_names())
+        missing_tables = []
+        missing_columns = {}
+
+        for model in self.declared_models:
+            table_name = model.__tablename__
+            if table_name not in existing_tables:
+                missing_tables.append(table_name)
+                continue
+            existing_cols = {col["name"] for col in inspector.get_columns(table_name)}
+            expected_cols = {col.name for col in model.__table__.columns}
+            missing = sorted(expected_cols - existing_cols)
+            if missing:
+                missing_columns[table_name] = missing
+
+        if missing_tables or missing_columns:
+            raise SchemaStructureError(
+                missing_tables=missing_tables,
+                missing_columns=missing_columns,
+            )
+
         return True
 
     def set_spatial_indexes(self):
