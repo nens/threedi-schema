@@ -20,7 +20,7 @@ class SchemaStructureError(Exception):
     """Raised when expected tables or columns are missing from the database."""
 
     def __init__(self, missing_tables=None, missing_columns=None):
-        parts = ["Database schema structure is incomplete."]
+        parts = ["Database schema structure is invalid."]
 
         if missing_tables:
             parts.append(f"\nMissing tables ({len(missing_tables)}):")
@@ -32,7 +32,5 @@ class SchemaStructureError(Exception):
             for table in sorted(missing_columns.keys()):
                 cols = sorted(missing_columns[table])
                 parts.append(f"\n\t- {table}: {', '.join(cols)}")
-
-        parts.append("\nThe database may need to be upgraded or repaired.")
 
         super().__init__("".join(parts))
