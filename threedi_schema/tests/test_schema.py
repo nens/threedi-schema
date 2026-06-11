@@ -369,3 +369,33 @@ def test_epsg_code_from_dem(sqlite_with_dem):
     assert schema._get_dem_epsg() == 28991
     schema.upgrade(epsg_code_override=schema._get_dem_epsg())
     assert schema._get_dem_epsg() == 28991
+
+
+class TestSchemaStructureValidation:
+    """Tests for structure validation in ModelSchema.validate_schema()."""
+
+    def test_complete_schema_passes(self, sqlite_latest):
+        schema = ModelSchema(sqlite_latest)
+        schema.validate_schema()  # should not raise
+
+    def test_missing_table_raises(self, sqlite_latest):
+        schema = ModelSchema(sqlite_latest)
+        with sqlite_latest.get_session() as session:
+            session.execute(text("DROP TABLE connection_node"))
+            session.commit()
+        with pytest.raises(errors.SchemaStructureError) as exc_info:
+            schema.validate_schema()
+        assert "connection_node" in str(exc_info.value)
+
+    def test_missing_column_raises(self, sqlite_latest):
+        schema = ModelSchema(sqlite_latest)
+        with sqlite_latest.get_session() as session:
+            session.execute(text("DROP TABLE connection_node"))
+            session.execute(
+                text("CREATE TABLE connection_node (id INTEGER PRIMARY KEY, code TEXT)")
+            )
+            session.commit()
+        with pytest.raises(errors.SchemaStructureError) as exc_info:
+            schema.validate_schema()
+        assert "connection_node" in str(exc_info.value)
+        assert "storage_area" in str(exc_info.value)
