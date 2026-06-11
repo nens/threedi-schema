@@ -2,7 +2,7 @@ Changelog of threedi-schema
 ===================================================
 
 
-0.302.1 (unreleased)
+0.302.1 (2026-06-11)
 --------------------
 
 - Extend validation method to check wether defined tables and columns are present (nens/rana#4189)
